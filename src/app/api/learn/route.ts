@@ -71,14 +71,21 @@ export async function GET(request: Request) {
  * - Regular users can only create private entries
  */
 export async function POST(request: Request) {
+  console.log("[Learn API] POST request received");
+  
   const authUser = await getAuthUserFromRequest(request);
   if (!authUser) {
+    console.log("[Learn API] Unauthorized - no auth user");
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
+  
+  console.log("[Learn API] Auth user:", authUser.email);
 
   const userId = await getOrCreateUserId(authUser);
   const supabaseServer = getSupabaseServer();
   const isAdmin = authUser.email === ADMIN_EMAIL;
+  
+  console.log("[Learn API] User ID:", userId, "Is Admin:", isAdmin);
 
   const body = await request.json() as {
     topic: string;
@@ -96,40 +103,54 @@ export async function POST(request: Request) {
     sourceUrl?: string;
     isPublic?: boolean;
   };
+  
+  console.log("[Learn API] Request body:", { 
+    topic: body.topic, 
+    title: body.title, 
+    hasCode: !!body.codeSolution,
+    codeLength: body.codeSolution?.length 
+  });
 
   if (!body.topic || !body.title || !body.codeSolution) {
+    console.log("[Learn API] Missing required fields");
     return Response.json({ error: "Topic, title, and code solution are required." }, { status: 400 });
   }
 
   // Only admin can make entries public
   const isPublic = isAdmin && body.isPublic === true;
 
+  const insertData = {
+    user_id: userId,
+    topic: body.topic,
+    sub_topic: body.subTopic ?? null,
+    title: body.title,
+    question_text: body.questionText ?? null,
+    difficulty: body.difficulty ?? null,
+    code_solution: body.codeSolution,
+    language: body.language ?? "cpp",
+    explanation: body.explanation ?? null,
+    intuition: body.intuition ?? null,
+    time_complexity: body.timeComplexity ?? null,
+    space_complexity: body.spaceComplexity ?? null,
+    tags: body.tags ?? [],
+    source_url: body.sourceUrl ?? null,
+    is_public: isPublic,
+  };
+  
+  console.log("[Learn API] Inserting data:", { ...insertData, code_solution: insertData.code_solution?.substring(0, 50) + "..." });
+
   const { data: entry, error } = await supabaseServer
     .from("content_library")
-    .insert({
-      user_id: userId,
-      topic: body.topic,
-      sub_topic: body.subTopic ?? null,
-      title: body.title,
-      question_text: body.questionText ?? null,
-      difficulty: body.difficulty ?? null,
-      code_solution: body.codeSolution,
-      language: body.language ?? "cpp",
-      explanation: body.explanation ?? null,
-      intuition: body.intuition ?? null,
-      time_complexity: body.timeComplexity ?? null,
-      space_complexity: body.spaceComplexity ?? null,
-      tags: body.tags ?? [],
-      source_url: body.sourceUrl ?? null,
-      is_public: isPublic,
-    })
+    .insert(insertData)
     .select()
     .single();
 
   if (error || !entry) {
-    console.error("[Learn POST error]", error);
+    console.error("[Learn API] Insert error:", error);
     return Response.json({ error: error?.message ?? "Failed to create entry." }, { status: 500 });
   }
+  
+  console.log("[Learn API] Entry created successfully:", entry.id);
 
   return Response.json({ entry });
 }

@@ -360,6 +360,10 @@ export default function DashboardClient() {
   const [fTag, setFTag] = useState("");
   const [fStatus, setFStatus] = useState<"All" | "complete" | "in-progress">("All");
   const [fSearch, setFSearch] = useState("");
+  
+  // Pattern Browser state (for topic-wise revision access)
+  const [selectedPattern, setSelectedPattern] = useState<string | null>(null);
+  const [patternView, setPatternView] = useState<"grid" | "list">("grid");
 
   // Learn tab state
   type ContentEntry = {
@@ -397,6 +401,28 @@ export default function DashboardClient() {
   const [lcImportInput, setLcImportInput] = useState("");
   const [lcImporting, setLcImporting] = useState(false);
   const [lcImportMsg, setLcImportMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  // Compiler state
+  const [compilerCode, setCompilerCode] = useState("");
+  const [compilerInput, setCompilerInput] = useState("");
+  const [compilerOutput, setCompilerOutput] = useState("");
+  const [compilerError, setCompilerError] = useState("");
+  const [compilerRunning, setCompilerRunning] = useState(false);
+  const [compilerLanguage, setCompilerLanguage] = useState("cpp");
+  const [showCompiler, setShowCompiler] = useState(false);
+  
+  // Question fields for compiler (like LeetCode)
+  const [compilerQuestion, setCompilerQuestion] = useState("");
+  const [compilerTopic, setCompilerTopic] = useState("");
+  const [compilerSubTopic, setCompilerSubTopic] = useState("");
+  const [compilerTitle, setCompilerTitle] = useState("");
+  const [compilerDifficulty, setCompilerDifficulty] = useState("Medium");
+  
+  // Compiler navigation state - for browsing saved questions
+  const [compilerSelectedEntry, setCompilerSelectedEntry] = useState<ContentEntry | null>(null);
+  const [compilerExpandedTopics, setCompilerExpandedTopics] = useState<Set<string>>(new Set());
+  const [compilerNavSearch, setCompilerNavSearch] = useState("");
+  const [compilerEditingId, setCompilerEditingId] = useState<string | null>(null); // track if editing existing entry
 
   /* ── Auth ── */
   useEffect(() => {
@@ -832,6 +858,11 @@ export default function DashboardClient() {
           tags: Array.isArray(d.tags) ? d.tags.join(", ") : "",
           sourceUrl: d.sourceUrl ?? "",
         });
+        // Also set compiler code
+        if (d.codeSolution) {
+          setCompilerCode(d.codeSolution);
+          setCompilerLanguage(d.language ?? "cpp");
+        }
         setLcImportMsg({
           type: "ok",
           text: d.alreadySolved
@@ -843,6 +874,205 @@ export default function DashboardClient() {
       .catch((e: Error) => setLcImportMsg({ type: "err", text: `❌ ${e.message}` }))
       .finally(() => setLcImporting(false));
   };
+
+  /* ── Run code in compiler ── */
+  const runCompiler = async () => {
+    if (!compilerCode.trim()) {
+      setCompilerError("Please enter some code to run");
+      return;
+    }
+    setCompilerRunning(true);
+    setCompilerOutput("");
+    setCompilerError("");
+    
+    try {
+      const response = await fetch("/api/compiler", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: compilerCode,
+          language: compilerLanguage,
+          stdin: compilerInput,
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        setCompilerError(result.errorMessage || result.error || "Compilation failed");
+        if (result.stdout) {
+          setCompilerOutput(result.stdout);
+        }
+      } else {
+        setCompilerOutput(result.stdout || "(No output)");
+        if (result.stderr) {
+          setCompilerError(result.stderr);
+        }
+      }
+    } catch (error) {
+      setCompilerError("Failed to connect to compiler service. Please try again.");
+    } finally {
+      setCompilerRunning(false);
+    }
+  };
+
+  /* ── Quick save from compiler - directly to database ── */
+  const quickSaveFromCompiler = async () => {
+    if (!compilerCode.trim()) {
+      alert("Please enter code first!");
+      return;
+    }
+    if (!compilerTopic.trim()) {
+      alert("Please enter a topic (e.g., Arrays, Trees, DP)");
+      return;
+    }
+    if (!compilerTitle.trim()) {
+      alert("Please enter a title for this problem");
+      return;
+    }
+    if (!token) {
+      alert("Please sign in first");
+      return;
+    }
+
+    setLearnLoading(true);
+    
+    try {
+      // Check if we're editing an existing entry
+      if (compilerEditingId) {
+        // Update existing entry
+        const body = {
+          id: compilerEditingId,
+          topic: compilerTopic.trim(),
+          subTopic: compilerSubTopic.trim() || null,
+          title: compilerTitle.trim(),
+          questionText: compilerQuestion.trim() || null,
+          difficulty: compilerDifficulty,
+          codeSolution: compilerCode,
+          language: compilerLanguage,
+        };
+        
+        console.log("[Compiler] Updating entry:", body);
+
+        const response = await fetch("/api/learn", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(body),
+        });
+        
+        const data = await response.json();
+        console.log("[Compiler] Update response:", data);
+        
+        if (!response.ok) {
+          throw new Error(data.error ?? "Failed to update");
+        }
+        
+        alert(`✅ Updated "${compilerTitle}"!`);
+        loadLearnEntries(token);
+      } else {
+        // Create new entry
+        const body = {
+          topic: compilerTopic.trim(),
+          subTopic: compilerSubTopic.trim() || null,
+          title: compilerTitle.trim(),
+          questionText: compilerQuestion.trim() || null,
+          difficulty: compilerDifficulty,
+          codeSolution: compilerCode,
+          language: compilerLanguage,
+          tags: [],
+        };
+        
+        console.log("[Compiler] Creating new entry:", body);
+
+        const response = await fetch("/api/learn", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(body),
+        });
+        
+        const data = await response.json();
+        console.log("[Compiler] Create response:", data);
+        
+        if (!response.ok) {
+          throw new Error(data.error ?? "Failed to save");
+        }
+        
+        alert(`✅ Saved "${compilerTitle}" to ${compilerTopic}!`);
+        // Expand the topic in navigation so user can see the new entry
+        setCompilerExpandedTopics(prev => new Set([...prev, compilerTopic.trim()]));
+        // Clear form for new entry
+        setCompilerCode("");
+        setCompilerQuestion("");
+        setCompilerTopic("");
+        setCompilerSubTopic("");
+        setCompilerTitle("");
+        setCompilerOutput("");
+        setCompilerError("");
+        setCompilerInput("");
+        setCompilerEditingId(null);
+        setCompilerSelectedEntry(null);
+        loadLearnEntries(token);
+      }
+    } catch (error) {
+      console.error("[Compiler] Save error:", error);
+      alert(`❌ ${error instanceof Error ? error.message : "Failed to save"}`);
+    } finally {
+      setLearnLoading(false);
+    }
+  };
+  
+  // Load entry into compiler from navigation
+  const loadEntryIntoCompiler = (entry: ContentEntry) => {
+    setCompilerSelectedEntry(entry);
+    setCompilerEditingId(entry.id);
+    setCompilerCode(entry.code_solution);
+    setCompilerLanguage(entry.language);
+    setCompilerTopic(entry.topic);
+    setCompilerSubTopic(entry.sub_topic ?? "");
+    setCompilerTitle(entry.title);
+    setCompilerQuestion(entry.question_text ?? "");
+    setCompilerDifficulty(entry.difficulty ?? "Medium");
+    setCompilerOutput("");
+    setCompilerError("");
+    setCompilerInput("");
+  };
+  
+  // Clear compiler for new entry
+  const clearCompilerForNew = () => {
+    setCompilerSelectedEntry(null);
+    setCompilerEditingId(null);
+    setCompilerCode("");
+    setCompilerQuestion("");
+    setCompilerTopic("");
+    setCompilerSubTopic("");
+    setCompilerTitle("");
+    setCompilerDifficulty("Medium");
+    setCompilerOutput("");
+    setCompilerError("");
+    setCompilerInput("");
+  };
+  
+  // Group entries by topic and subtopic for navigation
+  const compilerNavData = useMemo(() => {
+    const filtered = learnEntries.filter(e => {
+      if (!compilerNavSearch.trim()) return true;
+      const search = compilerNavSearch.toLowerCase();
+      return e.title.toLowerCase().includes(search) || 
+             e.topic.toLowerCase().includes(search) ||
+             (e.sub_topic?.toLowerCase().includes(search));
+    });
+    
+    const byTopic: Record<string, Record<string, ContentEntry[]>> = {};
+    filtered.forEach(entry => {
+      const topic = entry.topic || "Uncategorized";
+      const subTopic = entry.sub_topic || "General";
+      if (!byTopic[topic]) byTopic[topic] = {};
+      if (!byTopic[topic][subTopic]) byTopic[topic][subTopic] = [];
+      byTopic[topic][subTopic].push(entry);
+    });
+    
+    return byTopic;
+  }, [learnEntries, compilerNavSearch]);
 
   /* ── Calendar ── */
   const connectCal = () => {
@@ -900,6 +1130,101 @@ export default function DashboardClient() {
     return Array.from(s).sort();
   }, [solves]);
 
+  // Pattern analytics - group problems by tags with stats
+  const patternStats = useMemo(() => {
+    const stats = new Map<string, {
+      count: number;
+      easy: number;
+      medium: number;
+      hard: number;
+      completed: number;
+      pending: number;
+      problems: SolveEntry[];
+    }>();
+    
+    solves.forEach(solve => {
+      solve.tags.forEach(tag => {
+        if (!stats.has(tag)) {
+          stats.set(tag, { count: 0, easy: 0, medium: 0, hard: 0, completed: 0, pending: 0, problems: [] });
+        }
+        const s = stats.get(tag)!;
+        s.count++;
+        s.problems.push(solve);
+        if (solve.difficulty === "Easy") s.easy++;
+        else if (solve.difficulty === "Medium") s.medium++;
+        else if (solve.difficulty === "Hard") s.hard++;
+        
+        const allDone = solve.revisionStages.every(r => r.status === "done");
+        if (allDone) s.completed++;
+        else s.pending++;
+      });
+    });
+    
+    return Array.from(stats.entries())
+      .map(([tag, data]) => ({ tag, ...data }))
+      .sort((a, b) => b.count - a.count);
+  }, [solves]);
+
+  // Get revisions for selected pattern
+  const patternRevisions = useMemo(() => {
+    if (!selectedPattern) return [];
+    return [...todayRevisions, ...upcomingRevisions].filter(r => 
+      r.tags?.includes(selectedPattern)
+    );
+  }, [selectedPattern, todayRevisions, upcomingRevisions]);
+
+  // Pattern icons mapping
+  const patternIcons: Record<string, string> = {
+    "array": "📊", "arrays": "📊",
+    "string": "📝", "strings": "📝",
+    "hash table": "🗂️", "hash-table": "🗂️", "hashmap": "🗂️",
+    "dynamic programming": "🧩", "dp": "🧩",
+    "tree": "🌳", "trees": "🌳", "binary tree": "🌳",
+    "graph": "🕸️", "graphs": "🕸️",
+    "binary search": "🔍",
+    "two pointers": "👆👆", "two-pointers": "👆👆",
+    "sliding window": "🪟",
+    "stack": "📚", "stacks": "📚",
+    "queue": "📋", "queues": "📋",
+    "linked list": "🔗", "linkedlist": "🔗",
+    "recursion": "🔄",
+    "backtracking": "↩️",
+    "greedy": "💰",
+    "math": "🔢", "mathematics": "🔢",
+    "bit manipulation": "⚡", "bit-manipulation": "⚡",
+    "heap": "⛰️", "priority queue": "⛰️",
+    "trie": "🌲",
+    "sorting": "📈", "sort": "📈",
+    "divide and conquer": "⚔️",
+    "union find": "🔀", "disjoint set": "🔀",
+    "bfs": "🌊", "breadth-first search": "🌊",
+    "dfs": "🏊", "depth-first search": "🏊",
+    "matrix": "⬜", "2d array": "⬜",
+    "simulation": "🎮",
+    "design": "🏗️",
+    "prefix sum": "➕",
+    "monotonic stack": "📊",
+  };
+  
+  const getPatternIcon = (tag: string) => {
+    const lower = tag.toLowerCase();
+    return patternIcons[lower] || "🏷️";
+  };
+
+  // Gradient colors for patterns
+  const patternGradients = [
+    "from-violet-500 to-purple-500",
+    "from-blue-500 to-cyan-500", 
+    "from-emerald-500 to-teal-500",
+    "from-orange-500 to-amber-500",
+    "from-pink-500 to-rose-500",
+    "from-indigo-500 to-blue-500",
+    "from-red-500 to-orange-500",
+    "from-green-500 to-emerald-500",
+    "from-yellow-500 to-amber-500",
+    "from-fuchsia-500 to-pink-500",
+  ];
+
   const filtered = useMemo(() => solves.filter(s => {
     if (fDiff !== "All" && s.difficulty !== fDiff) return false;
     if (fTag && !s.tags.includes(fTag)) return false;
@@ -951,77 +1276,83 @@ export default function DashboardClient() {
         animate={{ y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3">
-          <div className="flex items-center gap-6">
-            <motion.div 
-              className="flex items-center gap-3"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${lightMode ? "bg-[#0969da]" : "bg-[#1f6feb]"}`}>
-                <span className="text-lg font-bold text-white">D</span>
-              </div>
-              <div>
-                <span className={`text-base font-semibold ${t.navText}`}>DSA Tracker</span>
-                <p className={`text-[10px] ${t.navMuted}`}>Spaced Repetition System</p>
-              </div>
-            </motion.div>
-            <div className={`flex gap-1 rounded-lg p-1 ${t.tabWrap}`}>
-              {(["dashboard", "questions", "analysis", "learn"] as Tab[]).map((tab2, idx) => (
-                <motion.button 
-                  key={tab2} 
-                  onClick={() => setTab(tab2)}
-                  className={`rounded-md px-4 py-2 text-xs font-semibold transition-all ${tab === tab2 ? t.tabActive : t.tabInactive}`}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                >
-                  {tab2 === "questions" ? "Questions" : tab2 === "analysis" ? "AI Analysis" : tab2 === "learn" ? "🎓 Learn" : "Dashboard"}
-                </motion.button>
-              ))}
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-5 py-3">
+          {/* Logo - always visible */}
+          <motion.div 
+            className="flex items-center gap-2 sm:gap-3 shrink-0"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg ${lightMode ? "bg-[#0969da]" : "bg-[#1f6feb]"}`}>
+              <span className="text-base sm:text-lg font-bold text-white">D</span>
             </div>
+            <div className="hidden sm:block">
+              <span className={`text-sm sm:text-base font-semibold ${t.navText}`}>DSA Tracker</span>
+              <p className={`text-[9px] sm:text-[10px] ${t.navMuted}`}>Spaced Repetition</p>
+            </div>
+          </motion.div>
+
+          {/* Tabs - scrollable on mobile */}
+          <div className={`flex gap-0.5 sm:gap-1 rounded-lg p-0.5 sm:p-1 overflow-x-auto scrollbar-none mx-2 sm:mx-4 ${t.tabWrap}`}>
+            {(["dashboard", "questions", "analysis", "learn"] as Tab[]).map((tab2, idx) => (
+              <motion.button 
+                key={tab2} 
+                onClick={() => setTab(tab2)}
+                className={`rounded-md px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold transition-all whitespace-nowrap ${tab === tab2 ? t.tabActive : t.tabInactive}`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+              >
+                <span className="sm:hidden">{tab2 === "dashboard" ? "📊" : tab2 === "questions" ? "📝" : tab2 === "analysis" ? "🤖" : "🎓"}</span>
+                <span className="hidden sm:inline">{tab2 === "dashboard" ? "📊 Dashboard" : tab2 === "questions" ? "📝 Questions" : tab2 === "analysis" ? "🤖 AI Analysis" : "🎓 Learn"}</span>
+              </motion.button>
+            ))}
           </div>
-          <div className="flex items-center gap-3">
+
+          {/* Right side - theme toggle + auth */}
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <motion.button 
               onClick={() => setLightMode(p => !p)}
-              className={`rounded-lg border px-3 py-2 text-base transition-all ${t.navBtn}`}
+              className={`rounded-lg border px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base transition-all ${t.navBtn}`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               title="Toggle light/dark mode"
             >
               {lightMode ? "🌙" : "☀️"}
             </motion.button>
-            {authStatus === "loading" ? <span className={`text-xs ${t.navMuted}`}>Loading…</span>
+            {authStatus === "loading" ? <span className={`text-[10px] sm:text-xs ${t.navMuted}`}>…</span>
               : authStatus === "in" ? (
                 <>
-                  <span className={`hidden text-xs font-medium sm:block ${t.navMuted}`}>{userEmail}</span>
+                  <span className={`hidden lg:block text-xs font-medium ${t.navMuted}`}>{userEmail}</span>
                   <motion.button 
                     onClick={signOut} 
-                    className={`rounded-lg border px-4 py-2 text-xs font-semibold transition-all ${t.navBtn}`}
+                    className={`rounded-lg border px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold transition-all ${t.navBtn}`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    Sign out
+                    <span className="sm:hidden">↪</span>
+                    <span className="hidden sm:inline">Sign out</span>
                   </motion.button>
                 </>
               ) : (
                 <motion.button 
                   onClick={signIn} 
                   disabled={signingIn}
-                  className={`rounded-lg px-4 py-2 text-xs font-semibold text-white disabled:opacity-50 transition-all ${lightMode ? "bg-[#0969da] hover:bg-[#0860ca]" : "bg-[#1f6feb] hover:bg-[#1a5edb]"}`}
+                  className={`rounded-lg px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold text-white disabled:opacity-50 transition-all ${lightMode ? "bg-[#0969da] hover:bg-[#0860ca]" : "bg-[#1f6feb] hover:bg-[#1a5edb]"}`}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  {signingIn ? "Signing in…" : "Sign in with Google"}
+                  {signingIn ? "…" : <><span className="sm:hidden">Sign in</span><span className="hidden sm:inline">Sign in with Google</span></>}
                 </motion.button>
               )}
           </div>
         </div>
       </motion.nav>
-      {authError && <div className="bg-red-500/10 border-b border-red-500/20 px-5 py-2 text-center text-xs text-red-400">{authError}</div>}
+      {authError && <div className="bg-red-500/10 border-b border-red-500/20 px-3 sm:px-5 py-2 text-center text-[10px] sm:text-xs text-red-400">{authError}</div>}
 
-      <div className="mx-auto max-w-[1600px] px-12 py-7">
+      {/* Main container - responsive padding */}
+      <div className="mx-auto max-w-[1600px] px-3 sm:px-6 lg:px-12 py-4 sm:py-7">
 
         {/* ════════════════════════════════════════════════════════════════
             DASHBOARD TAB
@@ -1029,10 +1360,100 @@ export default function DashboardClient() {
         {tab === "dashboard" && (
           <div className="flex flex-col gap-6">
 
+            {/* ════ MOTIVATIONAL BANNER ════ */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className={`relative overflow-hidden rounded-xl sm:rounded-2xl ${lightMode ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" : "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600"}`}
+            >
+              {/* Animated background shapes - hidden on mobile for performance */}
+              <div className="absolute inset-0 overflow-hidden hidden sm:block">
+                <motion.div
+                  animate={{ 
+                    x: [0, 100, 0],
+                    y: [0, -50, 0],
+                    rotate: [0, 180, 360]
+                  }}
+                  transition={{ duration: 20, repeat: Infinity }}
+                  className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-white/10 blur-2xl"
+                />
+                <motion.div
+                  animate={{ 
+                    x: [0, -80, 0],
+                    y: [0, 60, 0],
+                  }}
+                  transition={{ duration: 15, repeat: Infinity }}
+                  className="absolute -bottom-10 -right-10 w-60 h-60 rounded-full bg-white/10 blur-3xl"
+                />
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 8, repeat: Infinity }}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-white/5 blur-3xl"
+                />
+              </div>
+              
+              {/* Content - responsive layout */}
+              <div className="relative px-4 sm:px-8 py-4 sm:py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 sm:gap-6">
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                    className="text-3xl sm:text-5xl shrink-0"
+                  >
+                    {streak >= 7 ? "🔥" : streak >= 3 ? "⚡" : "🚀"}
+                  </motion.div>
+                  <div>
+                    <motion.h1 
+                      className="text-lg sm:text-2xl font-black text-white mb-0.5 sm:mb-1"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      {streak === 0 ? "Ready to Begin?" : 
+                       streak === 1 ? "Great Start!" : 
+                       streak < 7 ? `${streak} Day Streak!` :
+                       streak < 30 ? `${streak} Days Strong! 💪` :
+                       `${streak} Day Legend! 👑`}
+                    </motion.h1>
+                    <motion.p 
+                      className="text-white/80 text-xs sm:text-sm font-medium"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      {pending.length === 0 && todayRevisions.length === 0 
+                        ? "Sync LeetCode to start"
+                        : pending.length === 0 
+                        ? "✨ All caught up!"
+                        : `${pending.length} revision${pending.length > 1 ? "s" : ""} pending`}
+                    </motion.p>
+                  </div>
+                </div>
+                {/* Stats on right - hidden on small mobile, shown on sm+ */}
+                <motion.div 
+                  className="flex items-center gap-3 sm:gap-4 ml-auto sm:ml-0"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <div className="text-center">
+                    <p className="text-2xl sm:text-4xl font-black text-white">{stats?.totalSolved || 0}</p>
+                    <p className="text-[10px] sm:text-xs text-white/70 font-semibold">Solved</p>
+                  </div>
+                  <div className="w-px h-8 sm:h-12 bg-white/20" />
+                  <div className="text-center">
+                    <p className="text-2xl sm:text-4xl font-black text-white">{todayRevisions.filter(r => r.status === "done").length}</p>
+                    <p className="text-[10px] sm:text-xs text-white/70 font-semibold">Today</p>
+                  </div>
+                </motion.div>
+              </div>
+            </motion.div>
+
             {/* Stats */}
             {stats ? (
               <motion.div 
-                className="grid grid-cols-2 gap-4 sm:grid-cols-5"
+                className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-5"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
@@ -1049,20 +1470,20 @@ export default function DashboardClient() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, delay: idx * 0.1 }}
                     whileHover={{ scale: 1.03, y: -2 }}
-                    className={`group relative overflow-hidden rounded-2xl p-6 transition-all cursor-pointer ${lightMode ? "bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl" : "bg-[#161b22]/50 backdrop-blur-md shadow-xl hover:shadow-2xl"}`}
+                    className={`group relative overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-6 transition-all cursor-pointer ${lightMode ? "bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl" : "bg-[#161b22]/50 backdrop-blur-md shadow-xl hover:shadow-2xl"}`}
                   >
                     {/* Gradient border */}
-                    <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${s.borderGradient} opacity-20 group-hover:opacity-30 transition-opacity`} />
-                    <div className={`absolute inset-[1px] rounded-2xl ${lightMode ? "bg-white" : "bg-[#0d1117]"}`} />
+                    <div className={`absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br ${s.borderGradient} opacity-20 group-hover:opacity-30 transition-opacity`} />
+                    <div className={`absolute inset-[1px] rounded-xl sm:rounded-2xl ${lightMode ? "bg-white" : "bg-[#0d1117]"}`} />
                     
                     {/* Content */}
                     <div className="relative">
-                      <div className="flex items-center justify-between mb-4">
-                        <p className={`text-xs font-bold uppercase tracking-wide ${t.textMuted}`}>{s.label}</p>
-                        <span className="text-3xl">{s.icon}</span>
+                      <div className="flex items-center justify-between mb-2 sm:mb-4">
+                        <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wide ${t.textMuted}`}>{s.label}</p>
+                        <span className="text-xl sm:text-3xl">{s.icon}</span>
                       </div>
-                      <p className="text-5xl font-black mb-4" style={{ color: s.color }}>{s.value}</p>
-                      <div className={`h-2.5 rounded-full overflow-hidden ${lightMode ? "bg-[#eaeef2]" : "bg-[#21262d]"}`}>
+                      <p className="text-3xl sm:text-5xl font-black mb-2 sm:mb-4" style={{ color: s.color }}>{s.value}</p>
+                      <div className={`h-1.5 sm:h-2.5 rounded-full overflow-hidden ${lightMode ? "bg-[#eaeef2]" : "bg-[#21262d]"}`}>
                         <motion.div 
                           className={`h-full rounded-full bg-gradient-to-r ${s.borderGradient}`}
                           initial={{ width: 0 }}
@@ -1078,29 +1499,29 @@ export default function DashboardClient() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: 0.4 }}
                   whileHover={{ scale: 1.03, y: -2 }}
-                  className={`group relative overflow-hidden rounded-2xl p-6 transition-all cursor-pointer ${lightMode ? "bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl" : "bg-[#161b22]/50 backdrop-blur-md shadow-xl hover:shadow-2xl"}`}
+                  className={`group relative overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-6 transition-all cursor-pointer col-span-2 sm:col-span-1 ${lightMode ? "bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl" : "bg-[#161b22]/50 backdrop-blur-md shadow-xl hover:shadow-2xl"}`}
                 >
                   {/* Gradient border */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#bc4c00] to-[#f0883e] opacity-20 group-hover:opacity-30 transition-opacity" />
-                  <div className={`absolute inset-[1px] rounded-2xl ${lightMode ? "bg-white" : "bg-[#0d1117]"}`} />
+                  <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#bc4c00] to-[#f0883e] opacity-20 group-hover:opacity-30 transition-opacity" />
+                  <div className={`absolute inset-[1px] rounded-xl sm:rounded-2xl ${lightMode ? "bg-white" : "bg-[#0d1117]"}`} />
                   
                   {/* Content */}
-                  <div className="relative">
-                    <div className="flex items-center justify-between mb-4">
-                      <p className={`text-xs font-bold uppercase tracking-wide ${t.textMuted}`}>Streak</p>
+                  <div className="relative flex sm:block items-center gap-4">
+                    <div className="flex items-center justify-between mb-0 sm:mb-4">
+                      <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wide ${t.textMuted}`}>Streak</p>
                       <motion.span 
-                        className="text-3xl"
+                        className="text-xl sm:text-3xl ml-2 sm:ml-0"
                         animate={{ scale: [1, 1.1, 1] }}
                         transition={{ duration: 2, repeat: Infinity }}
                       >
                         🔥
                       </motion.span>
                     </div>
-                    <div className="flex items-baseline gap-2 mb-4">
-                      <p className="text-5xl font-black" style={{ color: lightMode ? "#bc4c00" : "#f0883e" }}>{streak}</p>
-                      <span className={`text-base font-bold ${t.textMuted}`}>days</span>
+                    <div className="flex items-baseline gap-2 mb-2 sm:mb-4 ml-auto sm:ml-0">
+                      <p className="text-3xl sm:text-5xl font-black" style={{ color: lightMode ? "#bc4c00" : "#f0883e" }}>{streak}</p>
+                      <span className={`text-sm sm:text-base font-bold ${t.textMuted}`}>days</span>
                     </div>
-                    <p className={`text-sm font-bold ${t.textMuted}`}>
+                    <p className={`text-xs sm:text-sm font-bold ${t.textMuted} hidden sm:block`}>
                       {streak === 0 ? "Start today! 🚀" : streak >= 7 ? "On fire! 🔥" : "Keep going! 💪"}
                     </p>
                   </div>
@@ -1110,33 +1531,33 @@ export default function DashboardClient() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`relative overflow-hidden rounded-2xl px-6 py-12 text-center ${lightMode ? "bg-white/80 backdrop-blur-sm shadow-lg" : "bg-[#161b22]/50 backdrop-blur-md shadow-xl"}`}
+                className={`relative overflow-hidden rounded-xl sm:rounded-2xl px-4 sm:px-6 py-8 sm:py-12 text-center ${lightMode ? "bg-white/80 backdrop-blur-sm shadow-lg" : "bg-[#161b22]/50 backdrop-blur-md shadow-xl"}`}
               >
                 {/* Gradient border */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#0969da] to-[#1f6feb] opacity-20" />
-                <div className={`absolute inset-[1px] rounded-2xl ${lightMode ? "bg-white" : "bg-[#0d1117]"}`} />
+                <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#0969da] to-[#1f6feb] opacity-20" />
+                <div className={`absolute inset-[1px] rounded-xl sm:rounded-2xl ${lightMode ? "bg-white" : "bg-[#0d1117]"}`} />
                 
                 {/* Content */}
                 <div className="relative">
                   <motion.div 
-                    className={`mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl ${lightMode ? "bg-[#ddf4ff]" : "bg-[#0969da]/10"}`}
+                    className={`mx-auto mb-3 sm:mb-4 flex h-14 w-14 sm:h-20 sm:w-20 items-center justify-center rounded-xl sm:rounded-2xl ${lightMode ? "bg-[#ddf4ff]" : "bg-[#0969da]/10"}`}
                     animate={{ rotate: [0, 5, -5, 0] }}
                     transition={{ duration: 3, repeat: Infinity }}
                   >
-                    <span className="text-4xl">📊</span>
+                    <span className="text-2xl sm:text-4xl">📊</span>
                   </motion.div>
-                  <p className={`text-xl font-bold mb-3 ${t.textPrimary}`}>
+                  <p className={`text-base sm:text-xl font-bold mb-2 sm:mb-3 ${t.textPrimary}`}>
                     {authStatus !== "in" ? "Welcome to DSA Tracker!" : "Ready to Start?"}
                   </p>
-                  <p className={`text-base font-medium ${t.textMuted}`}>
-                    {authStatus !== "in" ? "Sign in with Google to start tracking your progress." : "Enter your LeetCode username and sync to load stats."}
+                  <p className={`text-sm sm:text-base font-medium ${t.textMuted}`}>
+                    {authStatus !== "in" ? "Sign in to start tracking." : "Sync LeetCode to load stats."}
                   </p>
                 </div>
               </motion.div>
             )}
 
-            {/* 3-col layout */}
-            <div className="grid gap-5 lg:grid-cols-[340px_1fr_320px]">
+            {/* 3-col layout - stacks on mobile */}
+            <div className="grid gap-4 sm:gap-5 lg:grid-cols-[320px_1fr_280px]">
 
               {/* ── Col 1: Controls ── */}
               <div className="flex flex-col gap-4">
@@ -1644,6 +2065,307 @@ export default function DashboardClient() {
                 </div>
               </div>
             </div>
+
+            {/* ════════════════════════════════════════════════════════════════
+                PATTERN BROWSER — Beautiful Topic-wise Revision Access
+            ════════════════════════════════════════════════════════════════ */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.6 }}
+              className={`mt-4 sm:mt-6 rounded-xl sm:rounded-2xl border overflow-hidden ${lightMode ? "bg-white/90 border-gray-200 shadow-xl" : "bg-[#161b22]/90 border-[#30363d] shadow-2xl"}`}
+            >
+              {/* Header */}
+              <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b ${lightMode ? "border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50" : "border-[#30363d] bg-gradient-to-r from-indigo-500/10 to-purple-500/10"}`}>
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <motion.div 
+                    className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg sm:rounded-xl ${lightMode ? "bg-gradient-to-br from-indigo-500 to-purple-600" : "bg-gradient-to-br from-indigo-500 to-purple-600"}`}
+                    animate={{ rotate: [0, 5, -5, 0] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                  >
+                    <span className="text-xl sm:text-2xl">🎯</span>
+                  </motion.div>
+                  <div>
+                    <h2 className={`text-base sm:text-lg font-black ${t.textPrimary}`}>Pattern Browser</h2>
+                    <p className={`text-xs sm:text-sm ${t.textMuted}`}>{patternStats.length} patterns</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 sm:gap-2 ml-auto">
+                  <button 
+                    onClick={() => setPatternView("grid")}
+                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${patternView === "grid" ? (lightMode ? "bg-indigo-500 text-white" : "bg-indigo-500 text-white") : (lightMode ? "bg-gray-100 text-gray-600" : "bg-white/10 text-white/60")}`}
+                  >
+                    ⊞
+                  </button>
+                  <button 
+                    onClick={() => setPatternView("list")}
+                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${patternView === "list" ? (lightMode ? "bg-indigo-500 text-white" : "bg-indigo-500 text-white") : (lightMode ? "bg-gray-100 text-gray-600" : "bg-white/10 text-white/60")}`}
+                  >
+                    ☰
+                  </button>
+                </div>
+              </div>
+
+              {/* Pattern Grid/List */}
+              <div className={`p-3 sm:p-6 ${lightMode ? "bg-gray-50/50" : "bg-[#0d1117]/50"}`}>
+                {patternStats.length === 0 ? (
+                  <div className="text-center py-8 sm:py-12">
+                    <motion.div
+                      animate={{ y: [0, -10, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="text-4xl sm:text-6xl mb-3 sm:mb-4"
+                    >
+                      🎯
+                    </motion.div>
+                    <p className={`text-base sm:text-lg font-bold mb-2 ${t.textPrimary}`}>No patterns yet!</p>
+                    <p className={`text-xs sm:text-sm ${t.textMuted}`}>Sync LeetCode to see breakdown</p>
+                  </div>
+                ) : patternView === "grid" ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4">
+                    {patternStats.slice(0, 15).map((pattern, idx) => {
+                      const isSelected = selectedPattern === pattern.tag;
+                      const gradient = patternGradients[idx % patternGradients.length];
+                      const completionRate = pattern.count > 0 ? Math.round((pattern.completed / pattern.count) * 100) : 0;
+                      
+                      return (
+                        <motion.button
+                          key={pattern.tag}
+                          onClick={() => setSelectedPattern(isSelected ? null : pattern.tag)}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: idx * 0.05 }}
+                          whileHover={{ scale: 1.03, y: -4 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={`relative group overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-5 text-left transition-all ${
+                            isSelected 
+                              ? "ring-2 ring-indigo-500 ring-offset-2 ring-offset-transparent" 
+                              : ""
+                          } ${lightMode ? "bg-white shadow-lg hover:shadow-xl" : "bg-[#161b22] shadow-xl hover:shadow-2xl border border-[#30363d]"}`}
+                        >
+                          {/* Gradient accent */}
+                          <div className={`absolute top-0 left-0 right-0 h-1 sm:h-1.5 bg-gradient-to-r ${gradient}`} />
+                          
+                          {/* Icon + Name */}
+                          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4">
+                            <motion.span 
+                              className="text-xl sm:text-3xl"
+                              animate={isSelected ? { scale: [1, 1.2, 1] } : {}}
+                              transition={{ duration: 0.5 }}
+                            >
+                              {getPatternIcon(pattern.tag)}
+                            </motion.span>
+                            <div className="min-w-0 flex-1">
+                              <p className={`text-xs sm:text-sm font-bold truncate capitalize ${t.textPrimary}`}>{pattern.tag}</p>
+                              <p className={`text-[10px] sm:text-xs ${t.textMuted}`}>{pattern.count}</p>
+                            </div>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div className="mb-2 sm:mb-3">
+                            <div className={`h-1.5 sm:h-2 rounded-full overflow-hidden ${lightMode ? "bg-gray-200" : "bg-white/10"}`}>
+                              <motion.div 
+                                className={`h-full rounded-full bg-gradient-to-r ${gradient}`}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${completionRate}%` }}
+                                transition={{ duration: 1, delay: idx * 0.05 }}
+                              />
+                            </div>
+                            <p className={`text-[9px] sm:text-[10px] mt-1 ${t.textFaint}`}>{completionRate}%</p>
+                          </div>
+
+                          {/* Difficulty breakdown - hidden on very small screens */}
+                          <div className="hidden sm:flex gap-1.5 sm:gap-2">
+                            {pattern.easy > 0 && (
+                              <span className="inline-flex items-center gap-1 rounded-full px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold bg-green-500/15 text-green-500">
+                                {pattern.easy}E
+                              </span>
+                            )}
+                            {pattern.medium > 0 && (
+                              <span className="inline-flex items-center gap-1 rounded-full px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold bg-yellow-500/15 text-yellow-500">
+                                {pattern.medium}M
+                              </span>
+                            )}
+                            {pattern.hard > 0 && (
+                              <span className="inline-flex items-center gap-1 rounded-full px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold bg-red-500/15 text-red-500">
+                                {pattern.hard}H
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Selection indicator */}
+                          {isSelected && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="absolute top-2 right-2 sm:top-3 sm:right-3 h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-indigo-500 flex items-center justify-center"
+                            >
+                              <span className="text-[10px] sm:text-xs text-white">✓</span>
+                            </motion.div>
+                          )}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* List View */
+                  <div className="flex flex-col gap-2">
+                    {patternStats.map((pattern, idx) => {
+                      const isSelected = selectedPattern === pattern.tag;
+                      const gradient = patternGradients[idx % patternGradients.length];
+                      const completionRate = pattern.count > 0 ? Math.round((pattern.completed / pattern.count) * 100) : 0;
+                      
+                      return (
+                        <motion.button
+                          key={pattern.tag}
+                          onClick={() => setSelectedPattern(isSelected ? null : pattern.tag)}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.03 }}
+                          whileHover={{ x: 4 }}
+                          className={`flex items-center gap-4 rounded-xl p-4 text-left transition-all ${
+                            isSelected 
+                              ? (lightMode ? "bg-indigo-50 border-2 border-indigo-500" : "bg-indigo-500/15 border-2 border-indigo-500")
+                              : (lightMode ? "bg-white border border-gray-200 hover:border-gray-300" : "bg-[#161b22] border border-[#30363d] hover:border-[#484f58]")
+                          }`}
+                        >
+                          <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${gradient}`}>
+                            <span className="text-2xl">{getPatternIcon(pattern.tag)}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3">
+                              <p className={`text-sm font-bold capitalize ${t.textPrimary}`}>{pattern.tag}</p>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${lightMode ? "bg-gray-100 text-gray-600" : "bg-white/10 text-white/60"}`}>
+                                {pattern.count} problems
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 mt-2">
+                              <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${lightMode ? "bg-gray-200" : "bg-white/10"}`}>
+                                <div className={`h-full rounded-full bg-gradient-to-r ${gradient}`} style={{ width: `${completionRate}%` }} />
+                              </div>
+                              <span className={`text-xs font-semibold ${t.textMuted}`}>{completionRate}%</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <span className="text-[11px] font-bold px-2 py-1 rounded-lg bg-green-500/15 text-green-500">{pattern.easy}E</span>
+                            <span className="text-[11px] font-bold px-2 py-1 rounded-lg bg-yellow-500/15 text-yellow-500">{pattern.medium}M</span>
+                            <span className="text-[11px] font-bold px-2 py-1 rounded-lg bg-red-500/15 text-red-500">{pattern.hard}H</span>
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Selected Pattern Detail Panel */}
+              <AnimatePresence>
+                {selectedPattern && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className={`border-t overflow-hidden ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}
+                  >
+                    <div className={`p-6 ${lightMode ? "bg-gradient-to-r from-indigo-50/50 to-purple-50/50" : "bg-gradient-to-r from-indigo-500/5 to-purple-500/5"}`}>
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">{getPatternIcon(selectedPattern)}</span>
+                          <div>
+                            <h3 className={`text-lg font-black capitalize ${t.textPrimary}`}>{selectedPattern}</h3>
+                            <p className={`text-sm ${t.textMuted}`}>
+                              {patternStats.find(p => p.tag === selectedPattern)?.count || 0} problems • 
+                              {patternRevisions.length} pending revisions
+                            </p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setSelectedPattern(null)}
+                          className={`px-3 py-2 rounded-lg text-sm font-semibold ${lightMode ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-white/10 text-white/60 hover:bg-white/15"}`}
+                        >
+                          ✕ Close
+                        </button>
+                      </div>
+
+                      {/* Problems for this pattern */}
+                      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                        {patternStats.find(p => p.tag === selectedPattern)?.problems.slice(0, 9).map((problem, idx) => {
+                          const dc = diffColor(problem.difficulty);
+                          const allDone = problem.revisionStages.every(r => r.status === "done");
+                          const nextRevision = problem.revisionStages.find(r => r.status === "scheduled" || r.status === "overdue");
+                          
+                          return (
+                            <motion.div
+                              key={problem.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: idx * 0.05 }}
+                              className={`rounded-xl border p-4 ${lightMode ? "bg-white border-gray-200" : "bg-[#161b22] border-[#30363d]"} ${allDone ? "opacity-60" : ""}`}
+                            >
+                              <div className="flex items-start justify-between gap-2 mb-3">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className={`h-2 w-2 rounded-full ${dc.dot}`} />
+                                    {problem.sourceUrl ? (
+                                      <a href={problem.sourceUrl} target="_blank" rel="noreferrer" 
+                                        className={`text-sm font-semibold truncate hover:text-indigo-500 transition ${t.textPrimary}`}>
+                                        {problem.title}
+                                      </a>
+                                    ) : (
+                                      <p className={`text-sm font-semibold truncate ${t.textPrimary}`}>{problem.title}</p>
+                                    )}
+                                  </div>
+                                  <p className={`text-xs ${dc.text}`}>{problem.difficulty}</p>
+                                </div>
+                                {allDone && <span className="text-green-500 text-lg">✓</span>}
+                              </div>
+                              
+                              {/* Revision stages */}
+                              <div className="flex gap-1.5 mb-3">
+                                {[1, 2, 3].map(n => {
+                                  const stage = problem.revisionStages.find(r => r.stage === n);
+                                  return (
+                                    <div key={n} className={`flex-1 h-1.5 rounded-full ${
+                                      stage?.status === "done" ? "bg-green-500" :
+                                      stage?.status === "failed" ? "bg-red-500" :
+                                      stage?.status === "overdue" ? "bg-yellow-500" :
+                                      stage?.status === "scheduled" ? (lightMode ? "bg-indigo-200" : "bg-indigo-500/30") :
+                                      (lightMode ? "bg-gray-200" : "bg-white/10")
+                                    }`} />
+                                  );
+                                })}
+                              </div>
+
+                              {/* Next revision info */}
+                              {nextRevision && (
+                                <p className={`text-[11px] ${nextRevision.status === "overdue" ? "text-yellow-500" : t.textFaint}`}>
+                                  {nextRevision.status === "overdue" ? "⚠️ Overdue" : `📅 ${relDate(nextRevision.dueOn)}`} • Stage {nextRevision.stage}
+                                </p>
+                              )}
+                              {!nextRevision && allDone && (
+                                <p className="text-[11px] text-green-500">✓ All revisions complete!</p>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Show more button */}
+                      {(patternStats.find(p => p.tag === selectedPattern)?.problems.length || 0) > 9 && (
+                        <div className="text-center mt-4">
+                          <button 
+                            onClick={() => { setFTag(selectedPattern); setTab("questions"); }}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold ${lightMode ? "bg-indigo-500 text-white hover:bg-indigo-600" : "bg-indigo-500 text-white hover:bg-indigo-400"}`}
+                          >
+                            View all {patternStats.find(p => p.tag === selectedPattern)?.count} problems →
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
           </div>
         )}
 
@@ -1652,54 +2374,56 @@ export default function DashboardClient() {
             QUESTION LIST TAB - LeetCode Style
         ════════════════════════════════════════════════════════════════ */}
         {tab === "questions" && (
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-3 sm:gap-5">
 
-            {/* Toolbar */}
-            <div className={`rounded-xl border p-4 ${lightMode ? "bg-white border-zinc-200" : "bg-[#1c1c1c] border-white/[0.08]"}`}>
-              <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Toolbar - responsive */}
+            <div className={`rounded-xl border p-3 sm:p-4 ${lightMode ? "bg-white border-zinc-200" : "bg-[#1c1c1c] border-white/[0.08]"}`}>
+              <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-2 sm:gap-3">
                 <div className="flex flex-wrap gap-2">
                   <input value={fSearch} onChange={e => setFSearch(e.target.value)}
-                    placeholder="🔍 Search problems…"
-                    className={`w-52 rounded-lg border px-3 py-2 text-sm outline-none transition ${lightMode ? "bg-white border-zinc-300 text-zinc-900 placeholder:text-zinc-400" : "bg-[#282828] border-white/10 text-white placeholder:text-white/40"}`} />
-                  <select value={fDiff} onChange={e => setFDiff(e.target.value as typeof fDiff)}
-                    className={`rounded-lg border px-3 py-2 text-sm outline-none transition ${lightMode ? "bg-white border-zinc-300 text-zinc-900" : "bg-[#282828] border-white/10 text-white"}`}>
-                    <option value="All">All Difficulties</option>
-                    <option>Easy</option><option>Medium</option><option>Hard</option>
-                  </select>
-                  <select value={fTag} onChange={e => setFTag(e.target.value)}
-                    className={`rounded-lg border px-3 py-2 text-sm outline-none transition ${lightMode ? "bg-white border-zinc-300 text-zinc-900" : "bg-[#282828] border-white/10 text-white"}`}>
-                    <option value="">All Topics</option>
-                    {allTags.map(t => <option key={t}>{t}</option>)}
-                  </select>
+                    placeholder="🔍 Search…"
+                    className={`w-full sm:w-40 lg:w-52 rounded-lg border px-3 py-2 text-xs sm:text-sm outline-none transition ${lightMode ? "bg-white border-zinc-300 text-zinc-900 placeholder:text-zinc-400" : "bg-[#282828] border-white/10 text-white placeholder:text-white/40"}`} />
+                  <div className="flex gap-2 flex-1 sm:flex-initial">
+                    <select value={fDiff} onChange={e => setFDiff(e.target.value as typeof fDiff)}
+                      className={`flex-1 sm:flex-initial rounded-lg border px-2 sm:px-3 py-2 text-xs sm:text-sm outline-none transition ${lightMode ? "bg-white border-zinc-300 text-zinc-900" : "bg-[#282828] border-white/10 text-white"}`}>
+                      <option value="All">Difficulty</option>
+                      <option>Easy</option><option>Medium</option><option>Hard</option>
+                    </select>
+                    <select value={fTag} onChange={e => setFTag(e.target.value)}
+                      className={`flex-1 sm:flex-initial rounded-lg border px-2 sm:px-3 py-2 text-xs sm:text-sm outline-none transition ${lightMode ? "bg-white border-zinc-300 text-zinc-900" : "bg-[#282828] border-white/10 text-white"}`}>
+                      <option value="">Topic</option>
+                      {allTags.map(tg => <option key={tg}>{tg}</option>)}
+                    </select>
+                  </div>
                   <select value={fStatus} onChange={e => setFStatus(e.target.value as typeof fStatus)}
-                    className={`rounded-lg border px-3 py-2 text-sm outline-none transition ${lightMode ? "bg-white border-zinc-300 text-zinc-900" : "bg-[#282828] border-white/10 text-white"}`}>
+                    className={`hidden sm:block rounded-lg border px-3 py-2 text-sm outline-none transition ${lightMode ? "bg-white border-zinc-300 text-zinc-900" : "bg-[#282828] border-white/10 text-white"}`}>
                     <option value="All">All Status</option>
-                    <option value="complete">✓ All Stages Done</option>
+                    <option value="complete">✓ Done</option>
                     <option value="in-progress">⏳ In Progress</option>
                   </select>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`rounded-lg px-3 py-2 text-sm font-semibold ${lightMode ? "bg-zinc-100 text-zinc-700" : "bg-white/5 text-white/60"}`}>
-                    {filtered.length} problems
+                <div className="flex items-center gap-2 justify-between sm:justify-end">
+                  <span className={`rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold ${lightMode ? "bg-zinc-100 text-zinc-700" : "bg-white/5 text-white/60"}`}>
+                    {filtered.length}
                   </span>
                   <button onClick={() => exportCSV(filtered)}
-                    className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${lightMode ? "border-zinc-300 text-zinc-700 hover:bg-zinc-50" : "border-white/10 text-white/70 hover:bg-white/5"}`}>
-                    ↓ Export
+                    className={`rounded-lg border px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition ${lightMode ? "border-zinc-300 text-zinc-700 hover:bg-zinc-50" : "border-white/10 text-white/70 hover:bg-white/5"}`}>
+                    ↓
                   </button>
                   <button onClick={handleSync} disabled={syncing}
-                    className={`rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-40 ${lightMode ? "bg-indigo-500 text-white hover:bg-indigo-600" : "bg-indigo-500 text-white hover:bg-indigo-400"}`}>
-                    {syncing ? "Syncing…" : "↻ Sync"}
+                    className={`rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition disabled:opacity-40 ${lightMode ? "bg-indigo-500 text-white hover:bg-indigo-600" : "bg-indigo-500 text-white hover:bg-indigo-400"}`}>
+                    {syncing ? "…" : "↻"}
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* LeetCode-style List */}
+            {/* LeetCode-style List - responsive */}
             <div className={`rounded-xl border overflow-hidden ${lightMode ? "border-zinc-200" : "border-white/[0.08]"}`}>
               {filtered.length === 0 ? (
-                <div className={`p-12 text-center ${lightMode ? "bg-white" : "bg-[#1c1c1c]"}`}>
-                  <p className={`text-sm font-medium ${lightMode ? "text-zinc-500" : "text-white/40"}`}>
-                    {solves.length === 0 ? "No problems yet. Sync LeetCode or add manually." : "No problems match your filters."}
+                <div className={`p-8 sm:p-12 text-center ${lightMode ? "bg-white" : "bg-[#1c1c1c]"}`}>
+                  <p className={`text-xs sm:text-sm font-medium ${lightMode ? "text-zinc-500" : "text-white/40"}`}>
+                    {solves.length === 0 ? "No problems yet. Sync LeetCode." : "No matches."}
                   </p>
                 </div>
               ) : filtered.map((solve, idx) => {
@@ -1717,10 +2441,10 @@ export default function DashboardClient() {
                 };
                 
                 return (
-                  <div key={solve.id} className={`group flex items-center border-b px-5 py-3 transition-colors ${lightMode ? "border-zinc-200 hover:bg-zinc-100" : "border-white/[0.08] hover:bg-[#2d2d2d]"} ${isEven ? (lightMode ? "bg-zinc-100/60" : "bg-[#262626]") : (lightMode ? "bg-white" : "bg-[#1a1a1a]")} ${allDone ? "opacity-50" : ""}`}>
+                  <div key={solve.id} className={`group flex items-center border-b px-3 sm:px-5 py-2.5 sm:py-3 transition-colors ${lightMode ? "border-zinc-200 hover:bg-zinc-100" : "border-white/[0.08] hover:bg-[#2d2d2d]"} ${isEven ? (lightMode ? "bg-zinc-100/60" : "bg-[#262626]") : (lightMode ? "bg-white" : "bg-[#1a1a1a]")} ${allDone ? "opacity-50" : ""}`}>
                     
-                    {/* Serial Number */}
-                    <div className={`w-12 shrink-0 text-sm ${lightMode ? "text-zinc-500" : "text-white/40"}`}>
+                    {/* Serial Number - hidden on mobile */}
+                    <div className={`hidden sm:block w-12 shrink-0 text-sm ${lightMode ? "text-zinc-500" : "text-white/40"}`}>
                       {idx + 1}
                     </div>
 
@@ -1731,21 +2455,30 @@ export default function DashboardClient() {
                     </div>
                     
                     {/* Problem Title */}
-                    <div className="flex-1 min-w-0 pr-4">
+                    <div className="flex-1 min-w-0 pr-2 sm:pr-4">
                       <div className="flex items-center gap-2">
                         {solve.sourceUrl ? (
                           <a href={solve.sourceUrl} target="_blank" rel="noreferrer"
-                            className={`font-medium hover:text-indigo-500 transition ${lightMode ? "text-zinc-900" : "text-white"}`}>
+                            className={`text-xs sm:text-sm font-medium hover:text-indigo-500 transition truncate ${lightMode ? "text-zinc-900" : "text-white"}`}>
                             {solve.title}
                           </a>
                         ) : (
-                          <span className={`font-medium ${lightMode ? "text-zinc-900" : "text-white"}`}>{solve.title}</span>
+                          <span className={`text-xs sm:text-sm font-medium truncate ${lightMode ? "text-zinc-900" : "text-white"}`}>{solve.title}</span>
                         )}
+                      </div>
+                      {/* Mobile: show difficulty inline */}
+                      <div className="sm:hidden flex items-center gap-2 mt-1">
+                        <span className={`text-[10px] font-medium ${dc.text}`}>{solve.difficulty}</span>
+                        {solve.tags.slice(0, 2).map(tag => (
+                          <span key={tag} className={`rounded px-1.5 py-0.5 text-[10px] ${lightMode ? "bg-zinc-100 text-zinc-600" : "bg-white/5 text-white/50"}`}>
+                            {tag}
+                          </span>
+                        ))}
                       </div>
                     </div>
                     
-                    {/* Tags */}
-                    <div className="w-80 shrink-0 flex items-center gap-1.5 pr-4">
+                    {/* Tags - hidden on mobile */}
+                    <div className="hidden lg:flex w-80 shrink-0 items-center gap-1.5 pr-4">
                       {solve.tags.length > 0 ? (
                         <>
                           {solve.tags.slice(0, 3).map(tag => (
@@ -1762,41 +2495,40 @@ export default function DashboardClient() {
                       )}
                     </div>
                     
-                    {/* Difficulty */}
-                    <div className="w-24 shrink-0 text-center">
-                      <span className={`text-sm font-medium ${dc.text}`}>
+                    {/* Difficulty - hidden on mobile */}
+                    <div className="hidden sm:block w-20 lg:w-24 shrink-0 text-center">
+                      <span className={`text-xs sm:text-sm font-medium ${dc.text}`}>
                         {solve.difficulty}
                       </span>
                     </div>
 
-                    {/* Last Solved - Beautiful Badge Format */}
-                    <div className="w-28 shrink-0 flex justify-center">
+                    {/* Last Solved - hidden on small mobile */}
+                    <div className="hidden md:flex w-24 lg:w-28 shrink-0 justify-center">
                       {(() => {
-                        // Try lastSolvedAt first, fallback to solvedOn
                         const dateToShow = solve.lastSolvedAt || solve.solvedOn;
                         if (dateToShow) {
                           const d = new Date(dateToShow);
                           const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                           const formattedDate = `${months[d.getMonth()]} ${d.getDate()}`;
                           return (
-                            <span className={`inline-block rounded px-2.5 py-1 text-xs font-medium ${lightMode ? "bg-indigo-50 text-indigo-700 border border-indigo-200" : "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"}`}>
+                            <span className={`inline-block rounded px-2 py-0.5 text-[10px] sm:text-xs font-medium ${lightMode ? "bg-indigo-50 text-indigo-700 border border-indigo-200" : "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"}`}>
                               {formattedDate}
                             </span>
                           );
                         }
-                        return <span className={`text-sm ${lightMode ? "text-zinc-400" : "text-white/20"}`}>—</span>;
+                        return <span className={`text-xs ${lightMode ? "text-zinc-400" : "text-white/20"}`}>—</span>;
                       })()}
                     </div>
                     
                     {/* Revision Stages */}
-                    <div className="flex items-center gap-2 ml-4 shrink-0">
+                    <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-4 shrink-0">
                       {[1,2,3].map(n => {
                         const stage = solve.revisionStages.find(r => r.stage === n);
                         return (
-                          <div key={n} className="flex flex-col items-center gap-1">
+                          <div key={n} className="flex flex-col items-center gap-0.5 sm:gap-1">
                             {stage ? (
                               <>
-                                <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ring-1 ${stageStyle(stage.status)}`}
+                                <span className={`inline-flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full text-[9px] sm:text-[10px] font-bold ring-1 ${stageStyle(stage.status)}`}
                                   title={`Stage ${n} · ${formatDate(stage.dueOn)} · ${stage.status}`}>
                                   {stageIcon(stage.status)}
                                 </span>
@@ -1951,13 +2683,28 @@ export default function DashboardClient() {
             Store and organize problems by topic with solutions
         ════════════════════════════════════════════════════════════════ */}
         {tab === "learn" && (
-          <div className={`flex h-[calc(100vh-120px)] gap-0 rounded-xl overflow-hidden border ${t.card}`}>
+          <div className={`flex flex-col md:flex-row h-[calc(100vh-140px)] sm:h-[calc(100vh-120px)] gap-0 rounded-xl overflow-hidden border ${t.card}`}>
 
-            {/* ════ LEFT SIDEBAR ════ */}
-            <div className={`flex w-64 shrink-0 flex-col border-r ${lightMode ? "border-gray-200 bg-[#f6f8fa]" : "border-[#30363d] bg-[#0d1117]"}`}>
+            {/* ════ COMPILER BUTTON - Floating ════ */}
+            <motion.button
+              onClick={() => { 
+                setShowCompiler(true); 
+                // Load entries if not already loaded
+                if (token && learnEntries.length === 0) loadLearnEntries(token);
+              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white shadow-2xl ${lightMode ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700" : "bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-500 hover:to-emerald-600"}`}
+            >
+              <span className="text-lg">⚡</span>
+              <span className="hidden sm:inline">Run Code</span>
+            </motion.button>
+
+            {/* ════ LEFT SIDEBAR - Collapsible on mobile ════ */}
+            <div className={`flex ${selectedEntry ? "hidden md:flex" : "flex"} w-full md:w-64 shrink-0 flex-col border-b md:border-b-0 md:border-r max-h-[50vh] md:max-h-none ${lightMode ? "border-gray-200 bg-[#f6f8fa]" : "border-[#30363d] bg-[#0d1117]"}`}>
               {/* Sidebar header */}
-              <div className={`flex items-center justify-between px-4 py-3 border-b ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}>
-                <span className={`text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Topics</span>
+              <div className={`flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 border-b ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}>
+                <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${t.textFaint}`}>Topics</span>
                 <motion.button
                   onClick={() => {
                     setEditEntry(null);
@@ -1972,12 +2719,12 @@ export default function DashboardClient() {
               </div>
 
               {/* Search */}
-              <div className={`px-3 py-2 border-b ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}>
+              <div className={`px-2 sm:px-3 py-2 border-b ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}>
                 <input
                   value={learnSearch}
                   onChange={e => setLearnSearch(e.target.value)}
                   placeholder="Search..."
-                  className={`w-full rounded-md border px-2.5 py-1.5 text-xs outline-none transition ${t.input}`}
+                  className={`w-full rounded-md border px-2 sm:px-2.5 py-1.5 text-xs outline-none transition ${t.input}`}
                 />
               </div>
 
@@ -2001,7 +2748,7 @@ export default function DashboardClient() {
                     <div key={topic}>
                       <button
                         onClick={() => setSelectedTopic(selectedTopic === topic ? "All" : topic)}
-                        className={`flex w-full items-center gap-1.5 px-4 py-1.5 text-left transition ${lightMode ? "hover:bg-gray-100" : "hover:bg-white/5"}`}
+                        className={`flex w-full items-center gap-1.5 px-3 sm:px-4 py-1.5 text-left transition ${lightMode ? "hover:bg-gray-100" : "hover:bg-white/5"}`}
                       >
                         <span className={`text-[9px] font-black uppercase tracking-widest ${lightMode ? "text-gray-400" : "text-[#7d8590]"}`}>
                           {topic}
@@ -2017,7 +2764,7 @@ export default function DashboardClient() {
                           <button
                             key={entry.id}
                             onClick={() => setSelectedEntry(entry)}
-                            className={`flex w-full items-start gap-2 px-4 py-2 text-left transition-colors ${
+                            className={`flex w-full items-start gap-2 px-3 sm:px-4 py-2 text-left transition-colors ${
                               isActive
                                 ? lightMode ? "bg-[#dbeafe] border-r-2 border-[#0969da]" : "bg-[#1f6feb]/20 border-r-2 border-[#1f6feb]"
                                 : lightMode ? "hover:bg-gray-100" : "hover:bg-white/5"
@@ -2041,7 +2788,7 @@ export default function DashboardClient() {
               </div>
 
               {/* Sidebar footer: difficulty filter */}
-              <div className={`border-t px-3 py-2 ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}>
+              <div className={`border-t px-2 sm:px-3 py-2 ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}>
                 <select
                   value={learnDifficulty}
                   onChange={e => setLearnDifficulty(e.target.value)}
@@ -2056,41 +2803,47 @@ export default function DashboardClient() {
             </div>
 
             {/* ════ RIGHT CONTENT PANEL ════ */}
-            <div className="flex flex-1 flex-col overflow-hidden">
+            <div className={`flex flex-1 flex-col overflow-hidden ${selectedEntry ? "flex" : "hidden md:flex"}`}>
               {selectedEntry ? (
                 <>
                   {/* Entry header bar */}
-                  <div className={`flex items-center justify-between gap-3 border-b px-6 py-3 shrink-0 ${lightMode ? "border-gray-200 bg-white" : "border-[#30363d] bg-[#161b22]"}`}>
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0 ${lightMode ? "bg-indigo-100 text-indigo-700" : "bg-indigo-500/20 text-indigo-300"}`}>
+                  <div className={`flex flex-wrap items-center justify-between gap-2 sm:gap-3 border-b px-3 sm:px-6 py-2 sm:py-3 shrink-0 ${lightMode ? "border-gray-200 bg-white" : "border-[#30363d] bg-[#161b22]"}`}>
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      {/* Back button - mobile only */}
+                      <button
+                        onClick={() => setSelectedEntry(null)}
+                        className={`md:hidden flex items-center justify-center h-8 w-8 rounded-lg shrink-0 ${lightMode ? "bg-gray-100 text-gray-600" : "bg-white/10 text-white/60"}`}
+                      >
+                        ←
+                      </button>
+                      <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded shrink-0 ${lightMode ? "bg-indigo-100 text-indigo-700" : "bg-indigo-500/20 text-indigo-300"}`}>
                         {selectedEntry.topic}
                       </span>
-                      {selectedEntry.sub_topic && <span className={`text-xs shrink-0 ${t.textFaint}`}>› {selectedEntry.sub_topic}</span>}
-                      <h2 className={`text-sm font-bold truncate ${t.textPrimary}`}>{selectedEntry.title}</h2>
+                      <h2 className={`text-xs sm:text-sm font-bold truncate ${t.textPrimary}`}>{selectedEntry.title}</h2>
                       {selectedEntry.difficulty && (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border shrink-0 ${diffColor(selectedEntry.difficulty as Difficulty).badge}`}>
+                        <span className={`hidden sm:inline text-[10px] font-bold px-2 py-0.5 rounded border shrink-0 ${diffColor(selectedEntry.difficulty as Difficulty).badge}`}>
                           {selectedEntry.difficulty}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                       <button
                         onClick={() => toggleFavorite(selectedEntry)}
-                        className={`text-base transition hover:scale-110 ${selectedEntry.is_favorite ? "" : "opacity-30 hover:opacity-70"}`}
+                        className={`text-sm sm:text-base transition hover:scale-110 ${selectedEntry.is_favorite ? "" : "opacity-30 hover:opacity-70"}`}
                       >{selectedEntry.is_favorite ? "⭐" : "☆"}</button>
                       <button
                         onClick={() => { handleEditLearnEntry(selectedEntry); }}
-                        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${lightMode ? "bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200" : "bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/20"}`}
-                      >✏️ Edit</button>
+                        className={`rounded-md px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-semibold transition ${lightMode ? "bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200" : "bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/20"}`}
+                      ><span className="sm:hidden">✏️</span><span className="hidden sm:inline">✏️ Edit</span></button>
                       <button
                         onClick={() => handleDeleteLearnEntry(selectedEntry.id)}
-                        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${lightMode ? "bg-red-50 hover:bg-red-100 text-red-600 border border-red-200" : "bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/20"}`}
-                      >🗑 Delete</button>
+                        className={`rounded-md px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-semibold transition ${lightMode ? "bg-red-50 hover:bg-red-100 text-red-600 border border-red-200" : "bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/20"}`}
+                      ><span className="sm:hidden">🗑</span><span className="hidden sm:inline">🗑 Delete</span></button>
                     </div>
                   </div>
 
                   {/* Entry body */}
-                  <div className={`flex-1 overflow-y-auto px-6 py-5 space-y-5 ${lightMode ? "bg-white" : "bg-[#0d1117]"}`}>
+                  <div className={`flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-5 space-y-4 sm:space-y-5 ${lightMode ? "bg-white" : "bg-[#0d1117]"}`}>
 
                     {/* Tags row */}
                     {selectedEntry.tags.length > 0 && (
@@ -2103,15 +2856,15 @@ export default function DashboardClient() {
 
                     {/* Question */}
                     {selectedEntry.question_text && (
-                      <div className={`rounded-lg border p-4 ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#161b22] border-[#30363d]"}`}>
-                        <p className={`text-[11px] font-bold uppercase tracking-wider mb-2 ${t.textFaint}`}>📋 Problem Statement</p>
-                        <p className={`text-sm leading-relaxed whitespace-pre-line ${t.textPrimary}`}>{selectedEntry.question_text}</p>
+                      <div className={`rounded-lg border p-3 sm:p-4 ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#161b22] border-[#30363d]"}`}>
+                        <p className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-2 ${t.textFaint}`}>📋 Problem</p>
+                        <p className={`text-xs sm:text-sm leading-relaxed whitespace-pre-line ${t.textPrimary}`}>{selectedEntry.question_text}</p>
                       </div>
                     )}
 
                     {/* Intuition */}
                     {selectedEntry.intuition && (
-                      <div className={`rounded-lg border p-4 ${lightMode ? "bg-amber-50 border-amber-200" : "bg-yellow-500/10 border-yellow-500/20"}`}>
+                      <div className={`rounded-lg border p-3 sm:p-4 ${lightMode ? "bg-amber-50 border-amber-200" : "bg-yellow-500/10 border-yellow-500/20"}`}>
                         <p className={`text-[11px] font-bold uppercase tracking-wider mb-2 ${lightMode ? "text-amber-600" : "text-yellow-400"}`}>💡 Key Insight</p>
                         <p className={`text-sm leading-relaxed whitespace-pre-line ${lightMode ? "text-amber-900" : "text-yellow-100"}`}>{selectedEntry.intuition}</p>
                       </div>
@@ -2236,31 +2989,64 @@ export default function DashboardClient() {
                       </div>
                     )}
 
-                    {/* Row 1: topic + sub-topic */}
+                    {/* ── QUICK ADD SECTION ── */}
+                    <div className={`rounded-xl border p-3 ${lightMode ? "bg-green-50 border-green-200" : "bg-green-500/10 border-green-500/20"}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className={`text-[11px] font-bold ${lightMode ? "text-green-700" : "text-green-300"}`}>
+                          ⚡ Quick Add: Paste code → Fill details → Save
+                        </p>
+                        <button
+                          onClick={() => {
+                            setCompilerCode(learnForm.codeSolution);
+                            setCompilerLanguage(learnForm.language);
+                            setShowAddModal(false);
+                            setShowCompiler(true);
+                          }}
+                          className={`text-[10px] font-bold px-2 py-1 rounded transition ${lightMode ? "bg-green-500 text-white hover:bg-green-600" : "bg-green-600 text-white hover:bg-green-500"}`}
+                        >
+                          ▶️ Test in Compiler
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Code — MOST IMPORTANT field, now at TOP */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className={`text-[11px] font-bold ${t.textMuted}`}>💻 Code Solution *</label>
+                        <div className="flex gap-2">
+                          <select value={learnForm.language} onChange={e => setLearnForm(p => ({...p, language: e.target.value}))}
+                            className={`rounded border px-2 py-1 text-[10px] outline-none ${t.select}`}>
+                            <option value="cpp">C++</option>
+                            <option value="python">Python</option>
+                            <option value="java">Java</option>
+                            <option value="javascript">JS</option>
+                          </select>
+                        </div>
+                      </div>
+                      <textarea value={learnForm.codeSolution} onChange={e => setLearnForm(p => ({...p, codeSolution: e.target.value}))}
+                        placeholder="Paste your solution here…"
+                        rows={8} 
+                        spellCheck={false}
+                        className={`w-full rounded-lg border px-3 py-2 text-xs font-mono outline-none resize-y ${lightMode ? "bg-gray-900 text-green-400 border-gray-700 placeholder:text-gray-600" : "bg-[#0d1117] text-green-400 border-[#30363d] placeholder:text-gray-600"}`} />
+                    </div>
+
+                    {/* Row 1: topic + title (most essential) */}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className={`text-[11px] font-bold mb-1 block ${t.textMuted}`}>Topic *</label>
+                        <label className={`text-[11px] font-bold mb-1 block ${t.textMuted}`}>📁 Topic *</label>
                         <input value={learnForm.topic} onChange={e => setLearnForm(p => ({...p, topic: e.target.value}))}
                           placeholder="Arrays, Trees, DP…"
                           className={`w-full rounded-lg border px-3 py-2 text-sm outline-none ${t.input}`} />
                       </div>
                       <div>
-                        <label className={`text-[11px] font-bold mb-1 block ${t.textMuted}`}>Sub-Topic</label>
-                        <input value={learnForm.subTopic} onChange={e => setLearnForm(p => ({...p, subTopic: e.target.value}))}
-                          placeholder="Sliding Window, BFS…"
+                        <label className={`text-[11px] font-bold mb-1 block ${t.textMuted}`}>📌 Title *</label>
+                        <input value={learnForm.title} onChange={e => setLearnForm(p => ({...p, title: e.target.value}))}
+                          placeholder="Two Sum, LCA of BST…"
                           className={`w-full rounded-lg border px-3 py-2 text-sm outline-none ${t.input}`} />
                       </div>
                     </div>
 
-                    {/* Row 2: title */}
-                    <div>
-                      <label className={`text-[11px] font-bold mb-1 block ${t.textMuted}`}>Title *</label>
-                      <input value={learnForm.title} onChange={e => setLearnForm(p => ({...p, title: e.target.value}))}
-                        placeholder="Two Sum, LCA of BST…"
-                        className={`w-full rounded-lg border px-3 py-2 text-sm outline-none ${t.input}`} />
-                    </div>
-
-                    {/* Row 3: difficulty + language + tags */}
+                    {/* Row 2: difficulty + sub-topic + tags */}
                     <div className="grid grid-cols-3 gap-3">
                       <div>
                         <label className={`text-[11px] font-bold mb-1 block ${t.textMuted}`}>Difficulty</label>
@@ -2270,14 +3056,10 @@ export default function DashboardClient() {
                         </select>
                       </div>
                       <div>
-                        <label className={`text-[11px] font-bold mb-1 block ${t.textMuted}`}>Language</label>
-                        <select value={learnForm.language} onChange={e => setLearnForm(p => ({...p, language: e.target.value}))}
-                          className={`w-full rounded-lg border px-3 py-2 text-sm outline-none ${t.select}`}>
-                          <option value="cpp">C++</option>
-                          <option value="python">Python</option>
-                          <option value="java">Java</option>
-                          <option value="javascript">JS</option>
-                        </select>
+                        <label className={`text-[11px] font-bold mb-1 block ${t.textMuted}`}>Sub-Topic</label>
+                        <input value={learnForm.subTopic} onChange={e => setLearnForm(p => ({...p, subTopic: e.target.value}))}
+                          placeholder="Sliding Window…"
+                          className={`w-full rounded-lg border px-3 py-2 text-sm outline-none ${t.input}`} />
                       </div>
                       <div>
                         <label className={`text-[11px] font-bold mb-1 block ${t.textMuted}`}>Tags</label>
@@ -2287,20 +3069,12 @@ export default function DashboardClient() {
                       </div>
                     </div>
 
-                    {/* Code — most important field */}
-                    <div>
-                      <label className={`text-[11px] font-bold mb-1 block ${t.textMuted}`}>Code Solution *</label>
-                      <textarea value={learnForm.codeSolution} onChange={e => setLearnForm(p => ({...p, codeSolution: e.target.value}))}
-                        placeholder="Paste your solution here…"
-                        rows={9} className={`w-full rounded-lg border px-3 py-2 text-xs font-mono outline-none resize-y ${t.input}`} />
-                    </div>
-
-                    {/* Intuition */}
+                    {/* Intuition — quick note */}
                     <div>
                       <label className={`text-[11px] font-bold mb-1 block ${t.textMuted}`}>💡 Key Insight (optional)</label>
-                      <textarea value={learnForm.intuition} onChange={e => setLearnForm(p => ({...p, intuition: e.target.value}))}
-                        placeholder="The aha moment — e.g. use a hash map to get O(1) lookup"
-                        rows={2} className={`w-full rounded-lg border px-3 py-2 text-sm outline-none resize-y ${t.input}`} />
+                      <input value={learnForm.intuition} onChange={e => setLearnForm(p => ({...p, intuition: e.target.value}))}
+                        placeholder="The aha moment — e.g. use hash map for O(1) lookup"
+                        className={`w-full rounded-lg border px-3 py-2 text-sm outline-none ${t.input}`} />
                     </div>
 
                     {/* Explanation */}
@@ -2352,6 +3126,468 @@ export default function DashboardClient() {
                       className={`flex-1 rounded-lg py-2.5 text-sm font-bold text-white transition shadow-md disabled:opacity-50 ${lightMode ? "bg-[#0969da] hover:bg-[#0860ca]" : "bg-[#1f6feb] hover:bg-[#1a5edb]"}`}>
                       {learnLoading ? "Saving…" : editEntry ? "💾 Update" : "➕ Add Entry"}
                     </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+
+            {/* ════ COMPILER MODAL - LeetCode/GFG Style ════ */}
+            {showCompiler && (
+              <div className="fixed inset-0 z-50 bg-black/95">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="w-full h-full flex flex-col"
+                >
+                  {/* ═══ TOP HEADER BAR ═══ */}
+                  <div className={`flex items-center justify-between px-2 sm:px-4 py-2 border-b shrink-0 ${lightMode ? "bg-white border-gray-200" : "bg-[#1a1a2e] border-[#30363d]"}`}>
+                    <div className="flex items-center gap-2 sm:gap-4">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                          <span className="text-white text-sm font-bold">⚡</span>
+                        </div>
+                        <div className="hidden sm:block">
+                          <h2 className={`text-sm font-bold ${t.textPrimary}`}>Code Studio</h2>
+                          <p className={`text-[10px] ${t.textMuted}`}>
+                            {compilerEditingId ? `✏️ Editing: ${compilerTitle || "Untitled"}` : "📝 New Problem"}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* New / Edit indicator on mobile */}
+                      <span className={`sm:hidden text-[10px] px-2 py-0.5 rounded ${compilerEditingId ? "bg-yellow-500/20 text-yellow-400" : "bg-green-500/20 text-green-400"}`}>
+                        {compilerEditingId ? "Edit" : "New"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Language selector */}
+                      <select 
+                        value={compilerLanguage} 
+                        onChange={e => setCompilerLanguage(e.target.value)}
+                        className={`rounded-lg border px-2 py-1.5 text-xs font-bold outline-none ${lightMode ? "bg-gray-100 border-gray-300 text-gray-800" : "bg-[#21262d] border-[#30363d] text-white"}`}
+                      >
+                        <option value="cpp">C++ 17</option>
+                        <option value="c">C</option>
+                        <option value="python">Python 3</option>
+                        <option value="java">Java</option>
+                        <option value="javascript">JavaScript</option>
+                      </select>
+
+                      {/* Run button */}
+                      <motion.button 
+                        onClick={runCompiler}
+                        disabled={compilerRunning || !compilerCode.trim()}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="flex items-center gap-1.5 rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-white transition disabled:opacity-50 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 shadow-lg shadow-green-500/25"
+                      >
+                        {compilerRunning ? (
+                          <><span className="animate-spin">⏳</span><span className="hidden sm:inline">Running</span></>
+                        ) : (
+                          <><span>▶</span><span className="hidden sm:inline">Run Code</span></>
+                        )}
+                      </motion.button>
+
+                      {/* Save button */}
+                      <motion.button 
+                        onClick={quickSaveFromCompiler}
+                        disabled={!compilerCode.trim() || !compilerTopic.trim() || !compilerTitle.trim() || learnLoading}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`flex items-center gap-1.5 rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-white transition disabled:opacity-50 shadow-lg ${
+                          compilerEditingId 
+                            ? "bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 shadow-yellow-500/25" 
+                            : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 shadow-blue-500/25"
+                        }`}
+                      >
+                        {learnLoading ? "⏳" : compilerEditingId ? "💾 Update" : "💾 Save"}
+                      </motion.button>
+
+                      {/* New button (if editing) */}
+                      {compilerEditingId && (
+                        <motion.button 
+                          onClick={clearCompilerForNew}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="hidden sm:flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-white/70 bg-white/10 hover:bg-white/15 transition"
+                        >
+                          ✨ New
+                        </motion.button>
+                      )}
+
+                      {/* Close button */}
+                      <button 
+                        onClick={() => { setShowCompiler(false); clearCompilerForNew(); }}
+                        className={`rounded-lg p-2 text-lg transition ${lightMode ? "hover:bg-gray-100 text-gray-500" : "hover:bg-white/10 text-white/50"}`}
+                      >✕</button>
+                    </div>
+                  </div>
+
+                  {/* ═══ MAIN CONTENT - 3 PANEL LAYOUT ═══ */}
+                  <div className="flex-1 flex overflow-hidden">
+                    
+                    {/* ═══ LEFT SIDEBAR - Navigation Tree ═══ */}
+                    <div className={`w-[220px] xl:w-[260px] shrink-0 flex-col border-r hidden lg:flex ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#0d1117] border-[#30363d]"}`}>
+                      {/* Nav Header */}
+                      <div className={`px-3 py-2 border-b flex items-center justify-between ${lightMode ? "bg-white border-gray-200" : "bg-[#161b22] border-[#30363d]"}`}>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${t.textFaint}`}>📚 My Library</span>
+                        <button 
+                          onClick={clearCompilerForNew}
+                          className="text-[10px] px-2 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition font-semibold"
+                        >
+                          + New
+                        </button>
+                      </div>
+                      
+                      {/* Search */}
+                      <div className="p-2 border-b border-[#30363d]/50">
+                        <input 
+                          value={compilerNavSearch}
+                          onChange={e => setCompilerNavSearch(e.target.value)}
+                          placeholder="🔍 Search problems..."
+                          className={`w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none ${t.input}`}
+                        />
+                      </div>
+                      
+                      {/* Navigation Tree */}
+                      <div className="flex-1 overflow-y-auto p-2">
+                        {Object.keys(compilerNavData).length === 0 ? (
+                          <div className={`text-center py-8 ${t.textFaint}`}>
+                            <p className="text-2xl mb-2">📭</p>
+                            <p className="text-[11px]">No saved problems yet</p>
+                            <p className="text-[10px] mt-1 opacity-60">Add code on the right →</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            {Object.entries(compilerNavData).sort().map(([topic, subTopics]) => (
+                              <div key={topic}>
+                                {/* Topic Header */}
+                                <button
+                                  onClick={() => setCompilerExpandedTopics(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(topic)) next.delete(topic);
+                                    else next.add(topic);
+                                    return next;
+                                  })}
+                                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition ${
+                                    lightMode ? "hover:bg-gray-200" : "hover:bg-white/5"
+                                  }`}
+                                >
+                                  <span className="text-[10px]">{compilerExpandedTopics.has(topic) ? "▼" : "▶"}</span>
+                                  <span className={`text-xs font-bold ${t.textPrimary}`}>📁 {topic}</span>
+                                  <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded ${lightMode ? "bg-gray-200 text-gray-600" : "bg-white/10 text-white/50"}`}>
+                                    {Object.values(subTopics).flat().length}
+                                  </span>
+                                </button>
+                                
+                                {/* Sub-topics & Problems */}
+                                <AnimatePresence>
+                                  {compilerExpandedTopics.has(topic) && (
+                                    <motion.div
+                                      initial={{ height: 0, opacity: 0 }}
+                                      animate={{ height: "auto", opacity: 1 }}
+                                      exit={{ height: 0, opacity: 0 }}
+                                      className="overflow-hidden ml-3 border-l border-dashed border-white/10 pl-2"
+                                    >
+                                      {Object.entries(subTopics).sort().map(([subTopic, entries]) => (
+                                        <div key={subTopic} className="my-1">
+                                          <p className={`text-[10px] font-semibold px-2 py-1 ${t.textMuted}`}>
+                                            📂 {subTopic}
+                                          </p>
+                                          {entries.map(entry => (
+                                            <button
+                                              key={entry.id}
+                                              onClick={() => loadEntryIntoCompiler(entry)}
+                                              className={`w-full text-left px-2 py-1.5 rounded text-[11px] transition truncate flex items-center gap-1.5 ${
+                                                compilerEditingId === entry.id 
+                                                  ? "bg-blue-500/20 text-blue-400" 
+                                                  : lightMode 
+                                                    ? "hover:bg-gray-200 text-gray-700" 
+                                                    : "hover:bg-white/5 text-white/70"
+                                              }`}
+                                            >
+                                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                                entry.difficulty === "Easy" ? "bg-green-500" :
+                                                entry.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"
+                                              }`} />
+                                              <span className="truncate">{entry.title}</span>
+                                            </button>
+                                          ))}
+                                        </div>
+                                      ))}
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Nav Footer - Stats */}
+                      <div className={`px-3 py-2 border-t text-[10px] ${lightMode ? "bg-white border-gray-200 text-gray-500" : "bg-[#161b22] border-[#30363d] text-white/40"}`}>
+                        📊 {learnEntries.length} problems saved
+                      </div>
+                    </div>
+
+                    {/* ═══ MIDDLE - CODE EDITOR (LeetCode Style) ═══ */}
+                    <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+                      {/* Editor Header with tabs */}
+                      <div className={`flex items-center justify-between px-2 sm:px-4 py-1.5 border-b ${lightMode ? "bg-[#252526] border-[#3c3c3c]" : "bg-[#1e1e2e] border-[#30363d]"}`}>
+                        <div className="flex items-center gap-2">
+                          <div className={`flex items-center gap-1 px-3 py-1 rounded-t-lg text-xs font-semibold ${lightMode ? "bg-[#1e1e1e] text-white" : "bg-[#0d1117] text-green-400"}`}>
+                            <span>💻</span>
+                            <span>{compilerLanguage === "cpp" ? "main.cpp" : compilerLanguage === "python" ? "main.py" : compilerLanguage === "java" ? "Main.java" : "main.js"}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button 
+                            onClick={() => { 
+                              const el = document.getElementById("compiler-textarea");
+                              if (el) el.focus();
+                            }}
+                            className="px-2 py-1 rounded text-[10px] font-semibold bg-white/5 hover:bg-white/10 text-white/50 transition"
+                            title="Format code"
+                          >⌨️</button>
+                          <button 
+                            onClick={() => { setCompilerCode(""); setCompilerOutput(""); setCompilerError(""); }}
+                            className="px-2 py-1 rounded text-[10px] font-semibold bg-white/5 hover:bg-white/10 text-white/50 transition"
+                          >🗑️ Clear</button>
+                          <button 
+                            onClick={() => navigator.clipboard.writeText(compilerCode)}
+                            className="px-2 py-1 rounded text-[10px] font-semibold bg-white/5 hover:bg-white/10 text-white/50 transition"
+                          >📋 Copy</button>
+                        </div>
+                      </div>
+                      
+                      {/* Line Numbers + Code Editor */}
+                      <div className={`flex-1 flex overflow-hidden relative ${lightMode ? "bg-[#1e1e1e]" : "bg-[#0d1117]"}`}>
+                        {/* Line numbers */}
+                        <div className="w-10 sm:w-12 shrink-0 pt-4 pr-2 text-right select-none overflow-y-hidden border-r border-white/5" style={{ fontFamily: "'Fira Code', 'Consolas', monospace" }}>
+                          {(compilerCode || " ").split("\n").map((_, i) => (
+                            <div key={i} className="text-[13px] leading-[21px] text-gray-600">
+                              {i + 1}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Empty state placeholder */}
+                        {!compilerCode && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 ml-12">
+                            <div className="text-center text-gray-600">
+                              <p className="text-4xl mb-3 opacity-50">💻</p>
+                              <p className="text-sm font-medium">Start coding here</p>
+                              <p className="text-xs mt-1 opacity-60">Tab key works for indentation</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Code textarea with proper tab handling */}
+                        <textarea
+                          id="compiler-textarea"
+                          value={compilerCode}
+                          onChange={e => setCompilerCode(e.target.value)}
+                          onKeyDown={e => {
+                            // Handle Tab key for indentation
+                            if (e.key === "Tab") {
+                              e.preventDefault();
+                              const textarea = e.target as HTMLTextAreaElement;
+                              const start = textarea.selectionStart;
+                              const end = textarea.selectionEnd;
+                              const spaces = "    "; // 4 spaces
+                              
+                              if (e.shiftKey) {
+                                // Shift+Tab: Remove indentation
+                                const beforeCursor = compilerCode.substring(0, start);
+                                const lineStart = beforeCursor.lastIndexOf("\n") + 1;
+                                const lineIndent = compilerCode.substring(lineStart, start);
+                                if (lineIndent.startsWith("    ")) {
+                                  const newCode = compilerCode.substring(0, lineStart) + compilerCode.substring(lineStart + 4);
+                                  setCompilerCode(newCode);
+                                  setTimeout(() => {
+                                    textarea.selectionStart = textarea.selectionEnd = Math.max(lineStart, start - 4);
+                                  }, 0);
+                                }
+                              } else {
+                                // Tab: Add indentation
+                                const newCode = compilerCode.substring(0, start) + spaces + compilerCode.substring(end);
+                                setCompilerCode(newCode);
+                                setTimeout(() => {
+                                  textarea.selectionStart = textarea.selectionEnd = start + 4;
+                                }, 0);
+                              }
+                            }
+                            // Handle Enter for auto-indent
+                            if (e.key === "Enter") {
+                              const textarea = e.target as HTMLTextAreaElement;
+                              const start = textarea.selectionStart;
+                              const beforeCursor = compilerCode.substring(0, start);
+                              const lineStart = beforeCursor.lastIndexOf("\n") + 1;
+                              const currentLine = beforeCursor.substring(lineStart);
+                              const indent = currentLine.match(/^(\s*)/)?.[1] || "";
+                              const lastChar = beforeCursor.trim().slice(-1);
+                              const extraIndent = ["{", "(", "[", ":"].includes(lastChar) ? "    " : "";
+                              
+                              e.preventDefault();
+                              const newCode = compilerCode.substring(0, start) + "\n" + indent + extraIndent + compilerCode.substring(start);
+                              setCompilerCode(newCode);
+                              setTimeout(() => {
+                                textarea.selectionStart = textarea.selectionEnd = start + 1 + indent.length + extraIndent.length;
+                              }, 0);
+                            }
+                          }}
+                          placeholder=""
+                          spellCheck={false}
+                          className="flex-1 w-full py-4 pr-4 pl-2 text-[13px] leading-[21px] outline-none resize-none bg-transparent text-[#e6edf3] border-none focus:ring-0 focus:outline-none"
+                          style={{ 
+                            fontFamily: "'Fira Code', 'Consolas', 'Monaco', monospace",
+                            caretColor: "#22c55e",
+                            tabSize: 4,
+                            MozTabSize: 4,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* ═══ RIGHT PANEL - Problem Details + I/O ═══ */}
+                    <div className={`w-[300px] xl:w-[340px] shrink-0 flex flex-col border-l hidden lg:flex ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#161b22] border-[#30363d]"}`}>
+                      
+                      {/* Problem Details Form */}
+                      <div className={`border-b ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}>
+                        <div className={`px-3 py-2 flex items-center justify-between ${lightMode ? "bg-white" : "bg-[#0d1117]"}`}>
+                          <span className={`text-[10px] font-bold uppercase tracking-wider ${t.textFaint}`}>📋 Problem Info</span>
+                          {compilerEditingId && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400">Editing</span>
+                          )}
+                        </div>
+                        <div className="p-3 space-y-2 max-h-[180px] overflow-y-auto">
+                          {/* Topic + SubTopic */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className={`text-[9px] font-bold mb-0.5 block ${t.textMuted}`}>📁 Topic *</label>
+                              <input 
+                                value={compilerTopic}
+                                onChange={e => setCompilerTopic(e.target.value)}
+                                placeholder="Arrays..."
+                                list="compiler-topic-list"
+                                className={`w-full rounded border px-2 py-1 text-[11px] outline-none ${t.input}`}
+                              />
+                              <datalist id="compiler-topic-list">
+                                {["Arrays", "Strings", "Linked List", "Stack", "Queue", "Trees", "Binary Search", "Dynamic Programming", "Graphs", "Backtracking", "Greedy", "Heap", "Trie", "Math", "Bit Manipulation"].map(t => (
+                                  <option key={t} value={t} />
+                                ))}
+                              </datalist>
+                            </div>
+                            <div>
+                              <label className={`text-[9px] font-bold mb-0.5 block ${t.textMuted}`}>📂 Sub-topic</label>
+                              <input 
+                                value={compilerSubTopic}
+                                onChange={e => setCompilerSubTopic(e.target.value)}
+                                placeholder="Sliding Window..."
+                                list="compiler-subtopic-list"
+                                className={`w-full rounded border px-2 py-1 text-[11px] outline-none ${t.input}`}
+                              />
+                              <datalist id="compiler-subtopic-list">
+                                {["Two Pointers", "Sliding Window", "Prefix Sum", "Binary Search", "BFS", "DFS", "Recursion", "Memoization", "Tabulation", "Sorting", "Hashing"].map(st => (
+                                  <option key={st} value={st} />
+                                ))}
+                              </datalist>
+                            </div>
+                          </div>
+                          {/* Title */}
+                          <div>
+                            <label className={`text-[9px] font-bold mb-0.5 block ${t.textMuted}`}>📌 Title *</label>
+                            <input 
+                              value={compilerTitle}
+                              onChange={e => setCompilerTitle(e.target.value)}
+                              placeholder="Two Sum..."
+                              className={`w-full rounded border px-2 py-1 text-[11px] outline-none ${t.input}`}
+                            />
+                          </div>
+                          {/* Difficulty */}
+                          <div className="flex gap-1">
+                            {["Easy", "Medium", "Hard"].map(d => (
+                              <button
+                                key={d}
+                                onClick={() => setCompilerDifficulty(d)}
+                                className={`flex-1 py-1 rounded text-[10px] font-bold transition ${
+                                  compilerDifficulty === d
+                                    ? d === "Easy" ? "bg-green-500 text-white" : d === "Medium" ? "bg-yellow-500 text-black" : "bg-red-500 text-white"
+                                    : lightMode ? "bg-gray-100 text-gray-500 hover:bg-gray-200" : "bg-white/5 text-white/50 hover:bg-white/10"
+                                }`}
+                              >
+                                {d}
+                              </button>
+                            ))}
+                          </div>
+                          {/* Question text (collapsible) */}
+                          <div>
+                            <label className={`text-[9px] font-bold mb-0.5 block ${t.textMuted}`}>📝 Problem Statement</label>
+                            <textarea 
+                              value={compilerQuestion}
+                              onChange={e => setCompilerQuestion(e.target.value)}
+                              placeholder="Optional: paste problem..."
+                              rows={2}
+                              className={`w-full rounded border px-2 py-1 text-[10px] outline-none resize-y ${t.input}`}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Input Section */}
+                      <div className={`border-b ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}>
+                        <div className={`px-3 py-1.5 ${lightMode ? "bg-white" : "bg-[#0d1117]"}`}>
+                          <span className={`text-[10px] font-bold uppercase tracking-wider ${t.textFaint}`}>📥 Custom Input</span>
+                        </div>
+                        <textarea
+                          value={compilerInput}
+                          onChange={e => setCompilerInput(e.target.value)}
+                          placeholder="5&#10;1 2 3 4 5"
+                          rows={3}
+                          className={`w-full p-2 text-[11px] font-mono outline-none resize-none border-none ${lightMode ? "bg-gray-100 text-gray-800 placeholder:text-gray-400" : "bg-[#0d1117] text-gray-200 placeholder:text-gray-600"}`}
+                          style={{ fontFamily: "'Fira Code', monospace" }}
+                        />
+                      </div>
+
+                      {/* Output Section */}
+                      <div className="flex-1 flex flex-col overflow-hidden">
+                        <div className={`px-3 py-1.5 flex items-center gap-2 ${lightMode ? "bg-white" : "bg-[#0d1117]"}`}>
+                          <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                            compilerRunning ? "text-yellow-400" :
+                            compilerError && !compilerOutput ? "text-red-400" : 
+                            compilerOutput ? "text-green-400" : t.textFaint
+                          }`}>
+                            {compilerRunning ? "⏳ Running..." : 
+                             compilerError && !compilerOutput ? "❌ Error" : 
+                             compilerOutput ? "✅ Output" : "📤 Output"}
+                          </span>
+                          {compilerOutput && (
+                            <button 
+                              onClick={() => navigator.clipboard.writeText(compilerOutput)}
+                              className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/40 transition"
+                            >Copy</button>
+                          )}
+                        </div>
+                        <div className={`flex-1 overflow-y-auto p-2 ${lightMode ? "bg-gray-100" : "bg-[#0d1117]"}`}>
+                          {compilerRunning ? (
+                            <div className="flex items-center justify-center h-full gap-2">
+                              <div className="animate-spin h-5 w-5 border-2 border-green-500 border-t-transparent rounded-full" />
+                              <span className="text-[11px] text-green-400">Compiling...</span>
+                            </div>
+                          ) : compilerError ? (
+                            <pre className="text-[11px] font-mono text-red-400 whitespace-pre-wrap" style={{ fontFamily: "'Fira Code', monospace" }}>{compilerError}</pre>
+                          ) : compilerOutput ? (
+                            <pre className={`text-[11px] font-mono whitespace-pre-wrap ${lightMode ? "text-gray-800" : "text-green-300"}`} style={{ fontFamily: "'Fira Code', monospace" }}>{compilerOutput}</pre>
+                          ) : (
+                            <div className={`flex flex-col items-center justify-center h-full ${t.textFaint}`}>
+                              <span className="text-2xl mb-1">▶️</span>
+                              <span className="text-[10px]">Run to see output</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               </div>
