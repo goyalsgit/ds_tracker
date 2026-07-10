@@ -97,44 +97,44 @@ function exportCSV(solves: SolveEntry[]) {
 }
 
 /* ─── Theme ──────────────────────────────────────────────────────────────── */
-// Clean, professional theme inspired by VedaAI with light gray/blue background
+// Clean, professional theme inspired by modern coding platforms
 function getTheme(light: boolean) {
   return {
-    // Page - Light gray/blue background like VedaAI
-    pageBg:      light ? "bg-[#f0f4f8]" : "bg-[#0d1117]",
-    // Navbar - White with subtle shadow
-    navBg:       light ? "bg-white border-gray-200 shadow-sm" : "bg-[#161b22] border-[#30363d] shadow-lg",
-    navText:     light ? "text-gray-900"          : "text-[#e6edf3]",
-    navMuted:    light ? "text-gray-600"          : "text-[#7d8590]",
-    navBtn:      light ? "border-gray-300 text-gray-900 hover:bg-gray-50 hover:border-gray-400 font-semibold" : "border-[#30363d] text-[#e6edf3] hover:border-[#1f6feb] hover:bg-[#21262d] font-semibold",
-    tabActive:   light ? "bg-gray-900 text-white font-bold shadow-md" : "bg-[#1f6feb] text-white font-bold shadow-lg",
-    tabInactive: light ? "text-gray-600 hover:text-gray-900 hover:bg-gray-100 font-semibold" : "text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#21262d] font-semibold",
-    tabWrap:     light ? "bg-gray-100"            : "bg-[#161b22]",
-    // Cards - Pure white with subtle shadow
-    card:        light ? "bg-white border-gray-200 shadow-sm" : "bg-[#161b22] border-[#30363d] shadow-xl",
-    cardDark:    light ? "bg-gray-900 text-white shadow-md"           : "bg-[#0d1117] text-[#e6edf3] border-[#30363d] shadow-xl",
-    // Text - Clean, readable
-    textPrimary: light ? "text-gray-900 font-semibold"          : "text-[#e6edf3] font-semibold",
-    textMuted:   light ? "text-gray-600 font-medium"          : "text-[#7d8590] font-medium",
-    textFaint:   light ? "text-gray-500"          : "text-[#7d8590]",
-    textVfaint:  light ? "text-gray-400"          : "text-[#6e7681]",
-    // Inputs - Clean white
-    input:       light ? "border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 font-medium" : "border-[#30363d] bg-[#0d1117] text-[#e6edf3] placeholder-[#7d8590] focus:border-[#1f6feb] focus:ring-2 focus:ring-[#1f6feb]/20 font-medium",
-    select:      light ? "border-gray-300 bg-white text-gray-900 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 font-medium" : "border-[#30363d] bg-[#0d1117] text-[#e6edf3] focus:border-[#1f6feb] focus:ring-2 focus:ring-[#1f6feb]/20 font-medium",
+    // Page - Subtle warm gray background (not pure white)
+    pageBg:      light ? "bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100" : "bg-[#0d1117]",
+    // Navbar - Slightly off-white with better shadow
+    navBg:       light ? "bg-white/80 backdrop-blur-xl border-slate-200/60 shadow-lg shadow-slate-200/50" : "bg-[#161b22] border-[#30363d] shadow-lg",
+    navText:     light ? "text-slate-800"          : "text-[#e6edf3]",
+    navMuted:    light ? "text-slate-500"          : "text-[#7d8590]",
+    navBtn:      light ? "border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-slate-400 hover:text-slate-900 font-semibold" : "border-[#30363d] text-[#e6edf3] hover:border-[#1f6feb] hover:bg-[#21262d] font-semibold",
+    tabActive:   light ? "bg-slate-800 text-white font-bold shadow-lg shadow-slate-400/30" : "bg-[#1f6feb] text-white font-bold shadow-lg",
+    tabInactive: light ? "text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-semibold" : "text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#21262d] font-semibold",
+    tabWrap:     light ? "bg-slate-100/80 backdrop-blur-sm"            : "bg-[#161b22]",
+    // Cards - Warm white with nice shadow
+    card:        light ? "bg-white/90 backdrop-blur-sm border-slate-200/60 shadow-lg shadow-slate-200/30 hover:shadow-xl hover:shadow-slate-300/30" : "bg-[#161b22] border-[#30363d] shadow-xl",
+    cardDark:    light ? "bg-slate-800 text-white shadow-xl shadow-slate-400/20"           : "bg-[#0d1117] text-[#e6edf3] border-[#30363d] shadow-xl",
+    // Text - Better contrast
+    textPrimary: light ? "text-slate-800 font-semibold"          : "text-[#e6edf3] font-semibold",
+    textMuted:   light ? "text-slate-600 font-medium"          : "text-[#7d8590] font-medium",
+    textFaint:   light ? "text-slate-500"          : "text-[#7d8590]",
+    textVfaint:  light ? "text-slate-400"          : "text-[#6e7681]",
+    // Inputs - Subtle background
+    input:       light ? "border-slate-300 bg-slate-50/80 text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:bg-white font-medium" : "border-[#30363d] bg-[#0d1117] text-[#e6edf3] placeholder-[#7d8590] focus:border-[#1f6feb] focus:ring-2 focus:ring-[#1f6feb]/20 font-medium",
+    select:      light ? "border-slate-300 bg-slate-50/80 text-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 font-medium" : "border-[#30363d] bg-[#0d1117] text-[#e6edf3] focus:border-[#1f6feb] focus:ring-2 focus:ring-[#1f6feb]/20 font-medium",
     // Rows / items
-    row:         light ? "border-gray-200 hover:bg-gray-50" : "border-[#30363d] hover:bg-[#161b22]",
-    rowBg:       light ? "bg-gray-50 border-gray-200"       : "bg-[#161b22] border-[#30363d]",
-    // Tags - Subtle gray
-    tag:         light ? "bg-gray-100 text-gray-700 border-gray-200 font-semibold"        : "bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/30 font-semibold",
+    row:         light ? "border-slate-200/60 hover:bg-slate-50" : "border-[#30363d] hover:bg-[#161b22]",
+    rowBg:       light ? "bg-slate-50/80 border-slate-200/60"       : "bg-[#161b22] border-[#30363d]",
+    // Tags - Better visibility
+    tag:         light ? "bg-blue-50 text-blue-700 border-blue-200 font-semibold"        : "bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/30 font-semibold",
     // Divider
-    divider:     light ? "bg-gray-200"            : "bg-[#30363d]",
+    divider:     light ? "bg-slate-200/60"            : "bg-[#30363d]",
     // Table
-    tableHead:   light ? "bg-gray-50 border-gray-200 text-gray-900 font-bold" : "bg-[#161b22] border-[#30363d] text-[#e6edf3] font-bold",
-    tableRow:    light ? "border-gray-200 hover:bg-gray-50" : "border-[#30363d] hover:bg-[#161b22]",
+    tableHead:   light ? "bg-slate-100/80 border-slate-200/60 text-slate-700 font-bold" : "bg-[#161b22] border-[#30363d] text-[#e6edf3] font-bold",
+    tableRow:    light ? "border-slate-200/60 hover:bg-slate-50/80" : "border-[#30363d] hover:bg-[#161b22]",
     // Dashed empty state
-    dashed:      light ? "border-gray-300 text-gray-500 font-medium"    : "border-[#30363d] text-[#7d8590] font-medium",
-    // Revision card - Clean white with shadow
-    revisionCard: light ? "border-gray-200 bg-white hover:border-gray-300 hover:shadow-md shadow-sm" : "border-[#30363d] bg-[#161b22] hover:border-[#1f6feb] hover:shadow-2xl shadow-lg",
+    dashed:      light ? "border-slate-300 text-slate-500 font-medium"    : "border-[#30363d] text-[#7d8590] font-medium",
+    // Revision card - Better shadow
+    revisionCard: light ? "border-slate-200/60 bg-white/90 backdrop-blur-sm hover:border-slate-300 hover:shadow-xl shadow-lg shadow-slate-200/30" : "border-[#30363d] bg-[#161b22] hover:border-[#1f6feb] hover:shadow-2xl shadow-lg",
   };
 }
 function AISummaryModal({
@@ -345,6 +345,11 @@ export default function DashboardClient() {
   
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
+  
+  // Daily target state
+  const [dailyTarget, setDailyTarget] = useState(5);
+  const [showTargetModal, setShowTargetModal] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   // Database usage state
   const [dbUsage, setDbUsage] = useState<{
@@ -423,6 +428,7 @@ export default function DashboardClient() {
   const [compilerExpandedTopics, setCompilerExpandedTopics] = useState<Set<string>>(new Set());
   const [compilerNavSearch, setCompilerNavSearch] = useState("");
   const [compilerEditingId, setCompilerEditingId] = useState<string | null>(null); // track if editing existing entry
+  const [compilerLightMode, setCompilerLightMode] = useState(false); // Light/dark mode for compiler
 
   /* ── Auth ── */
   useEffect(() => {
@@ -450,6 +456,12 @@ export default function DashboardClient() {
       document.documentElement.classList.remove("light");
     }
   }, [lightMode]);
+
+  // Update current time every minute
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Save tags handler
   const handleSaveTags = (solveId: string, tagsStr: string) => {
@@ -1052,6 +1064,135 @@ export default function DashboardClient() {
     setCompilerInput("");
   };
   
+  // Syntax highlighting for code editor (LeetCode/VS Code style colors)
+  const highlightedCode = useMemo(() => {
+    if (!compilerCode) return "";
+    
+    // Escape HTML first
+    let code = compilerCode
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    
+    const lang = compilerLanguage;
+    
+    // Wrap entire code in a base color span first
+    const baseColor = compilerLightMode ? "#1f2937" : "#d4d4d4";
+    
+    // C++ / C keywords and highlighting
+    if (lang === "cpp" || lang === "c") {
+      // Comments (green) - must be first to avoid conflicts
+      code = code.replace(/(\/\/[^\n]*)/g, '§§COMMENT§§$1§§/COMMENT§§');
+      code = code.replace(/(\/\*[\s\S]*?\*\/)/g, '§§COMMENT§§$1§§/COMMENT§§');
+      // Strings (orange)
+      code = code.replace(/("(?:[^"\\]|\\.)*")/g, '§§STRING§§$1§§/STRING§§');
+      code = code.replace(/('(?:[^'\\\\]|\\\\.)*')/g, '§§STRING§§$1§§/STRING§§');
+      // Preprocessor (purple)
+      code = code.replace(/(#\s*(?:include|define|ifndef|ifdef|endif|pragma|if|else|elif|undef))/g, '§§PREPROC§§$1§§/PREPROC§§');
+      // Header files
+      code = code.replace(/(&lt;[a-zA-Z0-9_./]+&gt;)/g, '§§STRING§§$1§§/STRING§§');
+      // Keywords - types (blue)
+      code = code.replace(/\b(int|long|short|char|float|double|bool|void|auto|unsigned|signed|const|static|extern|register|volatile|inline|virtual|explicit|friend|mutable|size_t|wchar_t)\b/g, '§§TYPE§§$1§§/TYPE§§');
+      // Keywords - control flow (purple/pink)
+      code = code.replace(/\b(if|else|for|while|do|switch|case|default|break|continue|return|goto|throw|try|catch)\b/g, '§§CONTROL§§$1§§/CONTROL§§');
+      // Keywords - class/struct (blue)
+      code = code.replace(/\b(class|struct|union|enum|namespace|template|typename|public|private|protected|new|delete|this|nullptr|true|false|sizeof|typedef|using|operator)\b/g, '§§KEYWORD§§$1§§/KEYWORD§§');
+      // STL types (teal/cyan)
+      code = code.replace(/\b(vector|map|set|unordered_map|unordered_set|pair|string|queue|stack|priority_queue|list|deque|array|bitset|tuple|cout|cin|endl|std|sort|min|max|abs|swap|find|begin|end|size|push_back|pop_back|front|back|empty|clear|insert|erase|count|lower_bound|upper_bound)\b/g, '§§STL§§$1§§/STL§§');
+      // Function calls (yellow) - word followed by (
+      code = code.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g, '§§FUNC§§$1§§/FUNC§§(');
+      // Numbers (light green)
+      code = code.replace(/\b(\d+\.?\d*[fFlLuU]*)\b/g, '§§NUMBER§§$1§§/NUMBER§§');
+    }
+    // Python highlighting
+    else if (lang === "python") {
+      code = code.replace(/(#[^\n]*)/g, '§§COMMENT§§$1§§/COMMENT§§');
+      code = code.replace(/("""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\')/g, '§§STRING§§$1§§/STRING§§');
+      code = code.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, '§§STRING§§$1§§/STRING§§');
+      code = code.replace(/\b(def|class|if|elif|else|for|while|try|except|finally|with|as|import|from|return|yield|raise|break|continue|pass|lambda|and|or|not|in|is|global|nonlocal|assert|async|await)\b/g, '§§CONTROL§§$1§§/CONTROL§§');
+      code = code.replace(/\b(None|True|False)\b/g, '§§KEYWORD§§$1§§/KEYWORD§§');
+      code = code.replace(/\b(int|float|str|list|dict|set|tuple|bool|bytes|type|object|range|len|print|input|open|super|self|enumerate|zip|map|filter|sorted|reversed|sum|min|max|abs|round|any|all|isinstance|hasattr|getattr|setattr)\b/g, '§§STL§§$1§§/STL§§');
+      code = code.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g, '§§FUNC§§$1§§/FUNC§§(');
+      code = code.replace(/\b(\d+\.?\d*[jJ]?)\b/g, '§§NUMBER§§$1§§/NUMBER§§');
+      code = code.replace(/@(\w+)/g, '§§DECORATOR§§@$1§§/DECORATOR§§');
+    }
+    // Java highlighting
+    else if (lang === "java") {
+      code = code.replace(/(\/\/[^\n]*)/g, '§§COMMENT§§$1§§/COMMENT§§');
+      code = code.replace(/(\/\*[\s\S]*?\*\/)/g, '§§COMMENT§§$1§§/COMMENT§§');
+      code = code.replace(/("(?:[^"\\]|\\.)*")/g, '§§STRING§§$1§§/STRING§§');
+      code = code.replace(/\b(int|long|short|byte|char|float|double|boolean|void|class|interface|enum|extends|implements|abstract|final|static|public|private|protected|new|this|super|return|if|else|for|while|do|switch|case|default|break|continue|try|catch|finally|throw|throws|import|package|instanceof|synchronized|volatile|transient|native)\b/g, '§§KEYWORD§§$1§§/KEYWORD§§');
+      code = code.replace(/\b(null|true|false)\b/g, '§§KEYWORD§§$1§§/KEYWORD§§');
+      code = code.replace(/\b(String|Integer|Long|Double|Float|Boolean|Character|Object|System|Scanner|ArrayList|HashMap|HashSet|LinkedList|Arrays|Collections|Math|StringBuilder|Exception|Thread|List|Map|Set|Queue|Stack|PriorityQueue)\b/g, '§§STL§§$1§§/STL§§');
+      code = code.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g, '§§FUNC§§$1§§/FUNC§§(');
+      code = code.replace(/\b(\d+\.?\d*[fFdDlL]?)\b/g, '§§NUMBER§§$1§§/NUMBER§§');
+      code = code.replace(/@(\w+)/g, '§§DECORATOR§§@$1§§/DECORATOR§§');
+    }
+    // JavaScript highlighting
+    else if (lang === "javascript") {
+      code = code.replace(/(\/\/[^\n]*)/g, '§§COMMENT§§$1§§/COMMENT§§');
+      code = code.replace(/(\/\*[\s\S]*?\*\/)/g, '§§COMMENT§§$1§§/COMMENT§§');
+      code = code.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/g, '§§STRING§§$1§§/STRING§§');
+      code = code.replace(/\b(const|let|var|function|class|extends|return|if|else|for|while|do|switch|case|default|break|continue|try|catch|finally|throw|new|this|super|import|export|from|as|async|await|yield|typeof|instanceof|in|of|delete|void)\b/g, '§§KEYWORD§§$1§§/KEYWORD§§');
+      code = code.replace(/\b(null|undefined|true|false|NaN|Infinity)\b/g, '§§KEYWORD§§$1§§/KEYWORD§§');
+      code = code.replace(/\b(Array|Object|String|Number|Boolean|Function|Symbol|Map|Set|WeakMap|WeakSet|Promise|Date|RegExp|Error|JSON|Math|console|document|window|setTimeout|setInterval|fetch|parseInt|parseFloat)\b/g, '§§STL§§$1§§/STL§§');
+      code = code.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g, '§§FUNC§§$1§§/FUNC§§(');
+      code = code.replace(/\b(\d+\.?\d*)\b/g, '§§NUMBER§§$1§§/NUMBER§§');
+    }
+    
+    // Now replace markers with actual styled spans - VIBRANT LeetCode/VS Code colors
+    const colors = compilerLightMode ? {
+      // Light mode - Vibrant, high contrast (like VS Code Light+)
+      comment: "#008000",      // Green
+      string: "#a31515",       // Dark red
+      preproc: "#af00db",      // Purple
+      type: "#0000ff",         // Blue
+      control: "#af00db",      // Purple
+      keyword: "#0000ff",      // Blue
+      stl: "#267f99",          // Teal
+      number: "#098658",       // Green
+      decorator: "#795e26",    // Brown
+      func: "#795e26",         // Brown for functions
+    } : {
+      // Dark mode - SUPER VIBRANT (Dracula/One Dark Pro inspired)
+      comment: "#6A9955",      // Soft green (keeps readability)
+      string: "#CE9178",       // Warm orange
+      preproc: "#C586C0",      // Pink/magenta
+      type: "#4FC1FF",         // Bright cyan-blue
+      control: "#C586C0",      // Pink/magenta
+      keyword: "#569CD6",      // Sky blue
+      stl: "#4EC9B0",          // Bright teal
+      number: "#B5CEA8",       // Light green
+      decorator: "#DCDCAA",    // Yellow
+      func: "#DCDCAA",         // Yellow for functions
+    };
+    
+    code = code
+      .replace(/§§COMMENT§§/g, `<span style="color:${colors.comment};font-style:italic">`)
+      .replace(/§§\/COMMENT§§/g, '</span>')
+      .replace(/§§STRING§§/g, `<span style="color:${colors.string}">`)
+      .replace(/§§\/STRING§§/g, '</span>')
+      .replace(/§§PREPROC§§/g, `<span style="color:${colors.preproc}">`)
+      .replace(/§§\/PREPROC§§/g, '</span>')
+      .replace(/§§TYPE§§/g, `<span style="color:${colors.type}">`)
+      .replace(/§§\/TYPE§§/g, '</span>')
+      .replace(/§§CONTROL§§/g, `<span style="color:${colors.control}">`)
+      .replace(/§§\/CONTROL§§/g, '</span>')
+      .replace(/§§KEYWORD§§/g, `<span style="color:${colors.keyword}">`)
+      .replace(/§§\/KEYWORD§§/g, '</span>')
+      .replace(/§§STL§§/g, `<span style="color:${colors.stl}">`)
+      .replace(/§§\/STL§§/g, '</span>')
+      .replace(/§§NUMBER§§/g, `<span style="color:${colors.number}">`)
+      .replace(/§§\/NUMBER§§/g, '</span>')
+      .replace(/§§DECORATOR§§/g, `<span style="color:${colors.decorator}">`)
+      .replace(/§§\/DECORATOR§§/g, '</span>')
+      .replace(/§§FUNC§§/g, `<span style="color:${colors.func}">`)
+      .replace(/§§\/FUNC§§/g, '</span>');
+    
+    // Wrap everything in base color
+    return `<span style="color:${baseColor}">${code}</span>`;
+  }, [compilerCode, compilerLanguage, compilerLightMode]);
+
   // Group entries by topic and subtopic for navigation
   const compilerNavData = useMemo(() => {
     const filtered = learnEntries.filter(e => {
@@ -1073,6 +1214,88 @@ export default function DashboardClient() {
     
     return byTopic;
   }, [learnEntries, compilerNavSearch]);
+
+  // Print code to PDF with syntax highlighting
+  const printCodeToPDF = () => {
+    if (!compilerCode.trim()) {
+      alert("Please enter some code first!");
+      return;
+    }
+    
+    const title = compilerTitle || "Untitled Problem";
+    const topic = compilerTopic || "General";
+    const subTopic = compilerSubTopic || "";
+    const difficulty = compilerDifficulty || "Medium";
+    const question = compilerQuestion || "";
+    const lang = compilerLanguage;
+    const languageDisplay = lang === "cpp" ? "C++" : lang === "python" ? "Python" : lang === "java" ? "Java" : lang === "javascript" ? "JavaScript" : lang.toUpperCase();
+    
+    // Syntax highlighting
+    const highlightCode = (code: string, language: string): string => {
+      let h = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const cppKw = /\b(auto|break|case|catch|class|const|continue|default|delete|do|else|enum|explicit|extern|false|for|friend|goto|if|inline|namespace|new|nullptr|operator|private|protected|public|return|sizeof|static|struct|switch|template|this|throw|true|try|typedef|typename|union|unsigned|using|virtual|void|volatile|while|int|long|short|char|float|double|bool|string|vector|map|set|pair|queue|stack|priority_queue|unordered_map|unordered_set)\b/g;
+      const pyKw = /\b(and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|None|nonlocal|not|or|pass|raise|return|try|while|with|yield|True|False|self|print|range|len|str|int|float|list|dict|set)\b/g;
+      const javaKw = /\b(abstract|boolean|break|byte|case|catch|char|class|continue|default|do|double|else|extends|final|finally|float|for|if|implements|import|instanceof|int|interface|long|new|null|package|private|protected|public|return|short|static|super|switch|this|throw|throws|try|void|while|true|false|String|System|ArrayList|HashMap)\b/g;
+      const jsKw = /\b(async|await|break|case|catch|class|const|continue|default|delete|do|else|export|extends|finally|for|function|if|import|in|instanceof|let|new|null|return|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield|true|false|console|Array|Object|String|Number|Promise)\b/g;
+      
+      if (language === "cpp" || language === "c") {
+        h = h.replace(/(\/\/.*$)/gm, '<span class="cmt">$1</span>').replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="cmt">$1</span>').replace(/("(?:[^"\\]|\\.)*")/g, '<span class="str">$1</span>').replace(/('.')/g, '<span class="str">$1</span>').replace(/(#\w+)/g, '<span class="pre">$1</span>').replace(cppKw, '<span class="kw">$1</span>').replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
+      } else if (language === "python") {
+        h = h.replace(/(#.*$)/gm, '<span class="cmt">$1</span>').replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, '<span class="str">$1</span>').replace(pyKw, '<span class="kw">$1</span>').replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>').replace(/@(\w+)/g, '<span class="dec">@$1</span>');
+      } else if (language === "java") {
+        h = h.replace(/(\/\/.*$)/gm, '<span class="cmt">$1</span>').replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="cmt">$1</span>').replace(/("(?:[^"\\]|\\.)*")/g, '<span class="str">$1</span>').replace(javaKw, '<span class="kw">$1</span>').replace(/\b(\d+\.?\d*[fFdDlL]?)\b/g, '<span class="num">$1</span>').replace(/@(\w+)/g, '<span class="dec">@$1</span>');
+      } else if (language === "javascript") {
+        h = h.replace(/(\/\/.*$)/gm, '<span class="cmt">$1</span>').replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="cmt">$1</span>').replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/g, '<span class="str">$1</span>').replace(jsKw, '<span class="kw">$1</span>').replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
+      }
+      return h;
+    };
+    
+    const pw = window.open("", "_blank");
+    if (!pw) { alert("Please allow popups"); return; }
+    
+    const dc = difficulty === "Easy" ? "#22c55e" : difficulty === "Medium" ? "#eab308" : "#ef4444";
+    const db = difficulty === "Easy" ? "#dcfce7" : difficulty === "Medium" ? "#fef9c3" : "#fee2e2";
+    const hc = highlightCode(compilerCode, lang);
+    const esc = (t: string) => t.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    
+    pw.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(title)}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;padding:40px}
+.c{background:#fff;border-radius:20px;box-shadow:0 25px 80px rgba(0,0,0,.3);max-width:900px;margin:0 auto;overflow:hidden}
+.hd{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:30px 40px;color:#fff}
+.tt{font-size:26px;font-weight:700;margin-bottom:15px;display:flex;align-items:center;gap:12px}
+.ti{width:40px;height:40px;background:linear-gradient(135deg,#00d9ff,#00ff88);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.mt{display:flex;gap:10px;flex-wrap:wrap}
+.bd{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600}
+.tp{background:rgba(99,102,241,.2);color:#a5b4fc}.st{background:rgba(168,85,247,.2);color:#c4b5fd}
+.df{background:${db};color:${dc}}.lg{background:rgba(34,211,238,.2);color:#67e8f9}
+.ct{padding:30px 40px}.sc{margin-bottom:30px}
+.sct{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7280;margin-bottom:15px;display:flex;align-items:center;gap:10px}
+.sct::before{content:"";width:4px;height:20px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:2px}
+.pt{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border:1px solid #e2e8f0;border-radius:12px;padding:20px;font-size:14px;color:#374151;white-space:pre-wrap;line-height:1.8}
+.cc{background:#0d1117;border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+.ch{background:linear-gradient(135deg,#161b22,#21262d);padding:15px 25px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #30363d}
+.dt{display:flex;gap:8px}.dt span{width:12px;height:12px;border-radius:50%}.r{background:#ff5f56}.y{background:#ffbd2e}.g{background:#27ca40}
+.fn{color:#e6edf3;font-size:13px;font-family:'JetBrains Mono',monospace}.ln{background:rgba(56,139,253,.15);color:#58a6ff;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600}
+.cb{padding:25px;overflow-x:auto}
+.cb pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.8;color:#e6edf3;white-space:pre;tab-size:4}
+.kw{color:#ff7b72;font-weight:500}.str{color:#a5d6ff}.cmt{color:#8b949e;font-style:italic}.num{color:#79c0ff}.pre{color:#d2a8ff}.dec{color:#d2a8ff}
+.ft{background:#f8fafc;padding:20px 40px;text-align:center;color:#6b7280;font-size:12px;border-top:1px solid #e5e7eb}
+@media print{body{background:#fff;padding:0}.c{box-shadow:none;border-radius:0}.cb pre{font-size:11px}}
+</style></head><body>
+<div class="c"><div class="hd"><h1 class="tt"><span class="ti">💻</span>${esc(title)}</h1>
+<div class="mt"><span class="bd tp">📁 ${esc(topic)}</span>${subTopic?`<span class="bd st">📂 ${esc(subTopic)}</span>`:""}<span class="bd df">⚡ ${difficulty}</span><span class="bd lg">🔤 ${languageDisplay}</span></div></div>
+<div class="ct">${question?`<div class="sc"><div class="sct">📋 Problem Statement</div><div class="pt">${esc(question)}</div></div>`:""}
+<div class="sc"><div class="sct">🚀 Solution Code</div><div class="cc"><div class="ch"><div class="dt"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+<span class="fn">${lang==="cpp"?"solution.cpp":lang==="python"?"solution.py":lang==="java"?"Solution.java":"solution.js"}</span><span class="ln">${languageDisplay}</span></div>
+<div class="cb"><pre>${hc}</pre></div></div></div></div>
+<div class="ft"><strong>🎯 DSA Tracker</strong> • ${new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div></div></body></html>`);
+    pw.document.close();
+    pw.focus();
+    setTimeout(() => pw.print(), 600);
+  };
 
   /* ── Calendar ── */
   const connectCal = () => {
@@ -1291,13 +1514,21 @@ export default function DashboardClient() {
             </div>
           </motion.div>
 
-          {/* Tabs - scrollable on mobile */}
-          <div className={`flex gap-0.5 sm:gap-1 rounded-lg p-0.5 sm:p-1 overflow-x-auto scrollbar-none mx-2 sm:mx-4 ${t.tabWrap}`}>
+          {/* Tabs - scrollable on mobile with modern pill style */}
+          <div className={`flex gap-1 sm:gap-2 rounded-xl p-1 sm:p-1.5 overflow-x-auto scrollbar-none mx-2 sm:mx-4 ${lightMode ? "bg-gray-100/80 backdrop-blur-sm" : "bg-white/5 backdrop-blur-sm"}`}>
             {(["dashboard", "questions", "analysis", "learn"] as Tab[]).map((tab2, idx) => (
               <motion.button 
                 key={tab2} 
                 onClick={() => setTab(tab2)}
-                className={`rounded-md px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold transition-all whitespace-nowrap ${tab === tab2 ? t.tabActive : t.tabInactive}`}
+                className={`relative rounded-lg px-3 sm:px-5 py-2 sm:py-2.5 text-[10px] sm:text-xs font-bold transition-all whitespace-nowrap ${
+                  tab === tab2 
+                    ? lightMode 
+                      ? "bg-white text-gray-900 shadow-lg" 
+                      : "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30"
+                    : lightMode
+                      ? "text-gray-600 hover:text-gray-900 hover:bg-white/50"
+                      : "text-gray-400 hover:text-white hover:bg-white/10"
+                }`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 initial={{ opacity: 0, y: -10 }}
@@ -1360,169 +1591,364 @@ export default function DashboardClient() {
         {tab === "dashboard" && (
           <div className="flex flex-col gap-6">
 
-            {/* ════ MOTIVATIONAL BANNER ════ */}
+            {/* ════ HERO BANNER - User Info + Date/Time + Target ════ */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               className={`relative overflow-hidden rounded-xl sm:rounded-2xl ${lightMode ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" : "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600"}`}
             >
-              {/* Animated background shapes - hidden on mobile for performance */}
-              <div className="absolute inset-0 overflow-hidden hidden sm:block">
+              {/* Animated background shapes */}
+              <div className="absolute inset-0 overflow-hidden">
                 <motion.div
-                  animate={{ 
-                    x: [0, 100, 0],
-                    y: [0, -50, 0],
-                    rotate: [0, 180, 360]
-                  }}
+                  animate={{ x: [0, 100, 0], y: [0, -50, 0], rotate: [0, 180, 360] }}
                   transition={{ duration: 20, repeat: Infinity }}
                   className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-white/10 blur-2xl"
                 />
                 <motion.div
-                  animate={{ 
-                    x: [0, -80, 0],
-                    y: [0, 60, 0],
-                  }}
+                  animate={{ x: [0, -80, 0], y: [0, 60, 0] }}
                   transition={{ duration: 15, repeat: Infinity }}
                   className="absolute -bottom-10 -right-10 w-60 h-60 rounded-full bg-white/10 blur-3xl"
                 />
-                <motion.div
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 8, repeat: Infinity }}
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-white/5 blur-3xl"
-                />
               </div>
               
-              {/* Content - responsive layout */}
-              <div className="relative px-4 sm:px-8 py-4 sm:py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3 sm:gap-6">
+              {/* Content - 3 column layout */}
+              <div className="relative px-4 sm:px-8 py-5 sm:py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                
+                {/* LEFT - User Info */}
+                <div className="flex items-center gap-3 sm:gap-4">
                   <motion.div
                     animate={{ rotate: [0, 10, -10, 0] }}
                     transition={{ duration: 4, repeat: Infinity }}
                     className="text-3xl sm:text-5xl shrink-0"
                   >
-                    {streak >= 7 ? "🔥" : streak >= 3 ? "⚡" : "🚀"}
+                    {streak >= 7 ? "🔥" : streak >= 3 ? "⚡" : "👋"}
                   </motion.div>
                   <div>
+                    <motion.p 
+                      className="text-white/70 text-[10px] sm:text-xs font-medium uppercase tracking-wider"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      {authStatus === "in" ? "Welcome back" : "Hello there"}
+                    </motion.p>
                     <motion.h1 
-                      className="text-lg sm:text-2xl font-black text-white mb-0.5 sm:mb-1"
+                      className="text-lg sm:text-2xl font-black text-white"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.2 }}
                     >
-                      {streak === 0 ? "Ready to Begin?" : 
-                       streak === 1 ? "Great Start!" : 
-                       streak < 7 ? `${streak} Day Streak!` :
-                       streak < 30 ? `${streak} Days Strong! 💪` :
-                       `${streak} Day Legend! 👑`}
+                      {authStatus === "in" && userEmail 
+                        ? userEmail.split("@")[0].charAt(0).toUpperCase() + userEmail.split("@")[0].slice(1)
+                        : "Guest User"}
                     </motion.h1>
                     <motion.p 
-                      className="text-white/80 text-xs sm:text-sm font-medium"
+                      className="text-white/70 text-[10px] sm:text-xs font-medium flex items-center gap-1"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.3 }}
                     >
-                      {pending.length === 0 && todayRevisions.length === 0 
-                        ? "Sync LeetCode to start"
-                        : pending.length === 0 
-                        ? "✨ All caught up!"
-                        : `${pending.length} revision${pending.length > 1 ? "s" : ""} pending`}
+                      {streak > 0 && <span className="text-yellow-300">🔥 {streak} day streak</span>}
+                      {streak === 0 && "Start your journey today!"}
                     </motion.p>
                   </div>
                 </div>
-                {/* Stats on right - hidden on small mobile, shown on sm+ */}
+                
+                {/* MIDDLE - Date & Time */}
                 <motion.div 
-                  className="flex items-center gap-3 sm:gap-4 ml-auto sm:ml-0"
+                  className="text-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <p className="text-4xl sm:text-6xl font-black text-white tracking-tight" style={{ fontFamily: "'SF Pro Display', system-ui, sans-serif" }}>
+                    {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                  </p>
+                  <p className="text-white/80 text-sm sm:text-base font-semibold mt-1">
+                    {currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                  </p>
+                </motion.div>
+                
+                {/* RIGHT - Daily Target */}
+                <motion.div 
+                  className="text-center cursor-pointer group"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.4 }}
+                  onClick={() => setShowTargetModal(true)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <div className="text-center">
-                    <p className="text-2xl sm:text-4xl font-black text-white">{stats?.totalSolved || 0}</p>
-                    <p className="text-[10px] sm:text-xs text-white/70 font-semibold">Solved</p>
+                  <div className="relative">
+                    {/* Circular progress */}
+                    <svg className="w-20 h-20 sm:w-24 sm:h-24 -rotate-90" viewBox="0 0 100 100">
+                      {/* Background circle */}
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="8" />
+                      {/* Progress circle */}
+                      <motion.circle 
+                        cx="50" cy="50" r="40" 
+                        fill="none" 
+                        stroke="rgba(255,255,255,0.9)" 
+                        strokeWidth="8"
+                        strokeLinecap="round"
+                        strokeDasharray={`${Math.min((todayRevisions.filter(r => r.status === "done").length / dailyTarget) * 251.2, 251.2)} 251.2`}
+                        initial={{ strokeDasharray: "0 251.2" }}
+                        animate={{ strokeDasharray: `${Math.min((todayRevisions.filter(r => r.status === "done").length / dailyTarget) * 251.2, 251.2)} 251.2` }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                      />
+                    </svg>
+                    {/* Center text */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <p className="text-2xl sm:text-3xl font-black text-white">{Math.max(dailyTarget - todayRevisions.filter(r => r.status === "done").length, 0)}</p>
+                      <p className="text-[9px] sm:text-[10px] text-white/70 font-semibold">LEFT</p>
+                    </div>
                   </div>
-                  <div className="w-px h-8 sm:h-12 bg-white/20" />
-                  <div className="text-center">
-                    <p className="text-2xl sm:text-4xl font-black text-white">{todayRevisions.filter(r => r.status === "done").length}</p>
-                    <p className="text-[10px] sm:text-xs text-white/70 font-semibold">Today</p>
-                  </div>
+                  <p className="text-[10px] text-white/60 mt-1 group-hover:text-white/80 transition">Click to set target</p>
                 </motion.div>
               </div>
             </motion.div>
+            
+            {/* Daily Target Modal */}
+            <AnimatePresence>
+              {showTargetModal && (
+                <motion.div 
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setShowTargetModal(false)}
+                >
+                  <motion.div 
+                    className={`rounded-2xl p-6 w-80 ${lightMode ? "bg-white shadow-2xl" : "bg-[#161b22] border border-[#30363d]"}`}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <h3 className={`text-lg font-bold mb-4 ${lightMode ? "text-gray-900" : "text-white"}`}>🎯 Set Daily Target</h3>
+                    <p className={`text-sm mb-4 ${lightMode ? "text-gray-600" : "text-gray-400"}`}>How many problems do you want to solve/revise today?</p>
+                    <div className="flex items-center justify-center gap-4 mb-6">
+                      <button 
+                        onClick={() => setDailyTarget(Math.max(1, dailyTarget - 1))}
+                        className={`w-10 h-10 rounded-full text-xl font-bold transition ${lightMode ? "bg-gray-100 hover:bg-gray-200 text-gray-700" : "bg-white/10 hover:bg-white/20 text-white"}`}
+                      >−</button>
+                      <span className={`text-4xl font-black ${lightMode ? "text-indigo-600" : "text-indigo-400"}`}>{dailyTarget}</span>
+                      <button 
+                        onClick={() => setDailyTarget(Math.min(20, dailyTarget + 1))}
+                        className={`w-10 h-10 rounded-full text-xl font-bold transition ${lightMode ? "bg-gray-100 hover:bg-gray-200 text-gray-700" : "bg-white/10 hover:bg-white/20 text-white"}`}
+                      >+</button>
+                    </div>
+                    <div className="flex gap-2 mb-4">
+                      {[3, 5, 7, 10].map(n => (
+                        <button 
+                          key={n}
+                          onClick={() => setDailyTarget(n)}
+                          className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${
+                            dailyTarget === n 
+                              ? "bg-indigo-500 text-white" 
+                              : lightMode ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-white/5 text-white/60 hover:bg-white/10"
+                          }`}
+                        >{n}</button>
+                      ))}
+                    </div>
+                    <button 
+                      onClick={() => setShowTargetModal(false)}
+                      className="w-full py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold hover:from-indigo-400 hover:to-purple-400 transition"
+                    >Save Target</button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ════ SCROLLING TESTIMONIALS / FEATURES MARQUEE ════ */}
+            <div className="relative overflow-hidden py-2">
+              {/* Gradient fade edges */}
+              <div className={`absolute left-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-r ${lightMode ? "from-slate-50 to-transparent" : "from-[#0d1117] to-transparent"}`} />
+              <div className={`absolute right-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-l ${lightMode ? "from-slate-50 to-transparent" : "from-[#0d1117] to-transparent"}`} />
+              
+              {/* First row - scrolling left */}
+              <div className="flex animate-marquee mb-3">
+                {[...Array(2)].map((_, setIdx) => (
+                  <div key={setIdx} className="flex gap-4 mr-4">
+                    {[
+                      { icon: "🎯", text: "Spaced Repetition System", color: "from-purple-500 to-indigo-500" },
+                      { icon: "📊", text: "Track 500+ Problems", color: "from-blue-500 to-cyan-500" },
+                      { icon: "🔥", text: "Streak Tracking", color: "from-orange-500 to-red-500" },
+                      { icon: "💻", text: "Built-in Code Compiler", color: "from-green-500 to-emerald-500" },
+                      { icon: "🌙", text: "Dark & Light Modes", color: "from-slate-500 to-zinc-500" },
+                      { icon: "📱", text: "Mobile Responsive", color: "from-pink-500 to-rose-500" },
+                      { icon: "🔄", text: "LeetCode Auto-Sync", color: "from-yellow-500 to-amber-500" },
+                      { icon: "📅", text: "Google Calendar Integration", color: "from-teal-500 to-cyan-500" },
+                    ].map((item, idx) => (
+                      <div 
+                        key={idx}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap ${
+                          lightMode 
+                            ? "bg-white/90 backdrop-blur-sm border border-slate-200/60 shadow-md" 
+                            : "bg-[#161b22]/80 backdrop-blur-sm border border-[#30363d]"
+                        }`}
+                      >
+                        <span className="text-lg">{item.icon}</span>
+                        <span className={`text-sm font-semibold ${lightMode ? "text-slate-700" : "text-white/90"}`}>{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              
+              {/* Second row - scrolling right */}
+              <div className="flex animate-marquee-reverse">
+                {[...Array(2)].map((_, setIdx) => (
+                  <div key={setIdx} className="flex gap-4 mr-4">
+                    {[
+                      { emoji: "⭐", user: "Dev_code_01", text: "Perfect for DSA prep!" },
+                      { emoji: "🚀", user: "CodeMaster", text: "Improved my consistency 10x" },
+                      { emoji: "💡", user: "AlgoNinja", text: "Best revision tracker ever" },
+                      { emoji: "🎉", user: "TechStudent", text: "Love the spaced repetition" },
+                      { emoji: "✨", user: "InterviewPro", text: "Cracked FAANG interviews!" },
+                      { emoji: "🔥", user: "DSALover", text: "30 day streak and counting" },
+                    ].map((item, idx) => (
+                      <div 
+                        key={idx}
+                        className={`flex items-center gap-3 px-4 py-2 rounded-full whitespace-nowrap ${
+                          lightMode 
+                            ? "bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200/60" 
+                            : "bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20"
+                        }`}
+                      >
+                        <span className="text-lg">{item.emoji}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs font-bold ${lightMode ? "text-indigo-600" : "text-indigo-400"}`}>@{item.user}</span>
+                          <span className={`text-sm ${lightMode ? "text-slate-600" : "text-white/70"}`}>{item.text}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {/* Stats */}
             {stats ? (
               <motion.div 
-                className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-5"
+                className="grid grid-cols-2 gap-4 sm:gap-5 sm:grid-cols-5"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
                 {[
-                  { label: "Total Solved", value: stats.totalSolved, color: lightMode ? "#0969da" : "#58a6ff", borderGradient: "from-[#0969da] to-[#1f6feb]", icon: "📊" },
-                  { label: "Easy", value: stats.easySolved, color: lightMode ? "#1a7f37" : "#3fb950", borderGradient: "from-[#1a7f37] to-[#3fb950]", icon: "✅" },
-                  { label: "Medium", value: stats.mediumSolved, color: lightMode ? "#bf8700" : "#d29922", borderGradient: "from-[#bf8700] to-[#d29922]", icon: "⚡" },
-                  { label: "Hard", value: stats.hardSolved, color: lightMode ? "#cf222e" : "#f85149", borderGradient: "from-[#cf222e] to-[#f85149]", icon: "🔥" },
+                  { label: "Total Solved", value: stats.totalSolved, color: lightMode ? "#0969da" : "#58a6ff", borderGradient: "from-blue-500 to-cyan-500", glowClass: "glow-blue", icon: "📊", bgGradient: "from-blue-500/20 to-cyan-500/20" },
+                  { label: "Easy", value: stats.easySolved, color: lightMode ? "#1a7f37" : "#3fb950", borderGradient: "from-green-500 to-emerald-500", glowClass: "glow-green", icon: "✅", bgGradient: "from-green-500/20 to-emerald-500/20" },
+                  { label: "Medium", value: stats.mediumSolved, color: lightMode ? "#bf8700" : "#fbbf24", borderGradient: "from-yellow-500 to-orange-500", glowClass: "glow-yellow", icon: "⚡", bgGradient: "from-yellow-500/20 to-orange-500/20" },
+                  { label: "Hard", value: stats.hardSolved, color: lightMode ? "#cf222e" : "#f85149", borderGradient: "from-red-500 to-rose-500", glowClass: "glow-red", icon: "🔥", bgGradient: "from-red-500/20 to-rose-500/20" },
                 ].map((s, idx) => (
                   <motion.div 
                     key={s.label}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, delay: idx * 0.1 }}
-                    whileHover={{ scale: 1.03, y: -2 }}
-                    className={`group relative overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-6 transition-all cursor-pointer ${lightMode ? "bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl" : "bg-[#161b22]/50 backdrop-blur-md shadow-xl hover:shadow-2xl"}`}
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: idx * 0.1 }}
+                    whileHover={{ scale: 1.05, y: -5 }}
+                    className={`group relative overflow-hidden rounded-2xl p-4 sm:p-6 transition-all duration-300 cursor-pointer ${s.glowClass} ${
+                      lightMode 
+                        ? "bg-white/90 backdrop-blur-xl shadow-xl hover:shadow-2xl border border-gray-200/50" 
+                        : "bg-gradient-to-br from-[#1a1a2e]/80 to-[#16213e]/80 backdrop-blur-xl shadow-2xl border border-white/10"
+                    }`}
                   >
-                    {/* Gradient border */}
-                    <div className={`absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br ${s.borderGradient} opacity-20 group-hover:opacity-30 transition-opacity`} />
-                    <div className={`absolute inset-[1px] rounded-xl sm:rounded-2xl ${lightMode ? "bg-white" : "bg-[#0d1117]"}`} />
+                    {/* Animated gradient background on hover */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${s.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl`} />
+                    
+                    {/* Shine effect */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                    </div>
                     
                     {/* Content */}
-                    <div className="relative">
-                      <div className="flex items-center justify-between mb-2 sm:mb-4">
-                        <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wide ${t.textMuted}`}>{s.label}</p>
-                        <span className="text-xl sm:text-3xl">{s.icon}</span>
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-between mb-3 sm:mb-4">
+                        <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${lightMode ? "text-gray-500" : "text-gray-400"}`}>{s.label}</p>
+                        <motion.span 
+                          className="text-2xl sm:text-3xl"
+                          animate={{ rotate: [0, 5, -5, 0] }}
+                          transition={{ duration: 3, repeat: Infinity, delay: idx * 0.2 }}
+                        >
+                          {s.icon}
+                        </motion.span>
                       </div>
-                      <p className="text-3xl sm:text-5xl font-black mb-2 sm:mb-4" style={{ color: s.color }}>{s.value}</p>
-                      <div className={`h-1.5 sm:h-2.5 rounded-full overflow-hidden ${lightMode ? "bg-[#eaeef2]" : "bg-[#21262d]"}`}>
+                      <motion.p 
+                        className="text-4xl sm:text-5xl font-black mb-3 sm:mb-4"
+                        style={{ color: s.color }}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 200, delay: idx * 0.1 + 0.3 }}
+                      >
+                        {s.value}
+                      </motion.p>
+                      <div className={`h-2 sm:h-3 rounded-full overflow-hidden ${lightMode ? "bg-gray-200" : "bg-white/10"}`}>
                         <motion.div 
                           className={`h-full rounded-full bg-gradient-to-r ${s.borderGradient}`}
                           initial={{ width: 0 }}
                           animate={{ width: `${Math.min((s.value / (stats.totalSolved || 1)) * 100, 100)}%` }}
-                          transition={{ duration: 1, delay: idx * 0.1 + 0.3 }}
+                          transition={{ duration: 1.2, delay: idx * 0.1 + 0.4, ease: "easeOut" }}
                         />
                       </div>
                     </div>
                   </motion.div>
                 ))}
+                
+                {/* Streak Card - Special Design */}
                 <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3, delay: 0.4 }}
-                  whileHover={{ scale: 1.03, y: -2 }}
-                  className={`group relative overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-6 transition-all cursor-pointer col-span-2 sm:col-span-1 ${lightMode ? "bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl" : "bg-[#161b22]/50 backdrop-blur-md shadow-xl hover:shadow-2xl"}`}
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 }}
+                  whileHover={{ scale: 1.05, y: -5 }}
+                  className={`group relative overflow-hidden rounded-2xl p-4 sm:p-6 transition-all duration-300 cursor-pointer col-span-2 sm:col-span-1 ${
+                    lightMode 
+                      ? "bg-gradient-to-br from-orange-50 to-amber-50 shadow-xl hover:shadow-2xl border border-orange-200/50" 
+                      : "bg-gradient-to-br from-orange-500/20 to-amber-500/20 backdrop-blur-xl shadow-2xl border border-orange-500/30"
+                  }`}
+                  style={{ boxShadow: streak >= 7 ? "0 0 40px rgba(249, 115, 22, 0.3)" : undefined }}
                 >
-                  {/* Gradient border */}
-                  <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#bc4c00] to-[#f0883e] opacity-20 group-hover:opacity-30 transition-opacity" />
-                  <div className={`absolute inset-[1px] rounded-xl sm:rounded-2xl ${lightMode ? "bg-white" : "bg-[#0d1117]"}`} />
+                  {/* Fire particles effect for streak >= 7 */}
+                  {streak >= 7 && (
+                    <div className="absolute inset-0 overflow-hidden">
+                      {[...Array(5)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className="absolute w-2 h-2 rounded-full bg-orange-400/60"
+                          initial={{ y: "100%", x: `${20 + i * 15}%`, opacity: 0 }}
+                          animate={{ y: "-100%", opacity: [0, 1, 0] }}
+                          transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
+                        />
+                      ))}
+                    </div>
+                  )}
                   
                   {/* Content */}
-                  <div className="relative flex sm:block items-center gap-4">
+                  <div className="relative z-10 flex sm:block items-center gap-4">
                     <div className="flex items-center justify-between mb-0 sm:mb-4">
-                      <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wide ${t.textMuted}`}>Streak</p>
+                      <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${lightMode ? "text-orange-600" : "text-orange-300"}`}>Streak</p>
                       <motion.span 
-                        className="text-xl sm:text-3xl ml-2 sm:ml-0"
-                        animate={{ scale: [1, 1.1, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
+                        className="text-2xl sm:text-4xl ml-2 sm:ml-0"
+                        animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
                       >
                         🔥
                       </motion.span>
                     </div>
                     <div className="flex items-baseline gap-2 mb-2 sm:mb-4 ml-auto sm:ml-0">
-                      <p className="text-3xl sm:text-5xl font-black" style={{ color: lightMode ? "#bc4c00" : "#f0883e" }}>{streak}</p>
-                      <span className={`text-sm sm:text-base font-bold ${t.textMuted}`}>days</span>
+                      <motion.p 
+                        className="text-4xl sm:text-5xl font-black"
+                        style={{ color: lightMode ? "#ea580c" : "#fb923c" }}
+                        animate={streak >= 7 ? { scale: [1, 1.05, 1] } : {}}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      >
+                        {streak}
+                      </motion.p>
+                      <span className={`text-sm sm:text-lg font-bold ${lightMode ? "text-orange-500" : "text-orange-300"}`}>days</span>
                     </div>
-                    <p className={`text-xs sm:text-sm font-bold ${t.textMuted} hidden sm:block`}>
-                      {streak === 0 ? "Start today! 🚀" : streak >= 7 ? "On fire! 🔥" : "Keep going! 💪"}
+                    <p className={`text-xs sm:text-sm font-bold hidden sm:block ${lightMode ? "text-orange-600" : "text-orange-200"}`}>
+                      {streak === 0 ? "Start today! 🚀" : streak >= 30 ? "Legendary! 👑" : streak >= 7 ? "On fire! 🔥" : "Keep going! 💪"}
                     </p>
                   </div>
                 </motion.div>
@@ -3133,29 +3559,29 @@ export default function DashboardClient() {
 
             {/* ════ COMPILER MODAL - LeetCode/GFG Style ════ */}
             {showCompiler && (
-              <div className="fixed inset-0 z-50 bg-black/95">
+              <div className={`fixed inset-0 z-50 ${compilerLightMode ? "bg-[#f0f0f0]" : "bg-[#0d1117]"}`}>
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="w-full h-full flex flex-col"
                 >
                   {/* ═══ TOP HEADER BAR ═══ */}
-                  <div className={`flex items-center justify-between px-2 sm:px-4 py-2 border-b shrink-0 ${lightMode ? "bg-white border-gray-200" : "bg-[#1a1a2e] border-[#30363d]"}`}>
+                  <div className={`flex items-center justify-between px-3 sm:px-4 py-2 border-b shrink-0 ${compilerLightMode ? "bg-white border-gray-300 shadow-sm" : "bg-[#161b22] border-[#30363d]"}`}>
                     <div className="flex items-center gap-2 sm:gap-4">
                       <div className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
                           <span className="text-white text-sm font-bold">⚡</span>
                         </div>
                         <div className="hidden sm:block">
-                          <h2 className={`text-sm font-bold ${t.textPrimary}`}>Code Studio</h2>
-                          <p className={`text-[10px] ${t.textMuted}`}>
+                          <h2 className={`text-sm font-bold ${compilerLightMode ? "text-gray-900" : "text-white"}`}>Code Studio</h2>
+                          <p className={`text-[10px] ${compilerLightMode ? "text-gray-600" : "text-gray-400"}`}>
                             {compilerEditingId ? `✏️ Editing: ${compilerTitle || "Untitled"}` : "📝 New Problem"}
                           </p>
                         </div>
                       </div>
                       
                       {/* New / Edit indicator on mobile */}
-                      <span className={`sm:hidden text-[10px] px-2 py-0.5 rounded ${compilerEditingId ? "bg-yellow-500/20 text-yellow-400" : "bg-green-500/20 text-green-400"}`}>
+                      <span className={`sm:hidden text-[10px] px-2 py-0.5 rounded ${compilerEditingId ? "bg-yellow-100 text-yellow-700 border border-yellow-300" : "bg-green-100 text-green-700 border border-green-300"}`}>
                         {compilerEditingId ? "Edit" : "New"}
                       </span>
                     </div>
@@ -3165,7 +3591,7 @@ export default function DashboardClient() {
                       <select 
                         value={compilerLanguage} 
                         onChange={e => setCompilerLanguage(e.target.value)}
-                        className={`rounded-lg border px-2 py-1.5 text-xs font-bold outline-none ${lightMode ? "bg-gray-100 border-gray-300 text-gray-800" : "bg-[#21262d] border-[#30363d] text-white"}`}
+                        className={`rounded-lg border px-2 py-1.5 text-xs font-bold outline-none ${compilerLightMode ? "bg-gray-100 border-gray-300 text-gray-800" : "bg-[#21262d] border-[#30363d] text-white"}`}
                       >
                         <option value="cpp">C++ 17</option>
                         <option value="c">C</option>
@@ -3216,10 +3642,37 @@ export default function DashboardClient() {
                         </motion.button>
                       )}
 
+                      {/* Print PDF button */}
+                      <motion.button 
+                        onClick={printCodeToPDF}
+                        disabled={!compilerCode.trim()}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="hidden sm:flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-white/70 bg-white/10 hover:bg-white/15 transition disabled:opacity-50"
+                        title="Print to PDF"
+                      >
+                        🖨️ PDF
+                      </motion.button>
+
+                      {/* Light/Dark mode toggle for compiler */}
+                      <motion.button 
+                        onClick={() => setCompilerLightMode(!compilerLightMode)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className={`hidden sm:flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                          compilerLightMode 
+                            ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200" 
+                            : "bg-white/10 text-white/70 hover:bg-white/15"
+                        }`}
+                        title={compilerLightMode ? "Switch to Dark Mode" : "Switch to Light Mode"}
+                      >
+                        {compilerLightMode ? "🌙" : "☀️"}
+                      </motion.button>
+
                       {/* Close button */}
                       <button 
                         onClick={() => { setShowCompiler(false); clearCompilerForNew(); }}
-                        className={`rounded-lg p-2 text-lg transition ${lightMode ? "hover:bg-gray-100 text-gray-500" : "hover:bg-white/10 text-white/50"}`}
+                        className={`rounded-lg p-2 text-lg transition ${compilerLightMode ? "hover:bg-gray-100 text-gray-500" : "hover:bg-white/10 text-white/50"}`}
                       >✕</button>
                     </div>
                   </div>
@@ -3228,32 +3681,32 @@ export default function DashboardClient() {
                   <div className="flex-1 flex overflow-hidden">
                     
                     {/* ═══ LEFT SIDEBAR - Navigation Tree ═══ */}
-                    <div className={`w-[220px] xl:w-[260px] shrink-0 flex-col border-r hidden lg:flex ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#0d1117] border-[#30363d]"}`}>
+                    <div className={`w-[200px] lg:w-[240px] xl:w-[280px] shrink-0 flex-col border-r hidden md:flex ${compilerLightMode ? "bg-[#fafafa] border-gray-300" : "bg-[#0d1117] border-[#30363d]"}`}>
                       {/* Nav Header */}
-                      <div className={`px-3 py-2 border-b flex items-center justify-between ${lightMode ? "bg-white border-gray-200" : "bg-[#161b22] border-[#30363d]"}`}>
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${t.textFaint}`}>📚 My Library</span>
+                      <div className={`px-3 py-2.5 border-b flex items-center justify-between ${compilerLightMode ? "bg-white border-gray-300" : "bg-[#161b22] border-[#30363d]"}`}>
+                        <span className={`text-[11px] font-bold uppercase tracking-wider ${compilerLightMode ? "text-gray-700" : "text-gray-400"}`}>📚 My Library</span>
                         <button 
                           onClick={clearCompilerForNew}
-                          className="text-[10px] px-2 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition font-semibold"
+                          className={`text-[10px] px-2 py-1 rounded-md font-semibold transition ${compilerLightMode ? "bg-green-100 text-green-700 hover:bg-green-200 border border-green-300" : "bg-green-500/20 text-green-400 hover:bg-green-500/30"}`}
                         >
                           + New
                         </button>
                       </div>
                       
                       {/* Search */}
-                      <div className="p-2 border-b border-[#30363d]/50">
+                      <div className={`p-2.5 border-b ${compilerLightMode ? "border-gray-300 bg-white" : "border-[#30363d]/50"}`}>
                         <input 
                           value={compilerNavSearch}
                           onChange={e => setCompilerNavSearch(e.target.value)}
                           placeholder="🔍 Search problems..."
-                          className={`w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none ${t.input}`}
+                          className={`w-full rounded-lg border px-3 py-2 text-xs outline-none transition focus:ring-2 ${compilerLightMode ? "bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500 focus:ring-green-200 focus:border-green-400" : "border-[#30363d] bg-[#0d1117] text-[#e6edf3] placeholder:text-gray-500 focus:ring-green-500/30"}`}
                         />
                       </div>
                       
                       {/* Navigation Tree */}
                       <div className="flex-1 overflow-y-auto p-2">
                         {Object.keys(compilerNavData).length === 0 ? (
-                          <div className={`text-center py-8 ${t.textFaint}`}>
+                          <div className={`text-center py-8 ${compilerLightMode ? "text-gray-400" : "text-gray-500"}`}>
                             <p className="text-2xl mb-2">📭</p>
                             <p className="text-[11px]">No saved problems yet</p>
                             <p className="text-[10px] mt-1 opacity-60">Add code on the right →</p>
@@ -3271,12 +3724,12 @@ export default function DashboardClient() {
                                     return next;
                                   })}
                                   className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition ${
-                                    lightMode ? "hover:bg-gray-200" : "hover:bg-white/5"
+                                    compilerLightMode ? "hover:bg-gray-200" : "hover:bg-white/5"
                                   }`}
                                 >
-                                  <span className="text-[10px]">{compilerExpandedTopics.has(topic) ? "▼" : "▶"}</span>
-                                  <span className={`text-xs font-bold ${t.textPrimary}`}>📁 {topic}</span>
-                                  <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded ${lightMode ? "bg-gray-200 text-gray-600" : "bg-white/10 text-white/50"}`}>
+                                  <span className={`text-[10px] ${compilerLightMode ? "text-gray-500" : "text-gray-400"}`}>{compilerExpandedTopics.has(topic) ? "▼" : "▶"}</span>
+                                  <span className={`text-xs font-bold ${compilerLightMode ? "text-gray-800" : "text-white"}`}>📁 {topic}</span>
+                                  <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded ${compilerLightMode ? "bg-gray-200 text-gray-600" : "bg-white/10 text-white/50"}`}>
                                     {Object.values(subTopics).flat().length}
                                   </span>
                                 </button>
@@ -3288,11 +3741,11 @@ export default function DashboardClient() {
                                       initial={{ height: 0, opacity: 0 }}
                                       animate={{ height: "auto", opacity: 1 }}
                                       exit={{ height: 0, opacity: 0 }}
-                                      className="overflow-hidden ml-3 border-l border-dashed border-white/10 pl-2"
+                                      className={`overflow-hidden ml-3 border-l border-dashed pl-2 ${compilerLightMode ? "border-gray-300" : "border-white/10"}`}
                                     >
                                       {Object.entries(subTopics).sort().map(([subTopic, entries]) => (
                                         <div key={subTopic} className="my-1">
-                                          <p className={`text-[10px] font-semibold px-2 py-1 ${t.textMuted}`}>
+                                          <p className={`text-[10px] font-semibold px-2 py-1 ${compilerLightMode ? "text-gray-500" : "text-gray-400"}`}>
                                             📂 {subTopic}
                                           </p>
                                           {entries.map(entry => (
@@ -3302,7 +3755,7 @@ export default function DashboardClient() {
                                               className={`w-full text-left px-2 py-1.5 rounded text-[11px] transition truncate flex items-center gap-1.5 ${
                                                 compilerEditingId === entry.id 
                                                   ? "bg-blue-500/20 text-blue-400" 
-                                                  : lightMode 
+                                                  : compilerLightMode 
                                                     ? "hover:bg-gray-200 text-gray-700" 
                                                     : "hover:bg-white/5 text-white/70"
                                               }`}
@@ -3326,7 +3779,7 @@ export default function DashboardClient() {
                       </div>
                       
                       {/* Nav Footer - Stats */}
-                      <div className={`px-3 py-2 border-t text-[10px] ${lightMode ? "bg-white border-gray-200 text-gray-500" : "bg-[#161b22] border-[#30363d] text-white/40"}`}>
+                      <div className={`px-3 py-2.5 border-t text-[11px] font-medium ${compilerLightMode ? "bg-white border-gray-200 text-gray-500" : "bg-[#161b22] border-[#30363d] text-white/50"}`}>
                         📊 {learnEntries.length} problems saved
                       </div>
                     </div>
@@ -3334,39 +3787,43 @@ export default function DashboardClient() {
                     {/* ═══ MIDDLE - CODE EDITOR (LeetCode Style) ═══ */}
                     <div className="flex-1 flex flex-col overflow-hidden min-w-0">
                       {/* Editor Header with tabs */}
-                      <div className={`flex items-center justify-between px-2 sm:px-4 py-1.5 border-b ${lightMode ? "bg-[#252526] border-[#3c3c3c]" : "bg-[#1e1e2e] border-[#30363d]"}`}>
+                      <div className={`flex items-center justify-between px-3 sm:px-4 py-2 border-b ${compilerLightMode ? "bg-gray-50 border-gray-200" : "bg-[#1e1e2e] border-[#30363d]"}`}>
                         <div className="flex items-center gap-2">
-                          <div className={`flex items-center gap-1 px-3 py-1 rounded-t-lg text-xs font-semibold ${lightMode ? "bg-[#1e1e1e] text-white" : "bg-[#0d1117] text-green-400"}`}>
+                          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${compilerLightMode ? "bg-white text-gray-800 border border-gray-200 shadow-sm" : "bg-[#0d1117] text-green-400 border border-[#30363d]"}`}>
                             <span>💻</span>
                             <span>{compilerLanguage === "cpp" ? "main.cpp" : compilerLanguage === "python" ? "main.py" : compilerLanguage === "java" ? "Main.java" : "main.js"}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
                           <button 
                             onClick={() => { 
                               const el = document.getElementById("compiler-textarea");
                               if (el) el.focus();
                             }}
-                            className="px-2 py-1 rounded text-[10px] font-semibold bg-white/5 hover:bg-white/10 text-white/50 transition"
-                            title="Format code"
+                            className={`px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition ${compilerLightMode ? "bg-white hover:bg-gray-100 text-gray-600 border border-gray-200" : "bg-white/5 hover:bg-white/10 text-white/60"}`}
+                            title="Focus editor"
                           >⌨️</button>
                           <button 
                             onClick={() => { setCompilerCode(""); setCompilerOutput(""); setCompilerError(""); }}
-                            className="px-2 py-1 rounded text-[10px] font-semibold bg-white/5 hover:bg-white/10 text-white/50 transition"
+                            className={`px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition ${compilerLightMode ? "bg-white hover:bg-gray-100 text-gray-600 border border-gray-200" : "bg-white/5 hover:bg-white/10 text-white/60"}`}
                           >🗑️ Clear</button>
                           <button 
                             onClick={() => navigator.clipboard.writeText(compilerCode)}
-                            className="px-2 py-1 rounded text-[10px] font-semibold bg-white/5 hover:bg-white/10 text-white/50 transition"
+                            className={`px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition ${compilerLightMode ? "bg-white hover:bg-gray-100 text-gray-600 border border-gray-200" : "bg-white/5 hover:bg-white/10 text-white/60"}`}
                           >📋 Copy</button>
                         </div>
                       </div>
                       
                       {/* Line Numbers + Code Editor */}
-                      <div className={`flex-1 flex overflow-hidden relative ${lightMode ? "bg-[#1e1e1e]" : "bg-[#0d1117]"}`}>
-                        {/* Line numbers */}
-                        <div className="w-10 sm:w-12 shrink-0 pt-4 pr-2 text-right select-none overflow-y-hidden border-r border-white/5" style={{ fontFamily: "'Fira Code', 'Consolas', monospace" }}>
+                      <div className={`flex-1 flex overflow-hidden relative rounded-b-lg ${compilerLightMode ? "bg-white" : "bg-[#0d1117]"}`}>
+                        {/* Line numbers - will sync scroll */}
+                        <div 
+                          id="compiler-line-numbers"
+                          className={`w-10 sm:w-12 shrink-0 py-4 pr-2 text-right select-none overflow-hidden border-r ${compilerLightMode ? "border-gray-200 bg-gray-50" : "border-white/5 bg-[#0d1117]"}`} 
+                          style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace", fontSize: "13px", lineHeight: "22px" }}
+                        >
                           {(compilerCode || " ").split("\n").map((_, i) => (
-                            <div key={i} className="text-[13px] leading-[21px] text-gray-600">
+                            <div key={i} className={`${compilerLightMode ? "text-gray-400" : "text-gray-600"}`} style={{ height: "22px" }}>
                               {i + 1}
                             </div>
                           ))}
@@ -3375,7 +3832,7 @@ export default function DashboardClient() {
                         {/* Empty state placeholder */}
                         {!compilerCode && (
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 ml-12">
-                            <div className="text-center text-gray-600">
+                            <div className={`text-center ${compilerLightMode ? "text-gray-400" : "text-gray-600"}`}>
                               <p className="text-4xl mb-3 opacity-50">💻</p>
                               <p className="text-sm font-medium">Start coding here</p>
                               <p className="text-xs mt-1 opacity-60">Tab key works for indentation</p>
@@ -3383,11 +3840,40 @@ export default function DashboardClient() {
                           </div>
                         )}
                         
-                        {/* Code textarea with proper tab handling */}
-                        <textarea
-                          id="compiler-textarea"
-                          value={compilerCode}
-                          onChange={e => setCompilerCode(e.target.value)}
+                        {/* Syntax highlighted code overlay - scrollable container */}
+                        <div className="flex-1 relative overflow-hidden">
+                          {/* Highlighted code display (behind textarea) - synced scroll */}
+                          <pre
+                            id="compiler-highlighted-code"
+                            className="absolute inset-0 py-4 pr-4 pl-3 overflow-hidden pointer-events-none whitespace-pre m-0"
+                            style={{ 
+                              fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace",
+                              fontSize: "13px",
+                              lineHeight: "22px",
+                              tabSize: 4,
+                            }}
+                            aria-hidden="true"
+                            dangerouslySetInnerHTML={{ __html: highlightedCode + "\n" }}
+                          />
+                          
+                          {/* Transparent textarea for editing - handles scroll */}
+                          <textarea
+                            id="compiler-textarea"
+                            value={compilerCode}
+                            onChange={e => setCompilerCode(e.target.value)}
+                            onScroll={e => {
+                              // Sync scroll with highlighted code and line numbers
+                              const textarea = e.target as HTMLTextAreaElement;
+                              const highlighted = document.getElementById("compiler-highlighted-code");
+                              const lineNumbers = document.getElementById("compiler-line-numbers");
+                              if (highlighted) {
+                                highlighted.scrollTop = textarea.scrollTop;
+                                highlighted.scrollLeft = textarea.scrollLeft;
+                              }
+                              if (lineNumbers) {
+                                lineNumbers.scrollTop = textarea.scrollTop;
+                              }
+                            }}
                           onKeyDown={e => {
                             // Handle Tab key for indentation
                             if (e.key === "Tab") {
@@ -3439,54 +3925,59 @@ export default function DashboardClient() {
                           }}
                           placeholder=""
                           spellCheck={false}
-                          className="flex-1 w-full py-4 pr-4 pl-2 text-[13px] leading-[21px] outline-none resize-none bg-transparent text-[#e6edf3] border-none focus:ring-0 focus:outline-none"
+                          className="absolute inset-0 w-full h-full py-4 pr-4 pl-3 outline-none resize-none bg-transparent border-none focus:ring-0 focus:outline-none text-transparent"
                           style={{ 
-                            fontFamily: "'Fira Code', 'Consolas', 'Monaco', monospace",
-                            caretColor: "#22c55e",
+                            fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace",
+                            fontSize: "13px",
+                            lineHeight: "22px",
+                            caretColor: compilerLightMode ? "#3b82f6" : "#22c55e",
                             tabSize: 4,
                             MozTabSize: 4,
+                            WebkitTextFillColor: "transparent",
+                            overflow: "auto",
                           }}
                         />
+                        </div>
                       </div>
                     </div>
 
                     {/* ═══ RIGHT PANEL - Problem Details + I/O ═══ */}
-                    <div className={`w-[300px] xl:w-[340px] shrink-0 flex flex-col border-l hidden lg:flex ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#161b22] border-[#30363d]"}`}>
+                    <div className={`w-[280px] lg:w-[320px] xl:w-[360px] shrink-0 flex flex-col border-l hidden md:flex ${compilerLightMode ? "bg-[#fafafa] border-gray-300" : "bg-[#161b22] border-[#30363d]"}`}>
                       
                       {/* Problem Details Form */}
-                      <div className={`border-b ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}>
-                        <div className={`px-3 py-2 flex items-center justify-between ${lightMode ? "bg-white" : "bg-[#0d1117]"}`}>
-                          <span className={`text-[10px] font-bold uppercase tracking-wider ${t.textFaint}`}>📋 Problem Info</span>
+                      <div className={`border-b ${compilerLightMode ? "border-gray-300" : "border-[#30363d]"}`}>
+                        <div className={`px-3 py-2.5 flex items-center justify-between ${compilerLightMode ? "bg-white border-b border-gray-200" : "bg-[#0d1117]"}`}>
+                          <span className={`text-[11px] font-bold uppercase tracking-wider ${compilerLightMode ? "text-gray-700" : "text-gray-400"}`}>📋 Problem Info</span>
                           {compilerEditingId && (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400">Editing</span>
+                            <span className={`text-[9px] px-2 py-0.5 rounded-md font-medium ${compilerLightMode ? "bg-yellow-100 text-yellow-700 border border-yellow-300" : "bg-yellow-500/20 text-yellow-400"}`}>Editing</span>
                           )}
                         </div>
-                        <div className="p-3 space-y-2 max-h-[180px] overflow-y-auto">
+                        <div className={`p-3 space-y-3 max-h-[200px] overflow-y-auto ${compilerLightMode ? "bg-white" : ""}`}>
                           {/* Topic + SubTopic */}
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className={`text-[9px] font-bold mb-0.5 block ${t.textMuted}`}>📁 Topic *</label>
+                              <label className={`text-[10px] font-semibold mb-1 block ${compilerLightMode ? "text-gray-700" : "text-gray-400"}`}>📁 Topic *</label>
                               <input 
                                 value={compilerTopic}
                                 onChange={e => setCompilerTopic(e.target.value)}
                                 placeholder="Arrays..."
                                 list="compiler-topic-list"
-                                className={`w-full rounded border px-2 py-1 text-[11px] outline-none ${t.input}`}
+                                className={`w-full rounded-lg border px-2.5 py-1.5 text-[11px] outline-none transition focus:ring-2 ${compilerLightMode ? "bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500 focus:ring-blue-200 focus:border-blue-400" : "bg-[#0d1117] border-[#30363d] text-white focus:ring-blue-500/30"}`}
                               />
                               <datalist id="compiler-topic-list">
-                                {["Arrays", "Strings", "Linked List", "Stack", "Queue", "Trees", "Binary Search", "Dynamic Programming", "Graphs", "Backtracking", "Greedy", "Heap", "Trie", "Math", "Bit Manipulation"].map(t => (
-                                  <option key={t} value={t} />
+                                {["Arrays", "Strings", "Linked List", "Stack", "Queue", "Trees", "Binary Search", "Dynamic Programming", "Graphs", "Backtracking", "Greedy", "Heap", "Trie", "Math", "Bit Manipulation"].map(tp => (
+                                  <option key={tp} value={tp} />
                                 ))}
                               </datalist>
                             </div>
                             <div>
-                              <label className={`text-[9px] font-bold mb-0.5 block ${t.textMuted}`}>📂 Sub-topic</label>
+                              <label className={`text-[10px] font-semibold mb-1 block ${compilerLightMode ? "text-gray-700" : "text-gray-400"}`}>📂 Sub-topic</label>
                               <input 
                                 value={compilerSubTopic}
                                 onChange={e => setCompilerSubTopic(e.target.value)}
                                 placeholder="Sliding Window..."
                                 list="compiler-subtopic-list"
-                                className={`w-full rounded border px-2 py-1 text-[11px] outline-none ${t.input}`}
+                                className={`w-full rounded-lg border px-2.5 py-1.5 text-[11px] outline-none transition focus:ring-2 ${compilerLightMode ? "bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500 focus:ring-blue-200 focus:border-blue-400" : "bg-[#0d1117] border-[#30363d] text-white focus:ring-blue-500/30"}`}
                               />
                               <datalist id="compiler-subtopic-list">
                                 {["Two Pointers", "Sliding Window", "Prefix Sum", "Binary Search", "BFS", "DFS", "Recursion", "Memoization", "Tabulation", "Sorting", "Hashing"].map(st => (
@@ -3497,24 +3988,24 @@ export default function DashboardClient() {
                           </div>
                           {/* Title */}
                           <div>
-                            <label className={`text-[9px] font-bold mb-0.5 block ${t.textMuted}`}>📌 Title *</label>
+                            <label className={`text-[10px] font-semibold mb-1 block ${compilerLightMode ? "text-gray-700" : "text-gray-400"}`}>📌 Title *</label>
                             <input 
                               value={compilerTitle}
                               onChange={e => setCompilerTitle(e.target.value)}
                               placeholder="Two Sum..."
-                              className={`w-full rounded border px-2 py-1 text-[11px] outline-none ${t.input}`}
+                              className={`w-full rounded-lg border px-2.5 py-1.5 text-[11px] outline-none transition focus:ring-2 ${compilerLightMode ? "bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500 focus:ring-blue-200 focus:border-blue-400" : "bg-[#0d1117] border-[#30363d] text-white focus:ring-blue-500/30"}`}
                             />
                           </div>
                           {/* Difficulty */}
-                          <div className="flex gap-1">
+                          <div className="flex gap-1.5">
                             {["Easy", "Medium", "Hard"].map(d => (
                               <button
                                 key={d}
                                 onClick={() => setCompilerDifficulty(d)}
-                                className={`flex-1 py-1 rounded text-[10px] font-bold transition ${
+                                className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition border ${
                                   compilerDifficulty === d
-                                    ? d === "Easy" ? "bg-green-500 text-white" : d === "Medium" ? "bg-yellow-500 text-black" : "bg-red-500 text-white"
-                                    : lightMode ? "bg-gray-100 text-gray-500 hover:bg-gray-200" : "bg-white/5 text-white/50 hover:bg-white/10"
+                                    ? d === "Easy" ? "bg-green-500 text-white border-green-600 shadow-sm" : d === "Medium" ? "bg-yellow-500 text-black border-yellow-600 shadow-sm" : "bg-red-500 text-white border-red-600 shadow-sm"
+                                    : compilerLightMode ? "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200" : "bg-white/5 text-white/50 border-transparent hover:bg-white/10"
                                 }`}
                               >
                                 {d}
@@ -3523,40 +4014,40 @@ export default function DashboardClient() {
                           </div>
                           {/* Question text (collapsible) */}
                           <div>
-                            <label className={`text-[9px] font-bold mb-0.5 block ${t.textMuted}`}>📝 Problem Statement</label>
+                            <label className={`text-[10px] font-semibold mb-1 block ${compilerLightMode ? "text-gray-700" : "text-gray-400"}`}>📝 Problem Statement</label>
                             <textarea 
                               value={compilerQuestion}
                               onChange={e => setCompilerQuestion(e.target.value)}
                               placeholder="Optional: paste problem..."
                               rows={2}
-                              className={`w-full rounded border px-2 py-1 text-[10px] outline-none resize-y ${t.input}`}
+                              className={`w-full rounded-lg border px-2.5 py-1.5 text-[10px] outline-none resize-y transition focus:ring-2 ${compilerLightMode ? "bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500 focus:ring-blue-200 focus:border-blue-400" : "bg-[#0d1117] border-[#30363d] text-white focus:ring-blue-500/30"}`}
                             />
                           </div>
                         </div>
                       </div>
 
                       {/* Input Section */}
-                      <div className={`border-b ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}>
-                        <div className={`px-3 py-1.5 ${lightMode ? "bg-white" : "bg-[#0d1117]"}`}>
-                          <span className={`text-[10px] font-bold uppercase tracking-wider ${t.textFaint}`}>📥 Custom Input</span>
+                      <div className={`border-b ${compilerLightMode ? "border-gray-200" : "border-[#30363d]"}`}>
+                        <div className={`px-3 py-2 ${compilerLightMode ? "bg-white" : "bg-[#0d1117]"}`}>
+                          <span className={`text-[11px] font-bold uppercase tracking-wider ${compilerLightMode ? "text-gray-600" : "text-gray-400"}`}>📥 Custom Input</span>
                         </div>
                         <textarea
                           value={compilerInput}
                           onChange={e => setCompilerInput(e.target.value)}
                           placeholder="5&#10;1 2 3 4 5"
                           rows={3}
-                          className={`w-full p-2 text-[11px] font-mono outline-none resize-none border-none ${lightMode ? "bg-gray-100 text-gray-800 placeholder:text-gray-400" : "bg-[#0d1117] text-gray-200 placeholder:text-gray-600"}`}
-                          style={{ fontFamily: "'Fira Code', monospace" }}
+                          className={`w-full p-3 text-[12px] font-mono outline-none resize-none border-none ${compilerLightMode ? "bg-gray-50 text-gray-800 placeholder:text-gray-400" : "bg-[#0d1117] text-gray-200 placeholder:text-gray-600"}`}
+                          style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}
                         />
                       </div>
 
                       {/* Output Section */}
                       <div className="flex-1 flex flex-col overflow-hidden">
-                        <div className={`px-3 py-1.5 flex items-center gap-2 ${lightMode ? "bg-white" : "bg-[#0d1117]"}`}>
-                          <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                            compilerRunning ? "text-yellow-400" :
-                            compilerError && !compilerOutput ? "text-red-400" : 
-                            compilerOutput ? "text-green-400" : t.textFaint
+                        <div className={`px-3 py-2 flex items-center gap-2 ${compilerLightMode ? "bg-white" : "bg-[#0d1117]"}`}>
+                          <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                            compilerRunning ? "text-yellow-500" :
+                            compilerError && !compilerOutput ? "text-red-500" : 
+                            compilerOutput ? "text-green-500" : compilerLightMode ? "text-gray-600" : "text-gray-400"
                           }`}>
                             {compilerRunning ? "⏳ Running..." : 
                              compilerError && !compilerOutput ? "❌ Error" : 
@@ -3565,24 +4056,24 @@ export default function DashboardClient() {
                           {compilerOutput && (
                             <button 
                               onClick={() => navigator.clipboard.writeText(compilerOutput)}
-                              className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/40 transition"
-                            >Copy</button>
+                              className={`ml-auto text-[10px] px-2 py-1 rounded-md transition font-medium ${compilerLightMode ? "bg-gray-100 hover:bg-gray-200 text-gray-600" : "bg-white/5 hover:bg-white/10 text-white/60"}`}
+                            >📋 Copy</button>
                           )}
                         </div>
-                        <div className={`flex-1 overflow-y-auto p-2 ${lightMode ? "bg-gray-100" : "bg-[#0d1117]"}`}>
+                        <div className={`flex-1 overflow-y-auto p-3 ${compilerLightMode ? "bg-gray-50" : "bg-[#0d1117]"}`}>
                           {compilerRunning ? (
                             <div className="flex items-center justify-center h-full gap-2">
                               <div className="animate-spin h-5 w-5 border-2 border-green-500 border-t-transparent rounded-full" />
-                              <span className="text-[11px] text-green-400">Compiling...</span>
+                              <span className="text-[12px] text-green-500 font-medium">Compiling...</span>
                             </div>
                           ) : compilerError ? (
-                            <pre className="text-[11px] font-mono text-red-400 whitespace-pre-wrap" style={{ fontFamily: "'Fira Code', monospace" }}>{compilerError}</pre>
+                            <pre className="text-[12px] font-mono text-red-500 whitespace-pre-wrap" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}>{compilerError}</pre>
                           ) : compilerOutput ? (
-                            <pre className={`text-[11px] font-mono whitespace-pre-wrap ${lightMode ? "text-gray-800" : "text-green-300"}`} style={{ fontFamily: "'Fira Code', monospace" }}>{compilerOutput}</pre>
+                            <pre className={`text-[12px] font-mono whitespace-pre-wrap ${compilerLightMode ? "text-gray-800" : "text-green-300"}`} style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}>{compilerOutput}</pre>
                           ) : (
-                            <div className={`flex flex-col items-center justify-center h-full ${t.textFaint}`}>
-                              <span className="text-2xl mb-1">▶️</span>
-                              <span className="text-[10px]">Run to see output</span>
+                            <div className={`flex flex-col items-center justify-center h-full ${compilerLightMode ? "text-gray-400" : "text-gray-600"}`}>
+                              <span className="text-3xl mb-2">▶️</span>
+                              <span className="text-[11px] font-medium">Run to see output</span>
                             </div>
                           )}
                         </div>
