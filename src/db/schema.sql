@@ -142,7 +142,8 @@ begin
 end;
 $$ language plpgsql;
 
-create trigger if not exists update_content_library_timestamp
+drop trigger if exists update_content_library_timestamp on content_library;
+create trigger update_content_library_timestamp
   before update on content_library
   for each row execute function update_content_library_timestamp();
 
