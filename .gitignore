@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# docs temp files
+docs/temp/
+
+# docs with secrets
+docs/guides/DEPLOYMENT_GUIDE.md
+docs/guides/LOCAL_SETUP_GUIDE.md
+docs/guides/STEP_BY_STEP_DEPLOYMENT.md
+docs/guides/HUGGINGFACE_AI_GUIDE.md

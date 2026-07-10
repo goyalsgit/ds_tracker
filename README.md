@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DSA Tracker
 
-## Getting Started
+Track solved questions, generate revision schedules, and sync daily plans to Google Calendar.
 
-First, run the development server:
+## Getting started
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a `.env.local` file with the values below:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+DATABASE_URL=postgresql://user:password@host:5432/db
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+# Optional for server-side admin operations
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
+GOOGLE_CALENDAR_REDIRECT_URI=http://localhost:3000/api/google/callback
+```
 
-## Learn More
+## Database schema
 
-To learn more about Next.js, take a look at the following resources:
+Apply the schema in `src/db/schema.sql` to your PostgreSQL database before adding data.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+If you already applied the schema, add the auth user column:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```sql
+alter table users add column if not exists auth_user_id uuid;
+create unique index if not exists users_auth_user_id_idx on users(auth_user_id);
+```
 
-## Deploy on Vercel
+## Supabase Auth setup
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+In Supabase Auth settings, enable Google provider and add redirect URLs:
+- http://localhost:3000
+- http://localhost:3000/
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Google Calendar setup
+
+Create a Google Cloud project, enable the Google Calendar API, and create OAuth credentials.
+Add this redirect URL to the Google OAuth client:
+- http://localhost:3000/api/google/callback
+
+## Project status
+
+Current build includes:
+- Dashboard layout
+- Mock revision queue
+- Revision schedule utilities
+- Database schema placeholder
+
+Upcoming:
+- Google Calendar sync
+- LeetCode import
+- AI summaries
