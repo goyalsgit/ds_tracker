@@ -2,9 +2,12 @@ import { getAuthUserFromRequest } from "@/lib/authServer";
 import { getOrCreateUserId } from "@/lib/userProfile";
 import { getSupabaseServer } from "@/lib/supabaseServer";
 
+// Admin email — only this user can create/edit/delete public entries
+const ADMIN_EMAIL = "devanshgoyal7344@gmail.com";
+
 /**
  * GET /api/learn
- * Fetch all content library entries for the authenticated user
+ * Returns: public entries (visible to all) + user's private entries
  */
 export async function GET(request: Request) {
   const authUser = await getAuthUserFromRequest(request);
@@ -20,10 +23,11 @@ export async function GET(request: Request) {
   const difficulty = searchParams.get("difficulty");
   const search = searchParams.get("search");
 
+  // Fetch: all public entries + user's own private entries
   let query = supabaseServer
     .from("content_library")
     .select("*")
-    .eq("user_id", userId)
+    .or(`is_public.eq.true,user_id.eq.${userId}`)
     .order("created_at", { ascending: false });
 
   if (topic && topic !== "All") {
@@ -41,23 +45,30 @@ export async function GET(request: Request) {
   const { data: entries, error } = await query;
 
   if (error) {
+    console.error("[Learn GET error]", error);
     return Response.json({ error: "Failed to load content library." }, { status: 500 });
   }
 
-  // Get unique topics for filter
-  const { data: allEntries } = await supabaseServer
+  // Get unique topics from visible entries
+  const { data: allVisible } = await supabaseServer
     .from("content_library")
     .select("topic")
-    .eq("user_id", userId);
+    .or(`is_public.eq.true,user_id.eq.${userId}`);
 
-  const topics = [...new Set(allEntries?.map(e => e.topic) ?? [])].sort();
+  const topics = [...new Set(allVisible?.map(e => e.topic) ?? [])].sort();
 
-  return Response.json({ entries: entries ?? [], topics });
+  return Response.json({
+    entries: entries ?? [],
+    topics,
+    isAdmin: authUser.email === ADMIN_EMAIL,
+  });
 }
 
 /**
  * POST /api/learn
  * Create a new content library entry
+ * - Admin can create public entries (is_public: true)
+ * - Regular users can only create private entries
  */
 export async function POST(request: Request) {
   const authUser = await getAuthUserFromRequest(request);
@@ -67,6 +78,7 @@ export async function POST(request: Request) {
 
   const userId = await getOrCreateUserId(authUser);
   const supabaseServer = getSupabaseServer();
+  const isAdmin = authUser.email === ADMIN_EMAIL;
 
   const body = await request.json() as {
     topic: string;
@@ -82,11 +94,15 @@ export async function POST(request: Request) {
     spaceComplexity?: string;
     tags?: string[];
     sourceUrl?: string;
+    isPublic?: boolean;
   };
 
   if (!body.topic || !body.title || !body.codeSolution) {
     return Response.json({ error: "Topic, title, and code solution are required." }, { status: 400 });
   }
+
+  // Only admin can make entries public
+  const isPublic = isAdmin && body.isPublic === true;
 
   const { data: entry, error } = await supabaseServer
     .from("content_library")
@@ -105,6 +121,7 @@ export async function POST(request: Request) {
       space_complexity: body.spaceComplexity ?? null,
       tags: body.tags ?? [],
       source_url: body.sourceUrl ?? null,
+      is_public: isPublic,
     })
     .select()
     .single();
@@ -120,6 +137,8 @@ export async function POST(request: Request) {
 /**
  * PUT /api/learn
  * Update an existing content library entry
+ * - Admin can edit any public entry
+ * - Users can only edit their own private entries
  */
 export async function PUT(request: Request) {
   const authUser = await getAuthUserFromRequest(request);
@@ -129,6 +148,7 @@ export async function PUT(request: Request) {
 
   const userId = await getOrCreateUserId(authUser);
   const supabaseServer = getSupabaseServer();
+  const isAdmin = authUser.email === ADMIN_EMAIL;
 
   const body = await request.json() as {
     id: string;
@@ -146,10 +166,27 @@ export async function PUT(request: Request) {
     tags?: string[];
     sourceUrl?: string;
     isFavorite?: boolean;
+    isPublic?: boolean;
   };
 
   if (!body.id) {
     return Response.json({ error: "Entry ID is required." }, { status: 400 });
+  }
+
+  // Check ownership: user owns it OR admin can edit public entries
+  const { data: existing } = await supabaseServer
+    .from("content_library")
+    .select("user_id, is_public")
+    .eq("id", body.id)
+    .maybeSingle();
+
+  if (!existing) {
+    return Response.json({ error: "Entry not found." }, { status: 404 });
+  }
+
+  const canEdit = existing.user_id === userId || (isAdmin && existing.is_public);
+  if (!canEdit) {
+    return Response.json({ error: "You can only edit your own entries." }, { status: 403 });
   }
 
   const updateData: Record<string, unknown> = {};
@@ -167,12 +204,12 @@ export async function PUT(request: Request) {
   if (body.tags !== undefined) updateData.tags = body.tags;
   if (body.sourceUrl !== undefined) updateData.source_url = body.sourceUrl;
   if (body.isFavorite !== undefined) updateData.is_favorite = body.isFavorite;
+  if (isAdmin && body.isPublic !== undefined) updateData.is_public = body.isPublic;
 
   const { data: entry, error } = await supabaseServer
     .from("content_library")
     .update(updateData)
     .eq("id", body.id)
-    .eq("user_id", userId)
     .select()
     .single();
 
@@ -186,6 +223,8 @@ export async function PUT(request: Request) {
 /**
  * DELETE /api/learn
  * Delete a content library entry
+ * - Admin can delete public entries
+ * - Users can only delete their own private entries
  */
 export async function DELETE(request: Request) {
   const authUser = await getAuthUserFromRequest(request);
@@ -195,6 +234,7 @@ export async function DELETE(request: Request) {
 
   const userId = await getOrCreateUserId(authUser);
   const supabaseServer = getSupabaseServer();
+  const isAdmin = authUser.email === ADMIN_EMAIL;
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
@@ -203,11 +243,26 @@ export async function DELETE(request: Request) {
     return Response.json({ error: "Entry ID is required." }, { status: 400 });
   }
 
+  // Check ownership
+  const { data: existing } = await supabaseServer
+    .from("content_library")
+    .select("user_id, is_public")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!existing) {
+    return Response.json({ error: "Entry not found." }, { status: 404 });
+  }
+
+  const canDelete = existing.user_id === userId || (isAdmin && existing.is_public);
+  if (!canDelete) {
+    return Response.json({ error: "You can only delete your own entries." }, { status: 403 });
+  }
+
   const { error } = await supabaseServer
     .from("content_library")
     .delete()
-    .eq("id", id)
-    .eq("user_id", userId);
+    .eq("id", id);
 
   if (error) {
     return Response.json({ error: "Failed to delete entry." }, { status: 500 });

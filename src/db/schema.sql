@@ -124,6 +124,7 @@ create table if not exists content_library (
   tags text[] default '{}',
   source_url text,
   is_favorite boolean default false,
+  is_public boolean default false,
   view_count integer default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
