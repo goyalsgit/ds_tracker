@@ -450,6 +450,12 @@ export default function DashboardClient() {
   // Panel collapse state
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [problemInfoCollapsed, setProblemInfoCollapsed] = useState(true);
+  const [rightPanelTab, setRightPanelTab] = useState<"testcase" | "result">("testcase");
+  
+  // Problem Info height (percentage of right panel when expanded)
+  const [problemInfoHeight, setProblemInfoHeight] = useState(35);
+  const [isDraggingProblemInfo, setIsDraggingProblemInfo] = useState(false);
   
   // Vertical layout height (percentage of code editor)
   const [verticalSplit, setVerticalSplit] = useState(60);
@@ -488,11 +494,20 @@ export default function DashboardClient() {
     return () => clearInterval(timer);
   }, []);
 
-  // Resizable panels drag handlers
+  // Resizable panels drag handlers - SMOOTH with requestAnimationFrame
   useEffect(() => {
-    if (!isDraggingLeft && !isDraggingRight && !isDraggingIO && !isDraggingVertical) return;
+    if (!isDraggingLeft && !isDraggingRight && !isDraggingIO && !isDraggingVertical && !isDraggingProblemInfo) return;
     
-    const handleMouseMove = (e: MouseEvent) => {
+    const isVerticalDrag = isDraggingIO || isDraggingVertical || isDraggingProblemInfo;
+    document.body.classList.add(isVerticalDrag ? "dragging-vertical" : "dragging");
+    
+    let rafId: number | null = null;
+    let latestMouseEvent: MouseEvent | null = null;
+    
+    const processMove = () => {
+      if (!latestMouseEvent) { rafId = null; return; }
+      const e = latestMouseEvent;
+      
       if (isDraggingLeft) {
         const newWidth = Math.min(Math.max(e.clientX, 180), 500);
         setCompilerLeftWidth(newWidth);
@@ -500,15 +515,24 @@ export default function DashboardClient() {
         const newWidth = Math.min(Math.max(window.innerWidth - e.clientX, 240), 600);
         setCompilerRightWidth(newWidth);
       } else if (isDraggingIO) {
+        // For IO split - measure from the top of the io/tabs container
+        const ioContainer = document.getElementById("compiler-io-container");
+        if (ioContainer) {
+          const rect = ioContainer.getBoundingClientRect();
+          const relativeY = e.clientY - rect.top;
+          const percentage = (relativeY / rect.height) * 100;
+          setCompilerIOSplit(Math.min(Math.max(percentage, 15), 85));
+        }
+      } else if (isDraggingProblemInfo) {
+        // Adjust problem info height as percentage of right panel
         const rightPanel = document.getElementById("compiler-right-panel");
         if (rightPanel) {
           const rect = rightPanel.getBoundingClientRect();
           const relativeY = e.clientY - rect.top;
           const percentage = (relativeY / rect.height) * 100;
-          setCompilerIOSplit(Math.min(Math.max(percentage, 20), 80));
+          setProblemInfoHeight(Math.min(Math.max(percentage, 15), 70));
         }
       } else if (isDraggingVertical) {
-        // Vertical layout: code on top, IO on bottom
         const container = document.getElementById("compiler-main-content");
         if (container) {
           const rect = container.getBoundingClientRect();
@@ -517,6 +541,15 @@ export default function DashboardClient() {
           setVerticalSplit(Math.min(Math.max(percentage, 20), 85));
         }
       }
+      rafId = null;
+    };
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      latestMouseEvent = e;
+      if (rafId === null) {
+        rafId = requestAnimationFrame(processMove);
+      }
     };
     
     const handleMouseUp = () => {
@@ -524,20 +557,23 @@ export default function DashboardClient() {
       setIsDraggingRight(false);
       setIsDraggingIO(false);
       setIsDraggingVertical(false);
+      setIsDraggingProblemInfo(false);
     };
+    
+    const handleSelectStart = (e: Event) => e.preventDefault();
     
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
-    document.body.style.cursor = (isDraggingIO || isDraggingVertical) ? "row-resize" : "col-resize";
-    document.body.style.userSelect = "none";
+    document.addEventListener("selectstart", handleSelectStart);
     
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
+      document.removeEventListener("selectstart", handleSelectStart);
+      document.body.classList.remove("dragging", "dragging-vertical");
     };
-  }, [isDraggingLeft, isDraggingRight, isDraggingIO, isDraggingVertical]);
+  }, [isDraggingLeft, isDraggingRight, isDraggingIO, isDraggingVertical, isDraggingProblemInfo]);
 
   // Save tags handler
   const handleSaveTags = (solveId: string, tagsStr: string) => {
@@ -3664,7 +3700,7 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
 
             {/* ════ COMPILER MODAL - LeetCode/GFG Style ════ */}
             {showCompiler && (
-              <div className={`fixed inset-0 z-50 ${compilerLightMode ? "bg-[#f0f0f0]" : "bg-[#0d1117]"}`}>
+              <div className={`fixed inset-0 z-50 compiler-no-select ${compilerLightMode ? "bg-[#f0f0f0]" : "bg-[#0d1117]"}`}>
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -3875,12 +3911,12 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                   {/* ═══ MAIN CONTENT - Layout depends on compilerLayout ═══ */}
                   <div 
                     id="compiler-main-content"
-                    className={`flex-1 flex overflow-hidden transition-all duration-300 ${compilerLayout === "reversed" ? "flex-row-reverse" : compilerLayout === "vertical" ? "flex-col" : ""}`}
+                    className={`flex-1 flex overflow-hidden gap-1 p-1 transition-all duration-300 ${compilerLayout === "reversed" ? "flex-row-reverse" : compilerLayout === "vertical" ? "flex-col" : ""} ${compilerLightMode ? "bg-[#f0f0f0]" : "bg-[#0d1117]"}`}
                   >
                     
                     {/* ═══ LEFT SIDEBAR - Navigation Tree ═══ */}
                     <div 
-                      className={`shrink-0 flex-col border-r transition-all duration-200 ${compilerLayout === "focus" || compilerLayout === "vertical" ? "hidden" : leftPanelCollapsed ? "hidden md:flex" : "hidden md:flex"} ${compilerLightMode ? "bg-[#fafafa] border-gray-300" : "bg-[#0d1117] border-[#30363d]"}`}
+                      className={`shrink-0 flex-col rounded-lg overflow-hidden border ${!isDraggingLeft ? "transition-[width] duration-150" : ""} ${compilerLayout === "focus" || compilerLayout === "vertical" ? "hidden" : leftPanelCollapsed ? "hidden md:flex" : "hidden md:flex"} ${compilerLightMode ? "bg-white border-gray-200 shadow-sm" : "bg-[#161b22] border-[#30363d]"}`}
                       style={{ width: leftPanelCollapsed ? "40px" : `${compilerLeftWidth}px` }}
                     >
                       {leftPanelCollapsed ? (
@@ -4014,24 +4050,33 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
 
                     {/* ═══ LEFT-MIDDLE DRAG HANDLE ═══ */}
                     <div
-                      className={`${compilerLayout === "focus" || compilerLayout === "vertical" || leftPanelCollapsed ? "hidden" : "hidden md:flex"} w-1 hover:w-1.5 cursor-col-resize transition-all group relative shrink-0 ${
-                        isDraggingLeft 
-                          ? "bg-blue-500 w-1.5" 
-                          : compilerLightMode 
-                            ? "bg-gray-300 hover:bg-blue-400" 
-                            : "bg-[#30363d] hover:bg-blue-500"
-                      }`}
-                      onMouseDown={() => setIsDraggingLeft(true)}
+                      className={`drag-handle ${compilerLayout === "focus" || compilerLayout === "vertical" || leftPanelCollapsed ? "hidden" : "hidden md:flex"} cursor-col-resize group relative shrink-0 items-center justify-center`}
+                      style={{ width: "6px" }}
+                      onMouseDown={(e) => { e.preventDefault(); setIsDraggingLeft(true); }}
                       title="Drag to resize"
                     >
-                      <div className="absolute inset-y-0 -left-2 -right-2" />
-                      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity ${compilerLightMode ? "text-gray-500" : "text-gray-400"}`}>
-                        <svg width="8" height="20" viewBox="0 0 8 20" fill="currentColor"><circle cx="4" cy="5" r="1.5"/><circle cx="4" cy="10" r="1.5"/><circle cx="4" cy="15" r="1.5"/></svg>
+                      {/* Visible line indicator */}
+                      <div 
+                        className={`h-full transition-all rounded-full ${
+                          isDraggingLeft 
+                            ? "bg-blue-500 w-1" 
+                            : "bg-transparent group-hover:bg-blue-400 w-0.5"
+                        }`}
+                      />
+                      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${compilerLightMode ? "text-blue-400" : "text-blue-500"}`}>
+                        <svg width="8" height="24" viewBox="0 0 8 24" fill="currentColor"><circle cx="4" cy="6" r="1.5"/><circle cx="4" cy="12" r="1.5"/><circle cx="4" cy="18" r="1.5"/></svg>
                       </div>
                     </div>
 
                     {/* ═══ MIDDLE - CODE EDITOR (LeetCode Style) ═══ */}
-                    <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+                    <div 
+                      className={`flex flex-col overflow-hidden min-w-0 rounded-lg border ${compilerLightMode ? "bg-white border-gray-200 shadow-sm" : "bg-[#0d1117] border-[#30363d]"}`}
+                      style={{ 
+                        flex: compilerLayout === "vertical" ? "none" : "1",
+                        height: compilerLayout === "vertical" ? `${verticalSplit}%` : "auto",
+                        width: compilerLayout === "vertical" ? "100%" : "auto",
+                      }}
+                    >
                       {/* Editor Header with tabs */}
                       <div className={`flex items-center justify-between px-3 sm:px-4 py-2 border-b ${compilerLightMode ? "bg-gray-50 border-gray-200" : "bg-[#1e1e2e] border-[#30363d]"}`}>
                         <div className="flex items-center gap-2">
@@ -4440,31 +4485,53 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                       </div>
                     </div>
 
-                    {/* ═══ MIDDLE-RIGHT DRAG HANDLE ═══ */}
-                    <div
-                      className={`${compilerLayout === "focus" ? "hidden" : "hidden md:flex"} w-1 hover:w-1.5 cursor-col-resize transition-all group relative shrink-0 ${
-                        isDraggingRight 
-                          ? "bg-blue-500 w-1.5" 
-                          : compilerLightMode 
-                            ? "bg-gray-300 hover:bg-blue-400" 
-                            : "bg-[#30363d] hover:bg-blue-500"
-                      }`}
-                      onMouseDown={() => setIsDraggingRight(true)}
-                      title="Drag to resize"
-                    >
-                      <div className="absolute inset-y-0 -left-2 -right-2" />
-                      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity ${compilerLightMode ? "text-gray-500" : "text-gray-400"}`}>
-                        <svg width="8" height="20" viewBox="0 0 8 20" fill="currentColor"><circle cx="4" cy="5" r="1.5"/><circle cx="4" cy="10" r="1.5"/><circle cx="4" cy="15" r="1.5"/></svg>
+                    {/* ═══ MIDDLE-RIGHT DRAG HANDLE (Horizontal / Vertical) ═══ */}
+                    {compilerLayout === "vertical" ? (
+                      <div
+                        className={`drag-handle hidden md:flex cursor-row-resize group relative shrink-0 items-center justify-center w-full`}
+                        style={{ height: "6px" }}
+                        onMouseDown={(e) => { e.preventDefault(); setIsDraggingVertical(true); }}
+                        title="Drag to resize"
+                      >
+                        <div 
+                          className={`w-full transition-all rounded-full ${
+                            isDraggingVertical 
+                              ? "bg-blue-500 h-1" 
+                              : "bg-transparent group-hover:bg-blue-400 h-0.5"
+                          }`}
+                        />
+                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${compilerLightMode ? "text-blue-400" : "text-blue-500"}`}>
+                          <svg width="24" height="8" viewBox="0 0 24 8" fill="currentColor"><circle cx="6" cy="4" r="1.5"/><circle cx="12" cy="4" r="1.5"/><circle cx="18" cy="4" r="1.5"/></svg>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div
+                        className={`drag-handle ${compilerLayout === "focus" || rightPanelCollapsed ? "hidden" : "hidden md:flex"} cursor-col-resize group relative shrink-0 items-center justify-center`}
+                        style={{ width: "6px" }}
+                        onMouseDown={(e) => { e.preventDefault(); setIsDraggingRight(true); }}
+                        title="Drag to resize"
+                      >
+                        <div 
+                          className={`h-full transition-all rounded-full ${
+                            isDraggingRight 
+                              ? "bg-blue-500 w-1" 
+                              : "bg-transparent group-hover:bg-blue-400 w-0.5"
+                          }`}
+                        />
+                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${compilerLightMode ? "text-blue-400" : "text-blue-500"}`}>
+                          <svg width="8" height="24" viewBox="0 0 8 24" fill="currentColor"><circle cx="4" cy="6" r="1.5"/><circle cx="4" cy="12" r="1.5"/><circle cx="4" cy="18" r="1.5"/></svg>
+                        </div>
+                      </div>
+                    )}
 
                     {/* ═══ RIGHT PANEL - Problem Details + I/O ═══ */}
                     <div 
                       id="compiler-right-panel"
-                      className={`shrink-0 flex flex-col border-l transition-all duration-200 ${compilerLayout === "focus" ? "hidden" : "hidden md:flex"} ${compilerLightMode ? "bg-[#fafafa] border-gray-300" : "bg-[#161b22] border-[#30363d]"}`}
+                      className={`shrink-0 flex flex-col rounded-lg overflow-hidden border ${!isDraggingRight && !isDraggingVertical ? "transition-[width,height] duration-150" : ""} ${compilerLayout === "focus" ? "hidden" : "hidden md:flex"} ${compilerLightMode ? "bg-white border-gray-200 shadow-sm" : "bg-[#161b22] border-[#30363d]"}`}
                       style={{ 
                         width: compilerLayout === "vertical" ? "100%" : rightPanelCollapsed ? "40px" : `${compilerRightWidth}px`,
                         height: compilerLayout === "vertical" ? `${100 - verticalSplit}%` : "auto",
+                        flex: compilerLayout === "vertical" ? "1" : "none",
                       }}
                     >
                       
@@ -4479,29 +4546,46 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
                           </button>
                           <div className={`text-[10px] font-bold uppercase tracking-wider ${compilerLightMode ? "text-gray-500" : "text-gray-500"}`} style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>
-                            📋 Problem & I/O
+                            📋 Testcase & Result
                           </div>
                         </div>
                       ) : (
                         <>
-                      {/* Problem Details Form */}
-                      <div className={`border-b ${compilerLightMode ? "border-gray-300" : "border-[#30363d]"}`}>
-                        <div className={`px-3 py-2.5 flex items-center justify-between ${compilerLightMode ? "bg-white border-b border-gray-200" : "bg-[#0d1117]"}`}>
-                          <span className={`text-[11px] font-bold uppercase tracking-wider ${compilerLightMode ? "text-gray-700" : "text-gray-400"}`}>📋 Problem Info</span>
+                      {/* ═══ Problem Info - Collapsible & Resizable ═══ */}
+                      <div 
+                        className={`flex flex-col border-b overflow-hidden ${compilerLightMode ? "border-gray-300" : "border-[#30363d]"}`}
+                        style={problemInfoCollapsed ? {} : { flexBasis: `${problemInfoHeight}%`, flexShrink: 0, minHeight: 0 }}
+                      >
+                        <button 
+                          onClick={() => setProblemInfoCollapsed(!problemInfoCollapsed)}
+                          className={`w-full px-3 py-2.5 flex items-center justify-between transition shrink-0 ${compilerLightMode ? "bg-white hover:bg-gray-50" : "bg-[#0d1117] hover:bg-[#161b22]"}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <svg 
+                              className={`transition-transform ${problemInfoCollapsed ? "" : "rotate-90"} ${compilerLightMode ? "text-gray-500" : "text-gray-400"}`}
+                              width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                            >
+                              <path d="M9 18l6-6-6-6"/>
+                            </svg>
+                            <span className={`text-[11px] font-bold uppercase tracking-wider ${compilerLightMode ? "text-gray-700" : "text-gray-400"}`}>📋 Problem Info</span>
+                          </div>
                           <div className="flex items-center gap-1">
                             {compilerEditingId && (
                               <span className={`text-[9px] px-2 py-0.5 rounded-md font-medium ${compilerLightMode ? "bg-yellow-100 text-yellow-700 border border-yellow-300" : "bg-yellow-500/20 text-yellow-400"}`}>Editing</span>
                             )}
-                            <button 
-                              onClick={() => setRightPanelCollapsed(true)}
-                              className={`p-1 rounded transition ${compilerLightMode ? "hover:bg-gray-200 text-gray-500" : "hover:bg-white/10 text-white/50"}`}
+                            <span
+                              onClick={(e) => { e.stopPropagation(); setRightPanelCollapsed(true); }}
+                              className={`p-1 rounded transition cursor-pointer ${compilerLightMode ? "hover:bg-gray-200 text-gray-500" : "hover:bg-white/10 text-white/50"}`}
                               title="Collapse panel"
                             >
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-                            </button>
+                            </span>
                           </div>
-                        </div>
-                        <div className={`p-3 space-y-3 max-h-[200px] overflow-y-auto ${compilerLightMode ? "bg-white" : ""}`}>
+                        </button>
+                        {!problemInfoCollapsed && (
+                        <div 
+                          className={`p-3 space-y-3 overflow-y-auto flex-1 min-h-0 ${compilerLightMode ? "bg-white" : ""}`}
+                        >
                           {/* Topic + SubTopic */}
                           <div className="grid grid-cols-2 gap-2">
                             <div>
@@ -4573,10 +4657,127 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             />
                           </div>
                         </div>
+                        )}
                       </div>
 
-                      {/* Input/Output resizable container */}
-                      <div className="flex-1 flex flex-col overflow-hidden">
+                      {/* ═══ DRAG HANDLE - Between Problem Info and Testcase ═══ */}
+                      {!problemInfoCollapsed && (
+                        <div
+                          className={`drag-handle cursor-row-resize group relative shrink-0 flex items-center justify-center ${compilerLightMode ? "bg-gray-100" : "bg-[#161b22]"}`}
+                          style={{ height: "6px" }}
+                          onMouseDown={(e) => { e.preventDefault(); setIsDraggingProblemInfo(true); }}
+                          title="Drag to resize Problem Info section"
+                        >
+                          <div 
+                            className={`w-full transition-all rounded-full ${
+                              isDraggingProblemInfo 
+                                ? "bg-blue-500 h-1" 
+                                : "bg-transparent group-hover:bg-blue-400 h-0.5"
+                            }`}
+                          />
+                          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${compilerLightMode ? "text-blue-400" : "text-blue-500"}`}>
+                            <svg width="24" height="8" viewBox="0 0 24 8" fill="currentColor"><circle cx="6" cy="4" r="1.5"/><circle cx="12" cy="4" r="1.5"/><circle cx="18" cy="4" r="1.5"/></svg>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ═══ Testcase + Test Result - Vertically Stacked & Resizable ═══ */}
+                      <div id="compiler-io-container" className="flex-1 flex flex-col overflow-hidden min-h-0">
+                        {/* TESTCASE SECTION - Top */}
+                        <div 
+                          className="flex flex-col overflow-hidden"
+                          style={{ flexBasis: `${compilerIOSplit}%`, flexShrink: 0, minHeight: 0 }}
+                        >
+                          <div className={`px-3 py-2 flex items-center justify-between shrink-0 ${compilerLightMode ? "bg-[#fafafa] border-b border-gray-200" : "bg-[#161b22] border-b border-[#30363d]"}`}>
+                            <div className="flex items-center gap-2">
+                              <span className="text-green-500 text-xs">◉</span>
+                              <span className={`text-xs font-bold ${compilerLightMode ? "text-gray-900" : "text-white"}`}>Testcase</span>
+                              <span className={`text-[9px] ${compilerLightMode ? "text-gray-400" : "text-gray-600"}`}>{Math.round(compilerIOSplit)}%</span>
+                            </div>
+                            <button 
+                              onClick={() => setCompilerInput("")}
+                              className={`text-[9px] px-2 py-0.5 rounded transition ${compilerLightMode ? "hover:bg-gray-200 text-gray-500" : "hover:bg-white/10 text-white/50"}`}
+                              title="Clear input"
+                            >Clear</button>
+                          </div>
+                          <textarea
+                            value={compilerInput}
+                            onChange={e => setCompilerInput(e.target.value)}
+                            placeholder="Enter your test input here...&#10;Example:&#10;5&#10;1 2 3 4 5"
+                            className={`w-full flex-1 p-3 font-mono outline-none resize-none border-none ${compilerLightMode ? "bg-white text-gray-800 placeholder:text-gray-400" : "bg-[#0d1117] text-gray-200 placeholder:text-gray-600"}`}
+                            style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: `${compilerFontSize - 1}px` }}
+                          />
+                        </div>
+
+                        {/* HORIZONTAL DRAG HANDLE - Between Testcase & Result */}
+                        <div
+                          className={`drag-handle cursor-row-resize group relative shrink-0 flex items-center justify-center ${compilerLightMode ? "bg-gray-100" : "bg-[#161b22]"}`}
+                          style={{ height: "6px" }}
+                          onMouseDown={(e) => { e.preventDefault(); setIsDraggingIO(true); }}
+                          title="Drag to resize"
+                        >
+                          <div 
+                            className={`w-full transition-all rounded-full ${
+                              isDraggingIO 
+                                ? "bg-blue-500 h-1" 
+                                : "bg-transparent group-hover:bg-blue-400 h-0.5"
+                            }`}
+                          />
+                          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${compilerLightMode ? "text-blue-400" : "text-blue-500"}`}>
+                            <svg width="24" height="8" viewBox="0 0 24 8" fill="currentColor"><circle cx="6" cy="4" r="1.5"/><circle cx="12" cy="4" r="1.5"/><circle cx="18" cy="4" r="1.5"/></svg>
+                          </div>
+                        </div>
+
+                        {/* TEST RESULT SECTION - Bottom */}
+                        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+                          <div className={`px-3 py-2 flex items-center justify-between shrink-0 ${compilerLightMode ? "bg-[#fafafa] border-b border-gray-200" : "bg-[#161b22] border-b border-[#30363d]"}`}>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs ${
+                                compilerRunning ? "text-yellow-500" :
+                                compilerError && !compilerOutput ? "text-red-500" : 
+                                compilerOutput ? "text-green-500" : "text-blue-500"
+                              }`}>▶</span>
+                              <span className={`text-xs font-bold ${compilerLightMode ? "text-gray-900" : "text-white"}`}>Test Result</span>
+                              {compilerRunning && <span className="text-[9px] text-yellow-500 animate-pulse">Running...</span>}
+                              {!compilerRunning && compilerOutput && !compilerError && <span className="text-[9px] text-green-500">✓ Accepted</span>}
+                              {!compilerRunning && compilerError && <span className="text-[9px] text-red-500">✕ Error</span>}
+                            </div>
+                            {compilerOutput && (
+                              <button 
+                                onClick={() => navigator.clipboard.writeText(compilerOutput)}
+                                className={`text-[9px] px-2 py-0.5 rounded transition ${compilerLightMode ? "hover:bg-gray-200 text-gray-600" : "hover:bg-white/10 text-white/60"}`}
+                              >Copy</button>
+                            )}
+                          </div>
+                          <div className={`flex-1 overflow-y-auto p-3 ${compilerLightMode ? "bg-white" : "bg-[#0d1117]"}`}>
+                            {compilerRunning ? (
+                              <div className="flex items-center justify-center h-full gap-2">
+                                <div className="animate-spin h-5 w-5 border-2 border-green-500 border-t-transparent rounded-full" />
+                                <span className="text-[12px] text-green-500 font-medium">Compiling & Running...</span>
+                              </div>
+                            ) : compilerError ? (
+                              <div>
+                                <div className={`text-[10px] font-semibold mb-2 ${compilerLightMode ? "text-red-600" : "text-red-400"}`}>Compilation / Runtime Error:</div>
+                                <pre className="font-mono text-red-500 whitespace-pre-wrap" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: `${compilerFontSize - 1}px` }}>{compilerError}</pre>
+                              </div>
+                            ) : compilerOutput ? (
+                              <div>
+                                <div className={`text-[10px] font-semibold mb-2 ${compilerLightMode ? "text-gray-500" : "text-gray-400"}`}>Output:</div>
+                                <pre className={`font-mono whitespace-pre-wrap ${compilerLightMode ? "text-gray-800" : "text-green-300"}`} style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: `${compilerFontSize - 1}px` }}>{compilerOutput}</pre>
+                              </div>
+                            ) : (
+                              <div className={`flex flex-col items-center justify-center h-full ${compilerLightMode ? "text-gray-400" : "text-gray-600"}`}>
+                                <span className="text-4xl mb-2">▶️</span>
+                                <span className="text-[12px] font-medium mb-1">You must run your code first</span>
+                                <span className="text-[10px] opacity-70">Press Ctrl+Enter or click Run</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* OLD Input/Output resizable container - HIDDEN */}
+                      <div className="hidden flex-1 flex-col overflow-hidden">
                         {/* Input Section - resizable */}
                         <div 
                           className={`flex flex-col overflow-hidden ${compilerLightMode ? "border-b border-gray-200" : "border-b border-[#30363d]"}`}
@@ -4597,19 +4798,20 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
 
                         {/* IO Drag Handle */}
                         <div
-                          className={`h-1 hover:h-1.5 cursor-row-resize transition-all group relative shrink-0 ${
+                          className={`drag-handle cursor-row-resize transition-colors group relative shrink-0 ${
                             isDraggingIO 
-                              ? "bg-blue-500 h-1.5" 
+                              ? "bg-blue-500" 
                               : compilerLightMode 
                                 ? "bg-gray-300 hover:bg-blue-400" 
                                 : "bg-[#30363d] hover:bg-blue-500"
                           }`}
-                          onMouseDown={() => setIsDraggingIO(true)}
+                          style={{ height: isDraggingIO ? "3px" : "2px" }}
+                          onMouseDown={(e) => { e.preventDefault(); setIsDraggingIO(true); }}
                           title="Drag to resize"
                         >
-                          <div className="absolute inset-x-0 -top-2 -bottom-2" />
-                          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity ${compilerLightMode ? "text-gray-500" : "text-gray-400"}`}>
-                            <svg width="20" height="8" viewBox="0 0 20 8" fill="currentColor"><circle cx="5" cy="4" r="1.5"/><circle cx="10" cy="4" r="1.5"/><circle cx="15" cy="4" r="1.5"/></svg>
+                          <div className="absolute inset-x-0 -top-2 -bottom-2 cursor-row-resize" />
+                          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${compilerLightMode ? "text-gray-500" : "text-gray-400"}`}>
+                            <svg width="24" height="8" viewBox="0 0 24 8" fill="currentColor"><circle cx="6" cy="4" r="1.5"/><circle cx="12" cy="4" r="1.5"/><circle cx="18" cy="4" r="1.5"/></svg>
                           </div>
                         </div>
 
