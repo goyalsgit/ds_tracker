@@ -429,6 +429,17 @@ export default function DashboardClient() {
   const [compilerNavSearch, setCompilerNavSearch] = useState("");
   const [compilerEditingId, setCompilerEditingId] = useState<string | null>(null); // track if editing existing entry
   const [compilerLightMode, setCompilerLightMode] = useState(false); // Light/dark mode for compiler
+  
+  // Resizable panels state (like LeetCode)
+  const [compilerLeftWidth, setCompilerLeftWidth] = useState(240); // Left sidebar width in px
+  const [compilerRightWidth, setCompilerRightWidth] = useState(340); // Right panel width in px
+  const [compilerFontSize, setCompilerFontSize] = useState(13); // Font size in px
+  const [isDraggingLeft, setIsDraggingLeft] = useState(false);
+  const [isDraggingRight, setIsDraggingRight] = useState(false);
+  
+  // Input/Output split within right panel
+  const [compilerIOSplit, setCompilerIOSplit] = useState(50); // Percentage for input section
+  const [isDraggingIO, setIsDraggingIO] = useState(false);
 
   /* ── Auth ── */
   useEffect(() => {
@@ -462,6 +473,48 @@ export default function DashboardClient() {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
+
+  // Resizable panels drag handlers
+  useEffect(() => {
+    if (!isDraggingLeft && !isDraggingRight && !isDraggingIO) return;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingLeft) {
+        const newWidth = Math.min(Math.max(e.clientX, 180), 500);
+        setCompilerLeftWidth(newWidth);
+      } else if (isDraggingRight) {
+        const newWidth = Math.min(Math.max(window.innerWidth - e.clientX, 240), 600);
+        setCompilerRightWidth(newWidth);
+      } else if (isDraggingIO) {
+        // Calculate percentage based on right panel position
+        const rightPanel = document.getElementById("compiler-right-panel");
+        if (rightPanel) {
+          const rect = rightPanel.getBoundingClientRect();
+          const relativeY = e.clientY - rect.top;
+          const percentage = (relativeY / rect.height) * 100;
+          setCompilerIOSplit(Math.min(Math.max(percentage, 20), 80));
+        }
+      }
+    };
+    
+    const handleMouseUp = () => {
+      setIsDraggingLeft(false);
+      setIsDraggingRight(false);
+      setIsDraggingIO(false);
+    };
+    
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    document.body.style.cursor = isDraggingIO ? "row-resize" : "col-resize";
+    document.body.style.userSelect = "none";
+    
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [isDraggingLeft, isDraggingRight, isDraggingIO]);
 
   // Save tags handler
   const handleSaveTags = (solveId: string, tagsStr: string) => {
@@ -3681,7 +3734,10 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                   <div className="flex-1 flex overflow-hidden">
                     
                     {/* ═══ LEFT SIDEBAR - Navigation Tree ═══ */}
-                    <div className={`w-[200px] lg:w-[240px] xl:w-[280px] shrink-0 flex-col border-r hidden md:flex ${compilerLightMode ? "bg-[#fafafa] border-gray-300" : "bg-[#0d1117] border-[#30363d]"}`}>
+                    <div 
+                      className={`shrink-0 flex-col border-r hidden md:flex ${compilerLightMode ? "bg-[#fafafa] border-gray-300" : "bg-[#0d1117] border-[#30363d]"}`}
+                      style={{ width: `${compilerLeftWidth}px` }}
+                    >
                       {/* Nav Header */}
                       <div className={`px-3 py-2.5 border-b flex items-center justify-between ${compilerLightMode ? "bg-white border-gray-300" : "bg-[#161b22] border-[#30363d]"}`}>
                         <span className={`text-[11px] font-bold uppercase tracking-wider ${compilerLightMode ? "text-gray-700" : "text-gray-400"}`}>📚 My Library</span>
@@ -3784,6 +3840,24 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                       </div>
                     </div>
 
+                    {/* ═══ LEFT-MIDDLE DRAG HANDLE ═══ */}
+                    <div
+                      className={`hidden md:flex w-1 hover:w-1.5 cursor-col-resize transition-all group relative shrink-0 ${
+                        isDraggingLeft 
+                          ? "bg-blue-500 w-1.5" 
+                          : compilerLightMode 
+                            ? "bg-gray-300 hover:bg-blue-400" 
+                            : "bg-[#30363d] hover:bg-blue-500"
+                      }`}
+                      onMouseDown={() => setIsDraggingLeft(true)}
+                      title="Drag to resize"
+                    >
+                      <div className="absolute inset-y-0 -left-2 -right-2" />
+                      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity ${compilerLightMode ? "text-gray-500" : "text-gray-400"}`}>
+                        <svg width="8" height="20" viewBox="0 0 8 20" fill="currentColor"><circle cx="4" cy="5" r="1.5"/><circle cx="4" cy="10" r="1.5"/><circle cx="4" cy="15" r="1.5"/></svg>
+                      </div>
+                    </div>
+
                     {/* ═══ MIDDLE - CODE EDITOR (LeetCode Style) ═══ */}
                     <div className="flex-1 flex flex-col overflow-hidden min-w-0">
                       {/* Editor Header with tabs */}
@@ -3795,6 +3869,21 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5">
+                          {/* Font size controls */}
+                          <div className={`flex items-center gap-0.5 rounded-lg p-0.5 ${compilerLightMode ? "bg-white border border-gray-200" : "bg-white/5"}`}>
+                            <button 
+                              onClick={() => setCompilerFontSize(Math.max(10, compilerFontSize - 1))}
+                              className={`px-2 py-1 rounded text-[10px] font-bold transition ${compilerLightMode ? "hover:bg-gray-100 text-gray-600" : "hover:bg-white/10 text-white/60"}`}
+                              title="Decrease font size"
+                            >A−</button>
+                            <span className={`px-1.5 text-[10px] font-bold min-w-[24px] text-center ${compilerLightMode ? "text-gray-700" : "text-white/70"}`}>{compilerFontSize}</span>
+                            <button 
+                              onClick={() => setCompilerFontSize(Math.min(24, compilerFontSize + 1))}
+                              className={`px-2 py-1 rounded text-[10px] font-bold transition ${compilerLightMode ? "hover:bg-gray-100 text-gray-600" : "hover:bg-white/10 text-white/60"}`}
+                              title="Increase font size"
+                            >A+</button>
+                          </div>
+                          
                           <button 
                             onClick={() => { 
                               const el = document.getElementById("compiler-textarea");
@@ -3811,6 +3900,13 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             onClick={() => navigator.clipboard.writeText(compilerCode)}
                             className={`px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition ${compilerLightMode ? "bg-white hover:bg-gray-100 text-gray-600 border border-gray-200" : "bg-white/5 hover:bg-white/10 text-white/60"}`}
                           >📋 Copy</button>
+                          
+                          {/* Reset panels button */}
+                          <button 
+                            onClick={() => { setCompilerLeftWidth(240); setCompilerRightWidth(340); setCompilerIOSplit(50); setCompilerFontSize(13); }}
+                            className={`px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition ${compilerLightMode ? "bg-white hover:bg-gray-100 text-gray-600 border border-gray-200" : "bg-white/5 hover:bg-white/10 text-white/60"}`}
+                            title="Reset layout"
+                          >⟲</button>
                         </div>
                       </div>
                       
@@ -3820,10 +3916,10 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                         <div 
                           id="compiler-line-numbers"
                           className={`w-10 sm:w-12 shrink-0 py-4 pr-2 text-right select-none overflow-hidden border-r ${compilerLightMode ? "border-gray-200 bg-gray-50" : "border-white/5 bg-[#0d1117]"}`} 
-                          style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace", fontSize: "13px", lineHeight: "22px" }}
+                          style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace", fontSize: `${compilerFontSize}px`, lineHeight: `${compilerFontSize + 9}px` }}
                         >
                           {(compilerCode || " ").split("\n").map((_, i) => (
-                            <div key={i} className={`${compilerLightMode ? "text-gray-400" : "text-gray-600"}`} style={{ height: "22px" }}>
+                            <div key={i} className={`${compilerLightMode ? "text-gray-400" : "text-gray-600"}`} style={{ height: `${compilerFontSize + 9}px` }}>
                               {i + 1}
                             </div>
                           ))}
@@ -3848,8 +3944,8 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             className="absolute inset-0 py-4 pr-4 pl-3 overflow-hidden pointer-events-none whitespace-pre m-0"
                             style={{ 
                               fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace",
-                              fontSize: "13px",
-                              lineHeight: "22px",
+                              fontSize: `${compilerFontSize}px`,
+                              lineHeight: `${compilerFontSize + 9}px`,
                               tabSize: 4,
                             }}
                             aria-hidden="true"
@@ -3928,8 +4024,8 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                           className="absolute inset-0 w-full h-full py-4 pr-4 pl-3 outline-none resize-none bg-transparent border-none focus:ring-0 focus:outline-none text-transparent"
                           style={{ 
                             fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace",
-                            fontSize: "13px",
-                            lineHeight: "22px",
+                            fontSize: `${compilerFontSize}px`,
+                            lineHeight: `${compilerFontSize + 9}px`,
                             caretColor: compilerLightMode ? "#3b82f6" : "#22c55e",
                             tabSize: 4,
                             MozTabSize: 4,
@@ -3941,8 +4037,30 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                       </div>
                     </div>
 
+                    {/* ═══ MIDDLE-RIGHT DRAG HANDLE ═══ */}
+                    <div
+                      className={`hidden md:flex w-1 hover:w-1.5 cursor-col-resize transition-all group relative shrink-0 ${
+                        isDraggingRight 
+                          ? "bg-blue-500 w-1.5" 
+                          : compilerLightMode 
+                            ? "bg-gray-300 hover:bg-blue-400" 
+                            : "bg-[#30363d] hover:bg-blue-500"
+                      }`}
+                      onMouseDown={() => setIsDraggingRight(true)}
+                      title="Drag to resize"
+                    >
+                      <div className="absolute inset-y-0 -left-2 -right-2" />
+                      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity ${compilerLightMode ? "text-gray-500" : "text-gray-400"}`}>
+                        <svg width="8" height="20" viewBox="0 0 8 20" fill="currentColor"><circle cx="4" cy="5" r="1.5"/><circle cx="4" cy="10" r="1.5"/><circle cx="4" cy="15" r="1.5"/></svg>
+                      </div>
+                    </div>
+
                     {/* ═══ RIGHT PANEL - Problem Details + I/O ═══ */}
-                    <div className={`w-[280px] lg:w-[320px] xl:w-[360px] shrink-0 flex flex-col border-l hidden md:flex ${compilerLightMode ? "bg-[#fafafa] border-gray-300" : "bg-[#161b22] border-[#30363d]"}`}>
+                    <div 
+                      id="compiler-right-panel"
+                      className={`shrink-0 flex flex-col border-l hidden md:flex ${compilerLightMode ? "bg-[#fafafa] border-gray-300" : "bg-[#161b22] border-[#30363d]"}`}
+                      style={{ width: `${compilerRightWidth}px` }}
+                    >
                       
                       {/* Problem Details Form */}
                       <div className={`border-b ${compilerLightMode ? "border-gray-300" : "border-[#30363d]"}`}>
@@ -4026,56 +4144,83 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                         </div>
                       </div>
 
-                      {/* Input Section */}
-                      <div className={`border-b ${compilerLightMode ? "border-gray-200" : "border-[#30363d]"}`}>
-                        <div className={`px-3 py-2 ${compilerLightMode ? "bg-white" : "bg-[#0d1117]"}`}>
-                          <span className={`text-[11px] font-bold uppercase tracking-wider ${compilerLightMode ? "text-gray-600" : "text-gray-400"}`}>📥 Custom Input</span>
-                        </div>
-                        <textarea
-                          value={compilerInput}
-                          onChange={e => setCompilerInput(e.target.value)}
-                          placeholder="5&#10;1 2 3 4 5"
-                          rows={3}
-                          className={`w-full p-3 text-[12px] font-mono outline-none resize-none border-none ${compilerLightMode ? "bg-gray-50 text-gray-800 placeholder:text-gray-400" : "bg-[#0d1117] text-gray-200 placeholder:text-gray-600"}`}
-                          style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}
-                        />
-                      </div>
-
-                      {/* Output Section */}
+                      {/* Input/Output resizable container */}
                       <div className="flex-1 flex flex-col overflow-hidden">
-                        <div className={`px-3 py-2 flex items-center gap-2 ${compilerLightMode ? "bg-white" : "bg-[#0d1117]"}`}>
-                          <span className={`text-[11px] font-bold uppercase tracking-wider ${
-                            compilerRunning ? "text-yellow-500" :
-                            compilerError && !compilerOutput ? "text-red-500" : 
-                            compilerOutput ? "text-green-500" : compilerLightMode ? "text-gray-600" : "text-gray-400"
-                          }`}>
-                            {compilerRunning ? "⏳ Running..." : 
-                             compilerError && !compilerOutput ? "❌ Error" : 
-                             compilerOutput ? "✅ Output" : "📤 Output"}
-                          </span>
-                          {compilerOutput && (
-                            <button 
-                              onClick={() => navigator.clipboard.writeText(compilerOutput)}
-                              className={`ml-auto text-[10px] px-2 py-1 rounded-md transition font-medium ${compilerLightMode ? "bg-gray-100 hover:bg-gray-200 text-gray-600" : "bg-white/5 hover:bg-white/10 text-white/60"}`}
-                            >📋 Copy</button>
-                          )}
+                        {/* Input Section - resizable */}
+                        <div 
+                          className={`flex flex-col overflow-hidden ${compilerLightMode ? "border-b border-gray-200" : "border-b border-[#30363d]"}`}
+                          style={{ height: `${compilerIOSplit}%` }}
+                        >
+                          <div className={`px-3 py-2 flex items-center justify-between shrink-0 ${compilerLightMode ? "bg-white" : "bg-[#0d1117]"}`}>
+                            <span className={`text-[11px] font-bold uppercase tracking-wider ${compilerLightMode ? "text-gray-600" : "text-gray-400"}`}>📥 Custom Input</span>
+                            <span className={`text-[9px] ${compilerLightMode ? "text-gray-400" : "text-gray-600"}`}>{Math.round(compilerIOSplit)}%</span>
+                          </div>
+                          <textarea
+                            value={compilerInput}
+                            onChange={e => setCompilerInput(e.target.value)}
+                            placeholder="5&#10;1 2 3 4 5"
+                            className={`w-full flex-1 p-3 font-mono outline-none resize-none border-none ${compilerLightMode ? "bg-gray-50 text-gray-800 placeholder:text-gray-400" : "bg-[#0d1117] text-gray-200 placeholder:text-gray-600"}`}
+                            style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: `${compilerFontSize - 1}px` }}
+                          />
                         </div>
-                        <div className={`flex-1 overflow-y-auto p-3 ${compilerLightMode ? "bg-gray-50" : "bg-[#0d1117]"}`}>
-                          {compilerRunning ? (
-                            <div className="flex items-center justify-center h-full gap-2">
-                              <div className="animate-spin h-5 w-5 border-2 border-green-500 border-t-transparent rounded-full" />
-                              <span className="text-[12px] text-green-500 font-medium">Compiling...</span>
-                            </div>
-                          ) : compilerError ? (
-                            <pre className="text-[12px] font-mono text-red-500 whitespace-pre-wrap" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}>{compilerError}</pre>
-                          ) : compilerOutput ? (
-                            <pre className={`text-[12px] font-mono whitespace-pre-wrap ${compilerLightMode ? "text-gray-800" : "text-green-300"}`} style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}>{compilerOutput}</pre>
-                          ) : (
-                            <div className={`flex flex-col items-center justify-center h-full ${compilerLightMode ? "text-gray-400" : "text-gray-600"}`}>
-                              <span className="text-3xl mb-2">▶️</span>
-                              <span className="text-[11px] font-medium">Run to see output</span>
-                            </div>
-                          )}
+
+                        {/* IO Drag Handle */}
+                        <div
+                          className={`h-1 hover:h-1.5 cursor-row-resize transition-all group relative shrink-0 ${
+                            isDraggingIO 
+                              ? "bg-blue-500 h-1.5" 
+                              : compilerLightMode 
+                                ? "bg-gray-300 hover:bg-blue-400" 
+                                : "bg-[#30363d] hover:bg-blue-500"
+                          }`}
+                          onMouseDown={() => setIsDraggingIO(true)}
+                          title="Drag to resize"
+                        >
+                          <div className="absolute inset-x-0 -top-2 -bottom-2" />
+                          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity ${compilerLightMode ? "text-gray-500" : "text-gray-400"}`}>
+                            <svg width="20" height="8" viewBox="0 0 20 8" fill="currentColor"><circle cx="5" cy="4" r="1.5"/><circle cx="10" cy="4" r="1.5"/><circle cx="15" cy="4" r="1.5"/></svg>
+                          </div>
+                        </div>
+
+                        {/* Output Section - resizable */}
+                        <div 
+                          className="flex flex-col overflow-hidden"
+                          style={{ height: `${100 - compilerIOSplit}%` }}
+                        >
+                          <div className={`px-3 py-2 flex items-center gap-2 shrink-0 ${compilerLightMode ? "bg-white" : "bg-[#0d1117]"}`}>
+                            <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                              compilerRunning ? "text-yellow-500" :
+                              compilerError && !compilerOutput ? "text-red-500" : 
+                              compilerOutput ? "text-green-500" : compilerLightMode ? "text-gray-600" : "text-gray-400"
+                            }`}>
+                              {compilerRunning ? "⏳ Running..." : 
+                               compilerError && !compilerOutput ? "❌ Error" : 
+                               compilerOutput ? "✅ Output" : "📤 Output"}
+                            </span>
+                            {compilerOutput && (
+                              <button 
+                                onClick={() => navigator.clipboard.writeText(compilerOutput)}
+                                className={`ml-auto text-[10px] px-2 py-1 rounded-md transition font-medium ${compilerLightMode ? "bg-gray-100 hover:bg-gray-200 text-gray-600" : "bg-white/5 hover:bg-white/10 text-white/60"}`}
+                              >📋 Copy</button>
+                            )}
+                          </div>
+                          <div className={`flex-1 overflow-y-auto p-3 ${compilerLightMode ? "bg-gray-50" : "bg-[#0d1117]"}`}>
+                            {compilerRunning ? (
+                              <div className="flex items-center justify-center h-full gap-2">
+                                <div className="animate-spin h-5 w-5 border-2 border-green-500 border-t-transparent rounded-full" />
+                                <span className="text-[12px] text-green-500 font-medium">Compiling...</span>
+                              </div>
+                            ) : compilerError ? (
+                              <pre className={`font-mono text-red-500 whitespace-pre-wrap`} style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: `${compilerFontSize - 1}px` }}>{compilerError}</pre>
+                            ) : compilerOutput ? (
+                              <pre className={`font-mono whitespace-pre-wrap ${compilerLightMode ? "text-gray-800" : "text-green-300"}`} style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: `${compilerFontSize - 1}px` }}>{compilerOutput}</pre>
+                            ) : (
+                              <div className={`flex flex-col items-center justify-center h-full ${compilerLightMode ? "text-gray-400" : "text-gray-600"}`}>
+                                <span className="text-3xl mb-2">▶️</span>
+                                <span className="text-[11px] font-medium">Run to see output</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
