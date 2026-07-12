@@ -440,6 +440,20 @@ export default function DashboardClient() {
   // Input/Output split within right panel
   const [compilerIOSplit, setCompilerIOSplit] = useState(50); // Percentage for input section
   const [isDraggingIO, setIsDraggingIO] = useState(false);
+  
+  // Layout & Theme
+  const [compilerLayout, setCompilerLayout] = useState<"default" | "reversed" | "vertical" | "focus">("default");
+  const [compilerTheme, setCompilerTheme] = useState<"dark" | "light" | "dracula" | "monokai" | "nord" | "githubDark">("dark");
+  const [showLayoutMenu, setShowLayoutMenu] = useState(false);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
+  
+  // Panel collapse state
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  
+  // Vertical layout height (percentage of code editor)
+  const [verticalSplit, setVerticalSplit] = useState(60);
+  const [isDraggingVertical, setIsDraggingVertical] = useState(false);
 
   /* ── Auth ── */
   useEffect(() => {
@@ -476,7 +490,7 @@ export default function DashboardClient() {
 
   // Resizable panels drag handlers
   useEffect(() => {
-    if (!isDraggingLeft && !isDraggingRight && !isDraggingIO) return;
+    if (!isDraggingLeft && !isDraggingRight && !isDraggingIO && !isDraggingVertical) return;
     
     const handleMouseMove = (e: MouseEvent) => {
       if (isDraggingLeft) {
@@ -486,13 +500,21 @@ export default function DashboardClient() {
         const newWidth = Math.min(Math.max(window.innerWidth - e.clientX, 240), 600);
         setCompilerRightWidth(newWidth);
       } else if (isDraggingIO) {
-        // Calculate percentage based on right panel position
         const rightPanel = document.getElementById("compiler-right-panel");
         if (rightPanel) {
           const rect = rightPanel.getBoundingClientRect();
           const relativeY = e.clientY - rect.top;
           const percentage = (relativeY / rect.height) * 100;
           setCompilerIOSplit(Math.min(Math.max(percentage, 20), 80));
+        }
+      } else if (isDraggingVertical) {
+        // Vertical layout: code on top, IO on bottom
+        const container = document.getElementById("compiler-main-content");
+        if (container) {
+          const rect = container.getBoundingClientRect();
+          const relativeY = e.clientY - rect.top;
+          const percentage = (relativeY / rect.height) * 100;
+          setVerticalSplit(Math.min(Math.max(percentage, 20), 85));
         }
       }
     };
@@ -501,11 +523,12 @@ export default function DashboardClient() {
       setIsDraggingLeft(false);
       setIsDraggingRight(false);
       setIsDraggingIO(false);
+      setIsDraggingVertical(false);
     };
     
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
-    document.body.style.cursor = isDraggingIO ? "row-resize" : "col-resize";
+    document.body.style.cursor = (isDraggingIO || isDraggingVertical) ? "row-resize" : "col-resize";
     document.body.style.userSelect = "none";
     
     return () => {
@@ -514,7 +537,7 @@ export default function DashboardClient() {
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
-  }, [isDraggingLeft, isDraggingRight, isDraggingIO]);
+  }, [isDraggingLeft, isDraggingRight, isDraggingIO, isDraggingVertical]);
 
   // Save tags handler
   const handleSaveTags = (solveId: string, tagsStr: string) => {
@@ -1129,8 +1152,16 @@ export default function DashboardClient() {
     
     const lang = compilerLanguage;
     
-    // Wrap entire code in a base color span first
-    const baseColor = compilerLightMode ? "#1f2937" : "#d4d4d4";
+    // Theme-specific base text color
+    const baseColors = {
+      light: "#1f2937",
+      dark: "#d4d4d4",
+      dracula: "#F8F8F2",
+      monokai: "#F8F8F2",
+      nord: "#D8DEE9",
+      githubDark: "#C9D1D9",
+    };
+    const baseColor = compilerLightMode ? baseColors.light : (baseColors[compilerTheme] || baseColors.dark);
     
     // C++ / C keywords and highlighting
     if (lang === "cpp" || lang === "c") {
@@ -1193,32 +1224,41 @@ export default function DashboardClient() {
       code = code.replace(/\b(\d+\.?\d*)\b/g, '§§NUMBER§§$1§§/NUMBER§§');
     }
     
-    // Now replace markers with actual styled spans - VIBRANT LeetCode/VS Code colors
-    const colors = compilerLightMode ? {
-      // Light mode - Vibrant, high contrast (like VS Code Light+)
-      comment: "#008000",      // Green
-      string: "#a31515",       // Dark red
-      preproc: "#af00db",      // Purple
-      type: "#0000ff",         // Blue
-      control: "#af00db",      // Purple
-      keyword: "#0000ff",      // Blue
-      stl: "#267f99",          // Teal
-      number: "#098658",       // Green
-      decorator: "#795e26",    // Brown
-      func: "#795e26",         // Brown for functions
-    } : {
-      // Dark mode - SUPER VIBRANT (Dracula/One Dark Pro inspired)
-      comment: "#6A9955",      // Soft green (keeps readability)
-      string: "#CE9178",       // Warm orange
-      preproc: "#C586C0",      // Pink/magenta
-      type: "#4FC1FF",         // Bright cyan-blue
-      control: "#C586C0",      // Pink/magenta
-      keyword: "#569CD6",      // Sky blue
-      stl: "#4EC9B0",          // Bright teal
-      number: "#B5CEA8",       // Light green
-      decorator: "#DCDCAA",    // Yellow
-      func: "#DCDCAA",         // Yellow for functions
+    // Theme color palettes
+    const themeColors = {
+      light: {
+        comment: "#008000", string: "#a31515", preproc: "#af00db", type: "#0000ff",
+        control: "#af00db", keyword: "#0000ff", stl: "#267f99", number: "#098658",
+        decorator: "#795e26", func: "#795e26",
+      },
+      dark: {
+        comment: "#6A9955", string: "#CE9178", preproc: "#C586C0", type: "#4FC1FF",
+        control: "#C586C0", keyword: "#569CD6", stl: "#4EC9B0", number: "#B5CEA8",
+        decorator: "#DCDCAA", func: "#DCDCAA",
+      },
+      dracula: {
+        comment: "#6272A4", string: "#F1FA8C", preproc: "#FF79C6", type: "#8BE9FD",
+        control: "#FF79C6", keyword: "#FF79C6", stl: "#50FA7B", number: "#BD93F9",
+        decorator: "#F1FA8C", func: "#50FA7B",
+      },
+      monokai: {
+        comment: "#75715E", string: "#E6DB74", preproc: "#F92672", type: "#66D9EF",
+        control: "#F92672", keyword: "#F92672", stl: "#A6E22E", number: "#AE81FF",
+        decorator: "#FD971F", func: "#A6E22E",
+      },
+      nord: {
+        comment: "#616E88", string: "#A3BE8C", preproc: "#B48EAD", type: "#8FBCBB",
+        control: "#81A1C1", keyword: "#81A1C1", stl: "#88C0D0", number: "#B48EAD",
+        decorator: "#EBCB8B", func: "#88C0D0",
+      },
+      githubDark: {
+        comment: "#8B949E", string: "#A5D6FF", preproc: "#FF7B72", type: "#79C0FF",
+        control: "#FF7B72", keyword: "#FF7B72", stl: "#7EE787", number: "#79C0FF",
+        decorator: "#D2A8FF", func: "#D2A8FF",
+      },
     };
+    
+    const colors = compilerLightMode ? themeColors.light : themeColors[compilerTheme] || themeColors.dark;
     
     code = code
       .replace(/§§COMMENT§§/g, `<span style="color:${colors.comment};font-style:italic">`)
@@ -1244,7 +1284,19 @@ export default function DashboardClient() {
     
     // Wrap everything in base color
     return `<span style="color:${baseColor}">${code}</span>`;
-  }, [compilerCode, compilerLanguage, compilerLightMode]);
+  }, [compilerCode, compilerLanguage, compilerLightMode, compilerTheme]);
+
+  // Get theme background/border colors for editor
+  const editorTheme = useMemo(() => {
+    if (compilerLightMode) return { bg: "#ffffff", lineBg: "#f9fafb", lineText: "#9ca3af", border: "#e5e7eb" };
+    switch (compilerTheme) {
+      case "dracula":    return { bg: "#282A36", lineBg: "#21222C", lineText: "#6272A4", border: "#44475A" };
+      case "monokai":    return { bg: "#272822", lineBg: "#1E1F1A", lineText: "#75715E", border: "#3E3D32" };
+      case "nord":       return { bg: "#2E3440", lineBg: "#252B35", lineText: "#4C566A", border: "#3B4252" };
+      case "githubDark": return { bg: "#0D1117", lineBg: "#010409", lineText: "#484F58", border: "#21262D" };
+      default:           return { bg: "#0d1117", lineBg: "#0d1117", lineText: "#6b7280", border: "#30363d" };
+    }
+  }, [compilerLightMode, compilerTheme]);
 
   // Group entries by topic and subtopic for navigation
   const compilerNavData = useMemo(() => {
@@ -3707,6 +3759,96 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                         🖨️ PDF
                       </motion.button>
 
+                      {/* Layout picker */}
+                      <div className="relative hidden sm:block">
+                        <motion.button 
+                          onClick={() => { setShowLayoutMenu(!showLayoutMenu); setShowThemeMenu(false); }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                            compilerLightMode 
+                              ? "bg-gray-100 text-gray-700 hover:bg-gray-200" 
+                              : "bg-white/10 text-white/70 hover:bg-white/15"
+                          }`}
+                          title="Change layout"
+                        >
+                          {compilerLayout === "default" ? "◧" : compilerLayout === "reversed" ? "◨" : compilerLayout === "vertical" ? "⬒" : "▢"}
+                        </motion.button>
+                        {showLayoutMenu && (
+                          <div className={`absolute top-full right-0 mt-2 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[200px] ${compilerLightMode ? "bg-white border border-gray-200" : "bg-[#161b22] border border-[#30363d]"}`}>
+                            {[
+                              { key: "default", label: "◧ Default", desc: "Nav | Code | IO" },
+                              { key: "reversed", label: "◨ Reversed", desc: "IO | Code | Nav" },
+                              { key: "vertical", label: "⬒ Vertical", desc: "Stacked layout" },
+                              { key: "focus", label: "▢ Focus Mode", desc: "Code only" },
+                            ].map(item => (
+                              <button
+                                key={item.key}
+                                onClick={() => { setCompilerLayout(item.key as "default" | "reversed" | "vertical" | "focus"); setShowLayoutMenu(false); }}
+                                className={`w-full text-left px-4 py-2.5 transition flex flex-col ${
+                                  compilerLayout === item.key
+                                    ? compilerLightMode ? "bg-blue-50 text-blue-700" : "bg-blue-500/10 text-blue-400"
+                                    : compilerLightMode ? "hover:bg-gray-50 text-gray-700" : "hover:bg-white/5 text-white/80"
+                                }`}
+                              >
+                                <span className="text-sm font-bold">{item.label}</span>
+                                <span className={`text-[10px] ${compilerLightMode ? "text-gray-500" : "text-gray-400"}`}>{item.desc}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Theme picker */}
+                      <div className="relative hidden sm:block">
+                        <motion.button 
+                          onClick={() => { setShowThemeMenu(!showThemeMenu); setShowLayoutMenu(false); }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                            compilerLightMode 
+                              ? "bg-gray-100 text-gray-700 hover:bg-gray-200" 
+                              : "bg-white/10 text-white/70 hover:bg-white/15"
+                          }`}
+                          title="Change theme"
+                        >
+                          🎨
+                        </motion.button>
+                        {showThemeMenu && (
+                          <div className={`absolute top-full right-0 mt-2 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[180px] ${compilerLightMode ? "bg-white border border-gray-200" : "bg-[#161b22] border border-[#30363d]"}`}>
+                            {[
+                              { key: "light", label: "☀️ Light", preview: "#ffffff" },
+                              { key: "dark", label: "🌙 Dark", preview: "#0d1117" },
+                              { key: "dracula", label: "🧛 Dracula", preview: "#282A36" },
+                              { key: "monokai", label: "🎨 Monokai", preview: "#272822" },
+                              { key: "nord", label: "❄️ Nord", preview: "#2E3440" },
+                              { key: "githubDark", label: "🐙 GitHub Dark", preview: "#0D1117" },
+                            ].map(item => {
+                              const isActive = item.key === "light" ? compilerLightMode : (!compilerLightMode && compilerTheme === item.key);
+                              return (
+                                <button
+                                  key={item.key}
+                                  onClick={() => { 
+                                    if (item.key === "light") setCompilerLightMode(true);
+                                    else { setCompilerLightMode(false); setCompilerTheme(item.key as "dark" | "dracula" | "monokai" | "nord" | "githubDark"); }
+                                    setShowThemeMenu(false); 
+                                  }}
+                                  className={`w-full text-left px-4 py-2.5 transition flex items-center gap-2 ${
+                                    isActive
+                                      ? compilerLightMode ? "bg-blue-50 text-blue-700" : "bg-blue-500/10 text-blue-400"
+                                      : compilerLightMode ? "hover:bg-gray-50 text-gray-700" : "hover:bg-white/5 text-white/80"
+                                  }`}
+                                >
+                                  <span className="w-4 h-4 rounded shrink-0 border border-white/10" style={{ backgroundColor: item.preview }} />
+                                  <span className="text-sm font-semibold">{item.label}</span>
+                                  {isActive && <span className="ml-auto text-xs">✓</span>}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      
                       {/* Light/Dark mode toggle for compiler */}
                       <motion.button 
                         onClick={() => setCompilerLightMode(!compilerLightMode)}
@@ -3730,23 +3872,51 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                     </div>
                   </div>
 
-                  {/* ═══ MAIN CONTENT - 3 PANEL LAYOUT ═══ */}
-                  <div className="flex-1 flex overflow-hidden">
+                  {/* ═══ MAIN CONTENT - Layout depends on compilerLayout ═══ */}
+                  <div 
+                    id="compiler-main-content"
+                    className={`flex-1 flex overflow-hidden transition-all duration-300 ${compilerLayout === "reversed" ? "flex-row-reverse" : compilerLayout === "vertical" ? "flex-col" : ""}`}
+                  >
                     
                     {/* ═══ LEFT SIDEBAR - Navigation Tree ═══ */}
                     <div 
-                      className={`shrink-0 flex-col border-r hidden md:flex ${compilerLightMode ? "bg-[#fafafa] border-gray-300" : "bg-[#0d1117] border-[#30363d]"}`}
-                      style={{ width: `${compilerLeftWidth}px` }}
+                      className={`shrink-0 flex-col border-r transition-all duration-200 ${compilerLayout === "focus" || compilerLayout === "vertical" ? "hidden" : leftPanelCollapsed ? "hidden md:flex" : "hidden md:flex"} ${compilerLightMode ? "bg-[#fafafa] border-gray-300" : "bg-[#0d1117] border-[#30363d]"}`}
+                      style={{ width: leftPanelCollapsed ? "40px" : `${compilerLeftWidth}px` }}
                     >
+                      {leftPanelCollapsed ? (
+                        /* Collapsed view - just show expand button */
+                        <div className="flex flex-col items-center py-3 gap-3">
+                          <button 
+                            onClick={() => setLeftPanelCollapsed(false)}
+                            className={`p-2 rounded-lg transition ${compilerLightMode ? "hover:bg-gray-200 text-gray-700" : "hover:bg-white/10 text-white/70"}`}
+                            title="Expand library"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                          </button>
+                          <div className={`writing-vertical text-[10px] font-bold uppercase tracking-wider ${compilerLightMode ? "text-gray-500" : "text-gray-500"}`} style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>
+                            📚 Library ({learnEntries.length})
+                          </div>
+                        </div>
+                      ) : (
+                        <>
                       {/* Nav Header */}
                       <div className={`px-3 py-2.5 border-b flex items-center justify-between ${compilerLightMode ? "bg-white border-gray-300" : "bg-[#161b22] border-[#30363d]"}`}>
                         <span className={`text-[11px] font-bold uppercase tracking-wider ${compilerLightMode ? "text-gray-700" : "text-gray-400"}`}>📚 My Library</span>
-                        <button 
-                          onClick={clearCompilerForNew}
-                          className={`text-[10px] px-2 py-1 rounded-md font-semibold transition ${compilerLightMode ? "bg-green-100 text-green-700 hover:bg-green-200 border border-green-300" : "bg-green-500/20 text-green-400 hover:bg-green-500/30"}`}
-                        >
-                          + New
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button 
+                            onClick={clearCompilerForNew}
+                            className={`text-[10px] px-2 py-1 rounded-md font-semibold transition ${compilerLightMode ? "bg-green-100 text-green-700 hover:bg-green-200 border border-green-300" : "bg-green-500/20 text-green-400 hover:bg-green-500/30"}`}
+                          >
+                            + New
+                          </button>
+                          <button 
+                            onClick={() => setLeftPanelCollapsed(true)}
+                            className={`p-1 rounded transition ${compilerLightMode ? "hover:bg-gray-200 text-gray-500" : "hover:bg-white/10 text-white/50"}`}
+                            title="Collapse panel"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                          </button>
+                        </div>
                       </div>
                       
                       {/* Search */}
@@ -3838,11 +4008,13 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                       <div className={`px-3 py-2.5 border-t text-[11px] font-medium ${compilerLightMode ? "bg-white border-gray-200 text-gray-500" : "bg-[#161b22] border-[#30363d] text-white/50"}`}>
                         📊 {learnEntries.length} problems saved
                       </div>
+                        </>
+                      )}
                     </div>
 
                     {/* ═══ LEFT-MIDDLE DRAG HANDLE ═══ */}
                     <div
-                      className={`hidden md:flex w-1 hover:w-1.5 cursor-col-resize transition-all group relative shrink-0 ${
+                      className={`${compilerLayout === "focus" || compilerLayout === "vertical" || leftPanelCollapsed ? "hidden" : "hidden md:flex"} w-1 hover:w-1.5 cursor-col-resize transition-all group relative shrink-0 ${
                         isDraggingLeft 
                           ? "bg-blue-500 w-1.5" 
                           : compilerLightMode 
@@ -3910,16 +4082,22 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                         </div>
                       </div>
                       
-                      {/* Line Numbers + Code Editor */}
-                      <div className={`flex-1 flex overflow-hidden relative rounded-b-lg ${compilerLightMode ? "bg-white" : "bg-[#0d1117]"}`}>
+                      {/* Line Numbers + Code Editor - Theme aware */}
+                      <div className="flex-1 flex overflow-hidden relative rounded-b-lg" style={{ backgroundColor: editorTheme.bg }}>
                         {/* Line numbers - will sync scroll */}
                         <div 
                           id="compiler-line-numbers"
-                          className={`w-10 sm:w-12 shrink-0 py-4 pr-2 text-right select-none overflow-hidden border-r ${compilerLightMode ? "border-gray-200 bg-gray-50" : "border-white/5 bg-[#0d1117]"}`} 
-                          style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace", fontSize: `${compilerFontSize}px`, lineHeight: `${compilerFontSize + 9}px` }}
+                          className="w-10 sm:w-12 shrink-0 py-4 pr-2 text-right select-none overflow-hidden border-r" 
+                          style={{ 
+                            fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace", 
+                            fontSize: `${compilerFontSize}px`, 
+                            lineHeight: `${compilerFontSize + 9}px`,
+                            backgroundColor: editorTheme.lineBg,
+                            borderColor: editorTheme.border,
+                          }}
                         >
                           {(compilerCode || " ").split("\n").map((_, i) => (
-                            <div key={i} className={`${compilerLightMode ? "text-gray-400" : "text-gray-600"}`} style={{ height: `${compilerFontSize + 9}px` }}>
+                            <div key={i} style={{ height: `${compilerFontSize + 9}px`, color: editorTheme.lineText }}>
                               {i + 1}
                             </div>
                           ))}
@@ -3928,10 +4106,10 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                         {/* Empty state placeholder */}
                         {!compilerCode && (
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 ml-12">
-                            <div className={`text-center ${compilerLightMode ? "text-gray-400" : "text-gray-600"}`}>
+                            <div className="text-center" style={{ color: editorTheme.lineText }}>
                               <p className="text-4xl mb-3 opacity-50">💻</p>
                               <p className="text-sm font-medium">Start coding here</p>
-                              <p className="text-xs mt-1 opacity-60">Tab key works for indentation</p>
+                              <p className="text-xs mt-1 opacity-60">Tab / Shift+Tab for indent • Enter for auto-indent</p>
                             </div>
                           </div>
                         )}
@@ -3971,18 +4149,215 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               }
                             }}
                           onKeyDown={e => {
-                            // Handle Tab key for indentation
+                            const textarea = e.target as HTMLTextAreaElement;
+                            const start = textarea.selectionStart;
+                            const end = textarea.selectionEnd;
+                            const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+                            const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
+                            
+                            // Get comment syntax based on language
+                            const getCommentPrefix = () => {
+                              if (compilerLanguage === "python") return "# ";
+                              return "// "; // cpp, c, java, javascript
+                            };
+                            
+                            // Helper: get line boundaries
+                            const getLineRange = (pos: number) => {
+                              const before = compilerCode.substring(0, pos);
+                              const lineStart = before.lastIndexOf("\n") + 1;
+                              const nextNewline = compilerCode.indexOf("\n", pos);
+                              const lineEnd = nextNewline === -1 ? compilerCode.length : nextNewline;
+                              return { lineStart, lineEnd };
+                            };
+                            
+                            // Helper: get all selected lines
+                            const getSelectedLines = () => {
+                              const startLine = getLineRange(start).lineStart;
+                              const endLine = getLineRange(end).lineEnd;
+                              return { startLine, endLine };
+                            };
+                            
+                            // ═══ Ctrl/Cmd + / : Toggle line comment ═══
+                            if (ctrlKey && e.key === "/") {
+                              e.preventDefault();
+                              const commentStr = getCommentPrefix();
+                              const { startLine, endLine } = getSelectedLines();
+                              const selectedText = compilerCode.substring(startLine, endLine);
+                              const lines = selectedText.split("\n");
+                              
+                              // Check if ALL non-empty lines are commented
+                              const allCommented = lines.every(line => {
+                                const trimmed = line.trimStart();
+                                return trimmed === "" || trimmed.startsWith(commentStr.trim());
+                              });
+                              
+                              const newLines = lines.map(line => {
+                                if (line.trim() === "") return line;
+                                const indentMatch = line.match(/^(\s*)/);
+                                const indent = indentMatch ? indentMatch[1] : "";
+                                const content = line.substring(indent.length);
+                                if (allCommented) {
+                                  // Uncomment
+                                  if (content.startsWith(commentStr)) return indent + content.substring(commentStr.length);
+                                  if (content.startsWith(commentStr.trim())) return indent + content.substring(commentStr.trim().length).trimStart();
+                                  return line;
+                                } else {
+                                  // Comment (only non-commented lines)
+                                  if (content.startsWith(commentStr.trim())) return line;
+                                  return indent + commentStr + content;
+                                }
+                              });
+                              
+                              const newText = newLines.join("\n");
+                              const newCode = compilerCode.substring(0, startLine) + newText + compilerCode.substring(endLine);
+                              setCompilerCode(newCode);
+                              const lengthDiff = newText.length - selectedText.length;
+                              setTimeout(() => {
+                                textarea.selectionStart = start + (allCommented ? -commentStr.length : commentStr.length);
+                                textarea.selectionEnd = end + lengthDiff;
+                              }, 0);
+                              return;
+                            }
+                            
+                            // ═══ Alt + Up/Down : Move line up/down ═══
+                            if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+                              e.preventDefault();
+                              const { startLine, endLine } = getSelectedLines();
+                              const currentBlock = compilerCode.substring(startLine, endLine);
+                              
+                              if (e.key === "ArrowUp") {
+                                if (startLine === 0) return;
+                                const prevLineStart = compilerCode.lastIndexOf("\n", startLine - 2) + 1;
+                                const prevLine = compilerCode.substring(prevLineStart, startLine - 1);
+                                const newCode = 
+                                  compilerCode.substring(0, prevLineStart) +
+                                  currentBlock + "\n" +
+                                  prevLine +
+                                  compilerCode.substring(endLine);
+                                setCompilerCode(newCode);
+                                setTimeout(() => {
+                                  const shift = prevLine.length + 1;
+                                  textarea.selectionStart = start - shift;
+                                  textarea.selectionEnd = end - shift;
+                                }, 0);
+                              } else {
+                                if (endLine >= compilerCode.length) return;
+                                const nextLineEnd = compilerCode.indexOf("\n", endLine + 1);
+                                const nextEnd = nextLineEnd === -1 ? compilerCode.length : nextLineEnd;
+                                const nextLine = compilerCode.substring(endLine + 1, nextEnd);
+                                const newCode = 
+                                  compilerCode.substring(0, startLine) +
+                                  nextLine + "\n" +
+                                  currentBlock +
+                                  compilerCode.substring(nextEnd);
+                                setCompilerCode(newCode);
+                                setTimeout(() => {
+                                  const shift = nextLine.length + 1;
+                                  textarea.selectionStart = start + shift;
+                                  textarea.selectionEnd = end + shift;
+                                }, 0);
+                              }
+                              return;
+                            }
+                            
+                            // ═══ Shift+Alt + Up/Down : Duplicate line up/down ═══
+                            if (e.altKey && e.shiftKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+                              e.preventDefault();
+                              const { startLine, endLine } = getSelectedLines();
+                              const currentBlock = compilerCode.substring(startLine, endLine);
+                              const newCode = 
+                                compilerCode.substring(0, endLine) +
+                                "\n" + currentBlock +
+                                compilerCode.substring(endLine);
+                              setCompilerCode(newCode);
+                              if (e.key === "ArrowDown") {
+                                setTimeout(() => {
+                                  const shift = currentBlock.length + 1;
+                                  textarea.selectionStart = start + shift;
+                                  textarea.selectionEnd = end + shift;
+                                }, 0);
+                              }
+                              return;
+                            }
+                            
+                            // ═══ Ctrl/Cmd + D : Duplicate line ═══
+                            if (ctrlKey && e.key === "d" && !e.shiftKey) {
+                              e.preventDefault();
+                              const { startLine, endLine } = getSelectedLines();
+                              const currentBlock = compilerCode.substring(startLine, endLine);
+                              const newCode = 
+                                compilerCode.substring(0, endLine) +
+                                "\n" + currentBlock +
+                                compilerCode.substring(endLine);
+                              setCompilerCode(newCode);
+                              setTimeout(() => {
+                                const shift = currentBlock.length + 1;
+                                textarea.selectionStart = start + shift;
+                                textarea.selectionEnd = end + shift;
+                              }, 0);
+                              return;
+                            }
+                            
+                            // ═══ Ctrl/Cmd + Shift + K : Delete line ═══
+                            if (ctrlKey && e.shiftKey && e.key === "K") {
+                              e.preventDefault();
+                              const { startLine, endLine } = getSelectedLines();
+                              const nextChar = compilerCode.charAt(endLine);
+                              const removeExtra = nextChar === "\n" ? 1 : 0;
+                              const newCode = 
+                                compilerCode.substring(0, startLine) +
+                                compilerCode.substring(endLine + removeExtra);
+                              setCompilerCode(newCode);
+                              setTimeout(() => {
+                                textarea.selectionStart = textarea.selectionEnd = startLine;
+                              }, 0);
+                              return;
+                            }
+                            
+                            // ═══ Ctrl/Cmd + A : Select all (native, but ensure works) ═══
+                            // Handled natively
+                            
+                            // ═══ Ctrl/Cmd + Enter : Run code ═══
+                            if (ctrlKey && e.key === "Enter") {
+                              e.preventDefault();
+                              if (!compilerRunning && compilerCode.trim()) runCompiler();
+                              return;
+                            }
+                            
+                            // ═══ Ctrl/Cmd + S : Save code ═══
+                            if (ctrlKey && e.key === "s") {
+                              e.preventDefault();
+                              if (compilerCode.trim() && compilerTopic.trim() && compilerTitle.trim()) {
+                                quickSaveFromCompiler();
+                              }
+                              return;
+                            }
+                            
+                            // ═══ Tab : Add indent / Shift+Tab : Remove indent ═══
                             if (e.key === "Tab") {
                               e.preventDefault();
-                              const textarea = e.target as HTMLTextAreaElement;
-                              const start = textarea.selectionStart;
-                              const end = textarea.selectionEnd;
-                              const spaces = "    "; // 4 spaces
+                              const spaces = "    ";
+                              
+                              // Multi-line selection: indent/dedent all lines
+                              if (start !== end && compilerCode.substring(start, end).includes("\n")) {
+                                const { startLine, endLine } = getSelectedLines();
+                                const selectedText = compilerCode.substring(startLine, endLine);
+                                const lines = selectedText.split("\n");
+                                const newLines = e.shiftKey
+                                  ? lines.map(l => l.startsWith("    ") ? l.substring(4) : l.startsWith("\t") ? l.substring(1) : l)
+                                  : lines.map(l => spaces + l);
+                                const newText = newLines.join("\n");
+                                const newCode = compilerCode.substring(0, startLine) + newText + compilerCode.substring(endLine);
+                                setCompilerCode(newCode);
+                                setTimeout(() => {
+                                  textarea.selectionStart = startLine;
+                                  textarea.selectionEnd = startLine + newText.length;
+                                }, 0);
+                                return;
+                              }
                               
                               if (e.shiftKey) {
-                                // Shift+Tab: Remove indentation
-                                const beforeCursor = compilerCode.substring(0, start);
-                                const lineStart = beforeCursor.lastIndexOf("\n") + 1;
+                                const { lineStart } = getLineRange(start);
                                 const lineIndent = compilerCode.substring(lineStart, start);
                                 if (lineIndent.startsWith("    ")) {
                                   const newCode = compilerCode.substring(0, lineStart) + compilerCode.substring(lineStart + 4);
@@ -3992,31 +4367,59 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                                   }, 0);
                                 }
                               } else {
-                                // Tab: Add indentation
                                 const newCode = compilerCode.substring(0, start) + spaces + compilerCode.substring(end);
                                 setCompilerCode(newCode);
                                 setTimeout(() => {
                                   textarea.selectionStart = textarea.selectionEnd = start + 4;
                                 }, 0);
                               }
+                              return;
                             }
-                            // Handle Enter for auto-indent
+                            
+                            // ═══ Enter : Auto-indent + smart brace close ═══
                             if (e.key === "Enter") {
-                              const textarea = e.target as HTMLTextAreaElement;
-                              const start = textarea.selectionStart;
                               const beforeCursor = compilerCode.substring(0, start);
-                              const lineStart = beforeCursor.lastIndexOf("\n") + 1;
+                              const { lineStart } = getLineRange(start);
                               const currentLine = beforeCursor.substring(lineStart);
                               const indent = currentLine.match(/^(\s*)/)?.[1] || "";
                               const lastChar = beforeCursor.trim().slice(-1);
+                              const nextChar = compilerCode.charAt(start);
                               const extraIndent = ["{", "(", "[", ":"].includes(lastChar) ? "    " : "";
                               
+                              // Smart: if inside {} or [] or (), add extra newline
+                              const isInsideBrace = 
+                                (lastChar === "{" && nextChar === "}") ||
+                                (lastChar === "[" && nextChar === "]") ||
+                                (lastChar === "(" && nextChar === ")");
+                              
                               e.preventDefault();
-                              const newCode = compilerCode.substring(0, start) + "\n" + indent + extraIndent + compilerCode.substring(start);
+                              if (isInsideBrace) {
+                                const newCode = compilerCode.substring(0, start) + "\n" + indent + "    " + "\n" + indent + compilerCode.substring(start);
+                                setCompilerCode(newCode);
+                                setTimeout(() => {
+                                  textarea.selectionStart = textarea.selectionEnd = start + 1 + indent.length + 4;
+                                }, 0);
+                              } else {
+                                const newCode = compilerCode.substring(0, start) + "\n" + indent + extraIndent + compilerCode.substring(start);
+                                setCompilerCode(newCode);
+                                setTimeout(() => {
+                                  textarea.selectionStart = textarea.selectionEnd = start + 1 + indent.length + extraIndent.length;
+                                }, 0);
+                              }
+                              return;
+                            }
+                            
+                            // ═══ Auto-close brackets: { ( [ " ' ═══
+                            const bracketPairs: Record<string, string> = { "{": "}", "(": ")", "[": "]", '"': '"', "'": "'", "`": "`" };
+                            if (bracketPairs[e.key] && start === end) {
+                              e.preventDefault();
+                              const closeChar = bracketPairs[e.key];
+                              const newCode = compilerCode.substring(0, start) + e.key + closeChar + compilerCode.substring(end);
                               setCompilerCode(newCode);
                               setTimeout(() => {
-                                textarea.selectionStart = textarea.selectionEnd = start + 1 + indent.length + extraIndent.length;
+                                textarea.selectionStart = textarea.selectionEnd = start + 1;
                               }, 0);
+                              return;
                             }
                           }}
                           placeholder=""
@@ -4039,7 +4442,7 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
 
                     {/* ═══ MIDDLE-RIGHT DRAG HANDLE ═══ */}
                     <div
-                      className={`hidden md:flex w-1 hover:w-1.5 cursor-col-resize transition-all group relative shrink-0 ${
+                      className={`${compilerLayout === "focus" ? "hidden" : "hidden md:flex"} w-1 hover:w-1.5 cursor-col-resize transition-all group relative shrink-0 ${
                         isDraggingRight 
                           ? "bg-blue-500 w-1.5" 
                           : compilerLightMode 
@@ -4058,17 +4461,45 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                     {/* ═══ RIGHT PANEL - Problem Details + I/O ═══ */}
                     <div 
                       id="compiler-right-panel"
-                      className={`shrink-0 flex flex-col border-l hidden md:flex ${compilerLightMode ? "bg-[#fafafa] border-gray-300" : "bg-[#161b22] border-[#30363d]"}`}
-                      style={{ width: `${compilerRightWidth}px` }}
+                      className={`shrink-0 flex flex-col border-l transition-all duration-200 ${compilerLayout === "focus" ? "hidden" : "hidden md:flex"} ${compilerLightMode ? "bg-[#fafafa] border-gray-300" : "bg-[#161b22] border-[#30363d]"}`}
+                      style={{ 
+                        width: compilerLayout === "vertical" ? "100%" : rightPanelCollapsed ? "40px" : `${compilerRightWidth}px`,
+                        height: compilerLayout === "vertical" ? `${100 - verticalSplit}%` : "auto",
+                      }}
                     >
                       
+                      {rightPanelCollapsed ? (
+                        /* Collapsed view - just show expand button */
+                        <div className="flex flex-col items-center py-3 gap-3">
+                          <button 
+                            onClick={() => setRightPanelCollapsed(false)}
+                            className={`p-2 rounded-lg transition ${compilerLightMode ? "hover:bg-gray-200 text-gray-700" : "hover:bg-white/10 text-white/70"}`}
+                            title="Expand panel"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+                          </button>
+                          <div className={`text-[10px] font-bold uppercase tracking-wider ${compilerLightMode ? "text-gray-500" : "text-gray-500"}`} style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>
+                            📋 Problem & I/O
+                          </div>
+                        </div>
+                      ) : (
+                        <>
                       {/* Problem Details Form */}
                       <div className={`border-b ${compilerLightMode ? "border-gray-300" : "border-[#30363d]"}`}>
                         <div className={`px-3 py-2.5 flex items-center justify-between ${compilerLightMode ? "bg-white border-b border-gray-200" : "bg-[#0d1117]"}`}>
                           <span className={`text-[11px] font-bold uppercase tracking-wider ${compilerLightMode ? "text-gray-700" : "text-gray-400"}`}>📋 Problem Info</span>
-                          {compilerEditingId && (
-                            <span className={`text-[9px] px-2 py-0.5 rounded-md font-medium ${compilerLightMode ? "bg-yellow-100 text-yellow-700 border border-yellow-300" : "bg-yellow-500/20 text-yellow-400"}`}>Editing</span>
-                          )}
+                          <div className="flex items-center gap-1">
+                            {compilerEditingId && (
+                              <span className={`text-[9px] px-2 py-0.5 rounded-md font-medium ${compilerLightMode ? "bg-yellow-100 text-yellow-700 border border-yellow-300" : "bg-yellow-500/20 text-yellow-400"}`}>Editing</span>
+                            )}
+                            <button 
+                              onClick={() => setRightPanelCollapsed(true)}
+                              className={`p-1 rounded transition ${compilerLightMode ? "hover:bg-gray-200 text-gray-500" : "hover:bg-white/10 text-white/50"}`}
+                              title="Collapse panel"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                            </button>
+                          </div>
                         </div>
                         <div className={`p-3 space-y-3 max-h-[200px] overflow-y-auto ${compilerLightMode ? "bg-white" : ""}`}>
                           {/* Topic + SubTopic */}
@@ -4223,6 +4654,8 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                           </div>
                         </div>
                       </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </motion.div>
