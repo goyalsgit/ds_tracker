@@ -2,6 +2,8 @@
 
 :root {
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 * { 
@@ -13,17 +15,31 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+}
+
+/* ═══ GLOBAL SMOOTHNESS ═══ */
+/* Smooth transitions on all interactive elements */
+button, a, input, select, textarea {
+  transition: all 0.2s var(--transition-smooth);
+}
+
+/* Ensure GPU acceleration for animations */
+.animate-marquee,
+.animate-marquee-reverse {
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* Marquee/Testimonials Animation */
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
 }
 
 @keyframes marquee-reverse {
-  0% { transform: translateX(-50%); }
-  100% { transform: translateX(0); }
+  0% { transform: translate3d(-50%, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
 }
 
 .animate-marquee {
@@ -71,26 +87,18 @@ body {
   animation: shimmer 2s infinite;
 }
 
-/* Glow effect on hover */
-.glow-blue:hover {
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
-}
+/* Glow effect on hover - smooth */
+.glow-blue { transition: box-shadow 0.3s ease; }
+.glow-green { transition: box-shadow 0.3s ease; }
+.glow-yellow { transition: box-shadow 0.3s ease; }
+.glow-red { transition: box-shadow 0.3s ease; }
+.glow-purple { transition: box-shadow 0.3s ease; }
 
-.glow-green:hover {
-  box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
-}
-
-.glow-yellow:hover {
-  box-shadow: 0 0 30px rgba(234, 179, 8, 0.5);
-}
-
-.glow-red:hover {
-  box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
-}
-
-.glow-purple:hover {
-  box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
-}
+.glow-blue:hover { box-shadow: 0 0 30px rgba(59, 130, 246, 0.4), 0 10px 40px rgba(59, 130, 246, 0.2); }
+.glow-green:hover { box-shadow: 0 0 30px rgba(34, 197, 94, 0.4), 0 10px 40px rgba(34, 197, 94, 0.2); }
+.glow-yellow:hover { box-shadow: 0 0 30px rgba(234, 179, 8, 0.4), 0 10px 40px rgba(234, 179, 8, 0.2); }
+.glow-red:hover { box-shadow: 0 0 30px rgba(239, 68, 68, 0.4), 0 10px 40px rgba(239, 68, 68, 0.2); }
+.glow-purple:hover { box-shadow: 0 0 30px rgba(168, 85, 247, 0.4), 0 10px 40px rgba(168, 85, 247, 0.2); }
 
 /* Gradient text */
 .gradient-text {
@@ -115,23 +123,28 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-/* Custom scrollbar for webkit browsers */
+/* ═══ SCROLLBARS - Professional & Subtle ═══ */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
   background: transparent;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 100, 100, 0.3);
-  border-radius: 3px;
+  background: rgba(100, 100, 100, 0.25);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 100, 100, 0.5);
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 /* Hide scrollbar but allow scrolling */
@@ -149,13 +162,12 @@ body {
   scrollbar-width: thin;
 }
 
-/* Mobile touch improvements */
+/* ═══ MOBILE TOUCH ═══ */
 @media (max-width: 640px) {
   button, a, select, input {
     -webkit-tap-highlight-color: transparent;
   }
   
-  /* Prevent text selection on buttons */
   button {
     -webkit-user-select: none;
     user-select: none;
@@ -167,10 +179,11 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Better focus styles */
+/* ═══ FOCUS STATES ═══ */
 *:focus-visible {
-  outline: 2px solid #1f6feb;
+  outline: 2px solid #3b82f6;
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* Code editor textarea - remove focus styles */
@@ -178,7 +191,6 @@ html {
   outline: none !important;
   border: none !important;
   box-shadow: none !important;
-  ring: none !important;
 }
 
 #compiler-textarea {
@@ -186,54 +198,47 @@ html {
   border: none !important;
 }
 
-/* Remove blue focus ring from all textareas in compiler */
 .compiler-no-focus:focus {
   outline: none !important;
   box-shadow: none !important;
 }
 
-/* ═══ Compiler UI: Disable text selection like LeetCode ═══ */
-/* All buttons, labels, and UI chrome */
+/* ═══ COMPILER UI - Professional Selection Handling ═══ */
 .compiler-no-select,
-.compiler-no-select *,
-button,
-label,
-[role="button"] {
+.compiler-no-select * {
   -webkit-user-select: none;
   -moz-user-select: none;
-  -ms-user-select: none;
   user-select: none;
 }
 
-/* Only allow selection in code editor, textarea, and output areas */
-textarea,
-input,
-pre,
-code,
-.selectable,
-.selectable * {
+/* Allow selection only in editable areas */
+.compiler-no-select textarea,
+.compiler-no-select input,
+.compiler-no-select pre,
+.compiler-no-select code,
+.compiler-no-select .selectable,
+.compiler-no-select .selectable * {
   -webkit-user-select: text !important;
-  -moz-user-select: text !important;
-  -ms-user-select: text !important;
   user-select: text !important;
 }
 
-/* Drag handle styles - prevent selection during drag */
+/* ═══ DRAG HANDLES ═══ */
 .drag-handle {
   -webkit-user-select: none;
   user-select: none;
   touch-action: none;
+  transition: opacity 0.15s ease;
+  opacity: 0.6;
 }
 
 .drag-handle:hover {
-  background-color: #3b82f6 !important;
+  opacity: 1;
 }
 
-/* Body when dragging - prevent selection everywhere */
+/* Body states during drag operations */
 body.dragging,
 body.dragging * {
   -webkit-user-select: none !important;
-  -moz-user-select: none !important;
   user-select: none !important;
   cursor: col-resize !important;
 }
@@ -241,7 +246,23 @@ body.dragging * {
 body.dragging-vertical,
 body.dragging-vertical * {
   -webkit-user-select: none !important;
-  -moz-user-select: none !important;
   user-select: none !important;
   cursor: row-resize !important;
+}
+
+/* Prevent iframes from stealing mouse events during drag */
+body.dragging iframe,
+body.dragging-vertical iframe {
+  pointer-events: none;
+}
+
+/* ═══ BUTTON HOVER STATES ═══ */
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Prevent layout shift during page loads */
+img, video {
+  max-width: 100%;
+  height: auto;
 }
