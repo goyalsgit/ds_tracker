@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DEFAULT_INTERVALS, toDateInputValue } from "@/lib/revisionScheduler";
 import { getSupabaseBrowser } from "@/lib/supabaseBrowser";
@@ -457,9 +457,11 @@ export default function DashboardClient() {
   const [problemInfoHeight, setProblemInfoHeight] = useState(35);
   const [isDraggingProblemInfo, setIsDraggingProblemInfo] = useState(false);
   
-  // Notes editor state
+  // Notes editor state - uses ref for uncontrolled contentEditable (prevents cursor jump bugs)
   const [compilerNotes, setCompilerNotes] = useState("");
   const [rightPanelView, setRightPanelView] = useState<"io" | "notes">("io");
+  const notesEditorRef = useRef<HTMLDivElement>(null);
+  const notesLoadedIdRef = useRef<string | null>(null);
   
   // Vertical layout height (percentage of code editor)
   const [verticalSplit, setVerticalSplit] = useState(60);
@@ -497,6 +499,24 @@ export default function DashboardClient() {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
+
+  // Sync notes editor DOM content only when switching to a different entry
+  // (never on every keystroke — that's what caused the reversed-text cursor bug)
+  useEffect(() => {
+    if (rightPanelView !== "notes") return;
+    const entryKey = compilerEditingId ?? "new";
+    if (notesLoadedIdRef.current === entryKey) return; // already loaded for this entry
+    notesLoadedIdRef.current = entryKey;
+    
+    const el = notesEditorRef.current;
+    if (!el) return;
+    
+    if (compilerNotes.trim()) {
+      el.innerHTML = compilerNotes;
+    } else {
+      el.innerHTML = '<div style="opacity: 0.4;">Write your notes, tricks, and approach here...<br/><br/>• Paste images directly (Ctrl+V)<br/>• Bold: Ctrl+B | Italic: Ctrl+I<br/>• Paste formatted text from ChatGPT</div>';
+    }
+  }, [rightPanelView, compilerEditingId, compilerNotes]);
 
   // Resizable panels drag handlers - SMOOTH with requestAnimationFrame
   useEffect(() => {
@@ -1176,6 +1196,7 @@ export default function DashboardClient() {
     setCompilerError("");
     setCompilerInput("");
     setCompilerNotes(entry.explanation ?? "");
+    notesLoadedIdRef.current = null; // force notes editor to re-sync for this entry
   };
   
   // Clear compiler for new entry
@@ -1192,6 +1213,7 @@ export default function DashboardClient() {
     setCompilerError("");
     setCompilerInput("");
     setCompilerNotes("");
+    notesLoadedIdRef.current = null; // force notes editor to re-sync for new entry
   };
   
   // Syntax highlighting for code editor (LeetCode/VS Code style colors)
@@ -4810,8 +4832,11 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             >📋 Copy</button>
                           </div>
                           <div 
+                            ref={notesEditorRef}
+                            id="compiler-notes-editor"
                             contentEditable
                             dir="ltr"
+                            lang="en"
                             className={`flex-1 overflow-y-auto p-4 outline-none max-w-none selectable ${
                               compilerLightMode 
                                 ? "bg-white text-gray-800" 
@@ -4826,9 +4851,10 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               wordWrap: "break-word",
                               textAlign: "left",
                               direction: "ltr",
-                              unicodeBidi: "plaintext",
+                              unicodeBidi: "normal",
                             }}
                             onInput={(e) => {
+                              // Uncontrolled: only sync to state, never re-render this div's content
                               const el = e.target as HTMLDivElement;
                               setCompilerNotes(el.innerHTML);
                             }}
@@ -4858,6 +4884,8 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                                           selection.removeAllRanges();
                                           selection.addRange(range);
                                         }
+                                        // Sync state after image insert
+                                        if (notesEditorRef.current) setCompilerNotes(notesEditorRef.current.innerHTML);
                                       };
                                       reader.readAsDataURL(file);
                                     }
@@ -4867,7 +4895,6 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               }
                             }}
                             suppressContentEditableWarning
-                            dangerouslySetInnerHTML={{ __html: compilerNotes || '<div style="opacity: 0.4; text-align: left;">Write your notes, tricks, and approach here...<br/><br/>• Paste images directly (Ctrl+V)<br/>• Bold: Ctrl+B | Italic: Ctrl+I<br/>• Paste formatted text from ChatGPT</div>' }}
                           />
                         </div>
                       ) : (
