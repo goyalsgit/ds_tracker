@@ -3353,104 +3353,95 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                 >
                   {/* Header */}
                   <div className={`flex items-center gap-3 px-4 py-2.5 border-b shrink-0 ${lightMode ? "bg-white border-gray-200" : "bg-[#161b22] border-[#30363d]"}`}>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 shrink-0">
                       <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md">
                         <span className="text-white text-sm">🃏</span>
                       </div>
                       <div>
                         <h2 className={`text-sm font-bold ${lightMode ? "text-gray-900" : "text-white"}`}>Flash Revision</h2>
-                        <p className={`text-[10px] ${lightMode ? "text-gray-500" : "text-gray-400"}`}>{revisionCards.length} cards • Hover to zoom</p>
+                        <p className={`text-[10px] ${lightMode ? "text-gray-500" : "text-gray-400"}`}>{revisionCards.length} cards • Click or hover to zoom • Swipe ← →</p>
                       </div>
+                    </div>
+                    
+                    {/* Topic filter chips */}
+                    <div className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-none mx-3">
+                      <button
+                        onClick={() => {
+                          const all = learnEntries.slice(0, 8).map(e => e.id);
+                          setRevisionCards(all);
+                        }}
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition ${lightMode ? "bg-purple-100 text-purple-700 hover:bg-purple-200" : "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"}`}
+                      >All</button>
+                      {[...new Set(learnEntries.map(e => e.topic))].sort().map(topic => (
+                        <button
+                          key={topic}
+                          onClick={() => {
+                            const topicEntries = learnEntries.filter(e => e.topic === topic).map(e => e.id);
+                            setRevisionCards(topicEntries);
+                          }}
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition ${lightMode ? "bg-gray-100 text-gray-600 hover:bg-indigo-100 hover:text-indigo-700" : "bg-white/5 text-gray-400 hover:bg-indigo-500/20 hover:text-indigo-300"}`}
+                        >{topic}</button>
+                      ))}
                     </div>
                     
                     {/* Search to add */}
-                    <div className="flex-1 max-w-xs mx-4">
-                      <div className="relative">
-                        <input
-                          placeholder="🔍 Search & add questions..."
-                          className={`w-full rounded-lg border px-3 py-2 text-xs outline-none transition focus:ring-2 ${lightMode ? "bg-gray-50 border-gray-300 text-gray-800 focus:ring-purple-200 focus:border-purple-400" : "bg-[#0d1117] border-[#30363d] text-white focus:ring-purple-500/30"}`}
-                          onChange={(e) => {
-                            const search = e.target.value.toLowerCase();
-                            if (!search) return;
-                            // Show dropdown with matching results
-                            const dropdown = document.getElementById("revision-search-dropdown");
-                            if (dropdown) dropdown.style.display = search ? "block" : "none";
-                          }}
-                          onFocus={(e) => {
-                            const dropdown = document.getElementById("revision-search-dropdown");
-                            if (dropdown && (e.target as HTMLInputElement).value) dropdown.style.display = "block";
-                          }}
-                          onBlur={() => setTimeout(() => {
-                            const dropdown = document.getElementById("revision-search-dropdown");
-                            if (dropdown) dropdown.style.display = "none";
-                          }, 200)}
-                          id="revision-search-input"
-                        />
-                        <div 
-                          id="revision-search-dropdown"
-                          className={`absolute top-full left-0 right-0 mt-1 rounded-lg border shadow-xl max-h-48 overflow-y-auto z-50 hidden ${lightMode ? "bg-white border-gray-200" : "bg-[#161b22] border-[#30363d]"}`}
-                        >
-                          {learnEntries.filter(e => !revisionCards.includes(e.id)).slice(0, 8).map(entry => (
-                            <button
-                              key={entry.id}
-                              onClick={() => {
-                                setRevisionCards(prev => [...prev, entry.id]);
-                                const input = document.getElementById("revision-search-input") as HTMLInputElement;
-                                if (input) input.value = "";
-                              }}
-                              className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition ${lightMode ? "hover:bg-gray-50 text-gray-700" : "hover:bg-white/5 text-gray-300"}`}
-                            >
-                              <span className={`w-2 h-2 rounded-full shrink-0 ${entry.difficulty === "Easy" ? "bg-green-500" : entry.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"}`} />
-                              <span className="truncate font-medium">{entry.title}</span>
-                              <span className={`ml-auto text-[9px] shrink-0 ${lightMode ? "text-gray-400" : "text-gray-600"}`}>{entry.topic}</span>
-                            </button>
-                          ))}
-                        </div>
+                    <div className="relative w-48 shrink-0">
+                      <input
+                        placeholder="🔍 Add question..."
+                        className={`w-full rounded-lg border px-3 py-1.5 text-[11px] outline-none transition focus:ring-2 ${lightMode ? "bg-gray-50 border-gray-300 text-gray-800 focus:ring-purple-200" : "bg-[#0d1117] border-[#30363d] text-white focus:ring-purple-500/30"}`}
+                        onChange={(e) => {
+                          const dropdown = document.getElementById("revision-search-dropdown");
+                          if (dropdown) dropdown.style.display = e.target.value ? "block" : "none";
+                        }}
+                        onFocus={(e) => { const dropdown = document.getElementById("revision-search-dropdown"); if (dropdown && (e.target as HTMLInputElement).value) dropdown.style.display = "block"; }}
+                        onBlur={() => setTimeout(() => { const dropdown = document.getElementById("revision-search-dropdown"); if (dropdown) dropdown.style.display = "none"; }, 200)}
+                        id="revision-search-input"
+                      />
+                      <div id="revision-search-dropdown" className={`absolute top-full left-0 right-0 mt-1 rounded-lg border shadow-xl max-h-48 overflow-y-auto z-50 hidden ${lightMode ? "bg-white border-gray-200" : "bg-[#161b22] border-[#30363d]"}`}>
+                        {learnEntries.filter(e => !revisionCards.includes(e.id)).slice(0, 8).map(entry => (
+                          <button key={entry.id} onClick={() => { setRevisionCards(prev => [...prev, entry.id]); const input = document.getElementById("revision-search-input") as HTMLInputElement; if (input) input.value = ""; }}
+                            className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition ${lightMode ? "hover:bg-gray-50 text-gray-700" : "hover:bg-white/5 text-gray-300"}`}>
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${entry.difficulty === "Easy" ? "bg-green-500" : entry.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"}`} />
+                            <span className="truncate font-medium">{entry.title}</span>
+                            <span className={`ml-auto text-[9px] shrink-0 ${lightMode ? "text-gray-400" : "text-gray-600"}`}>{entry.topic}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
-                    
-                    <div className="flex items-center gap-2">
-                      {/* Grid layout controls */}
+
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {([2, 3, 4, 6] as const).map(cols => (
-                        <button
-                          key={cols}
-                          onClick={() => setRevisionLayout(cols)}
-                          className={`w-8 h-8 rounded-lg text-[11px] font-bold transition flex items-center justify-center ${
-                            revisionLayout === cols
-                              ? "bg-purple-500 text-white shadow-md shadow-purple-500/30"
-                              : lightMode ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-white/10 text-white/60 hover:bg-white/20"
-                          }`}
+                        <button key={cols} onClick={() => setRevisionLayout(cols)}
+                          className={`w-7 h-7 rounded-lg text-[10px] font-bold transition flex items-center justify-center ${revisionLayout === cols ? "bg-purple-500 text-white shadow" : lightMode ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-white/10 text-white/60 hover:bg-white/20"}`}
                         >{cols}</button>
                       ))}
-                      <div className={`w-px h-6 mx-1 ${lightMode ? "bg-gray-200" : "bg-white/10"}`} />
-                      {/* Card height slider */}
-                      <div className="flex items-center gap-1.5">
-                        <span className={`text-[9px] font-bold ${lightMode ? "text-gray-500" : "text-gray-500"}`}>H</span>
-                        <input
-                          type="range"
-                          min="180"
-                          max="500"
-                          value={revisionCardHeight}
-                          onChange={(e) => setRevisionCardHeight(Number(e.target.value))}
-                          className="w-20 h-1 accent-purple-500 cursor-pointer"
-                        />
-                      </div>
-                      <div className={`w-px h-6 mx-1 ${lightMode ? "bg-gray-200" : "bg-white/10"}`} />
-                      <button
-                        onClick={() => setRevisionCards(prev => [...prev].sort(() => Math.random() - 0.5))}
-                        className={`px-3 py-2 rounded-lg text-[11px] font-bold transition ${lightMode ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-white/10 text-white/60 hover:bg-white/20"}`}
-                      >🔀</button>
-                      <button
-                        onClick={() => setShowRevisionPanel(false)}
-                        className={`rounded-lg p-2 text-lg transition ${lightMode ? "hover:bg-gray-100 text-gray-500" : "hover:bg-white/10 text-white/50"}`}
-                      >✕</button>
+                      <input type="range" min="180" max="500" value={revisionCardHeight} onChange={(e) => setRevisionCardHeight(Number(e.target.value))} className="w-16 h-1 accent-purple-500 cursor-pointer ml-1" />
+                      <button onClick={() => setRevisionCards(prev => [...prev].sort(() => Math.random() - 0.5))} className={`px-2 py-1.5 rounded-lg text-[10px] font-bold transition ${lightMode ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-white/10 text-white/60 hover:bg-white/20"}`}>🔀</button>
+                      <button onClick={() => setShowRevisionPanel(false)} className={`rounded-lg p-1.5 text-base transition ${lightMode ? "hover:bg-gray-100 text-gray-500" : "hover:bg-white/10 text-white/50"}`}>✕</button>
                     </div>
                   </div>
                   
-                  {/* Card grid with hover zoom */}
+                  {/* Card grid with hover auto-zoom and touch swipe */}
                   <div 
                     className="flex-1 overflow-y-auto p-4 gap-4"
                     style={{ display: "grid", gridTemplateColumns: `repeat(${revisionLayout}, 1fr)`, alignContent: "start" }}
+                    onTouchStart={(e) => {
+                      const touch = e.touches[0];
+                      (e.currentTarget as HTMLElement).dataset.touchX = String(touch.clientX);
+                    }}
+                    onTouchEnd={(e) => {
+                      const startX = Number((e.currentTarget as HTMLElement).dataset.touchX || 0);
+                      const endX = e.changedTouches[0].clientX;
+                      const diff = startX - endX;
+                      if (Math.abs(diff) > 80) {
+                        // Swipe detected - navigate zoom if zoomed
+                        if (zoomedCardId) {
+                          const idx = revisionCards.indexOf(zoomedCardId);
+                          if (diff > 0 && idx < revisionCards.length - 1) setZoomedCardId(revisionCards[idx + 1]);
+                          if (diff < 0 && idx > 0) setZoomedCardId(revisionCards[idx - 1]);
+                        }
+                      }
+                    }}
                   >
                     {revisionCards.map((cardId) => {
                       const entry = learnEntries.find(e => e.id === cardId);
@@ -3458,9 +3449,19 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                       return (
                         <div
                           key={cardId}
-                          className={`relative group/card cursor-pointer transition-transform duration-200 hover:scale-[1.02] hover:z-10 ${zoomedCardId === cardId ? "ring-2 ring-purple-500" : ""}`}
+                          className={`relative group/card cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:z-10 ${zoomedCardId === cardId ? "ring-2 ring-purple-500" : ""}`}
                           style={{ height: `${revisionCardHeight}px` }}
                           onClick={() => setZoomedCardId(cardId)}
+                          onMouseEnter={(e) => {
+                            // Auto-zoom on hover after 600ms
+                            const el = e.currentTarget;
+                            const timer = setTimeout(() => setZoomedCardId(cardId), 600);
+                            el.dataset.hoverTimer = String(timer);
+                          }}
+                          onMouseLeave={(e) => {
+                            const timer = (e.currentTarget as HTMLElement).dataset.hoverTimer;
+                            if (timer) clearTimeout(Number(timer));
+                          }}
                         >
                           <div
                             className={`absolute inset-0 flex flex-col rounded-xl overflow-hidden border transition-shadow duration-200 hover:shadow-xl ${
@@ -3488,7 +3489,7 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             </div>
                             {/* Code preview */}
                             <div className={`flex-1 overflow-hidden ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
-                              <pre className="p-3 h-full overflow-hidden" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: "11px", lineHeight: "18px", color: "#9cdcfe", tabSize: 4, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{entry.code_solution}</pre>
+                              <pre className="p-3 h-full overflow-hidden" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', 'Cascadia Code', 'Source Code Pro', monospace", fontSize: "12px", lineHeight: "19px", color: "#79c0ff", tabSize: 4, whiteSpace: "pre-wrap", wordBreak: "break-word", fontVariantLigatures: "common-ligatures" }}>{entry.code_solution}</pre>
                             </div>
                             {/* Click hint */}
                             <div className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity pointer-events-none`}>
@@ -3537,13 +3538,17 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                           onClick={() => setZoomedCardId(null)}
                           onKeyDown={(e) => { 
                             if (e.key === "Escape") setZoomedCardId(null);
-                            if (e.key === "ArrowRight") {
+                            if (e.key === "ArrowRight") { const idx = revisionCards.indexOf(zoomedCardId); if (idx < revisionCards.length - 1) setZoomedCardId(revisionCards[idx + 1]); }
+                            if (e.key === "ArrowLeft") { const idx = revisionCards.indexOf(zoomedCardId); if (idx > 0) setZoomedCardId(revisionCards[idx - 1]); }
+                          }}
+                          onTouchStart={(e) => { (e.currentTarget as HTMLElement).dataset.touchX = String(e.touches[0].clientX); }}
+                          onTouchEnd={(e) => {
+                            const startX = Number((e.currentTarget as HTMLElement).dataset.touchX || 0);
+                            const diff = startX - e.changedTouches[0].clientX;
+                            if (Math.abs(diff) > 60) {
                               const idx = revisionCards.indexOf(zoomedCardId);
-                              if (idx < revisionCards.length - 1) setZoomedCardId(revisionCards[idx + 1]);
-                            }
-                            if (e.key === "ArrowLeft") {
-                              const idx = revisionCards.indexOf(zoomedCardId);
-                              if (idx > 0) setZoomedCardId(revisionCards[idx - 1]);
+                              if (diff > 0 && idx < revisionCards.length - 1) setZoomedCardId(revisionCards[idx + 1]);
+                              if (diff < 0 && idx > 0) setZoomedCardId(revisionCards[idx - 1]);
                             }
                           }}
                           tabIndex={0}
@@ -3599,7 +3604,7 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                                   ))}
                                 </div>
                                 {/* Code */}
-                                <pre className="flex-1 py-5 pl-5 pr-5 selectable" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: "14px", lineHeight: "24px", color: "#9cdcfe", tabSize: 4, whiteSpace: "pre" }}>{zoomedEntry.code_solution}</pre>
+                                <pre className="flex-1 py-5 pl-5 pr-5 selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', 'Cascadia Code', 'Source Code Pro', monospace", fontSize: "14px", lineHeight: "26px", color: "#79c0ff", tabSize: 4, whiteSpace: "pre", fontVariantLigatures: "common-ligatures", letterSpacing: "0.3px" }}>{zoomedEntry.code_solution}</pre>
                               </div>
                             </div>
                             {/* Footer hint */}
