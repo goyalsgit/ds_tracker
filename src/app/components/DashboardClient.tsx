@@ -96,44 +96,66 @@ function exportCSV(solves: SolveEntry[]) {
   a.click(); URL.revokeObjectURL(a.href);
 }
 
-/* ─── Syntax highlight helper (reusable for flash cards) ──── */
+/* ─── Syntax highlight helper (reusable for flash cards) ────
+   Uses marker tokens (◊N◊) that are replaced with real HTML at the
+   very end — so intermediate regex passes never corrupt inserted markup. */
 function highlightCodeHtml(code: string, language: string): string {
   if (!code) return "";
   let c = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  
-  // Apply patterns based on language
+
+  const COLORS = {
+    comment: "#6A9955", string: "#CE9178", preproc: "#C586C0",
+    type: "#4FC1FF", control: "#C586C0", keyword: "#569CD6",
+    stl: "#4EC9B0", number: "#B5CEA8",
+  };
+  // token key -> color
+  const tokenColors: Record<string, string> = {
+    C: COLORS.comment, S: COLORS.string, P: COLORS.preproc,
+    T: COLORS.type, F: COLORS.control, K: COLORS.keyword,
+    L: COLORS.stl, N: COLORS.number,
+  };
+  const wrap = (key: string, italic = false) => (_m: string, g1: string) =>
+    `◊${key}${italic ? "i" : ""}◊${g1}◊/◊`;
+
   if (language === "cpp" || language === "c") {
-    c = c.replace(/(\/\/[^\n]*)/g, '<span style="color:#6A9955;font-style:italic">$1</span>');
-    c = c.replace(/(\/\*[\s\S]*?\*\/)/g, '<span style="color:#6A9955;font-style:italic">$1</span>');
-    c = c.replace(/("(?:[^"\\]|\\.)*")/g, '<span style="color:#CE9178">$1</span>');
-    c = c.replace(/(#\s*(?:include|define|ifndef|ifdef|endif|pragma))/g, '<span style="color:#C586C0">$1</span>');
-    c = c.replace(/\b(int|long|short|char|float|double|bool|void|auto|unsigned|signed|const|static|inline|virtual|size_t)\b/g, '<span style="color:#4FC1FF">$1</span>');
-    c = c.replace(/\b(if|else|for|while|do|switch|case|default|break|continue|return|goto|throw|try|catch)\b/g, '<span style="color:#C586C0">$1</span>');
-    c = c.replace(/\b(class|struct|union|enum|namespace|template|typename|public|private|protected|new|delete|this|nullptr|true|false|sizeof|typedef|using)\b/g, '<span style="color:#569CD6">$1</span>');
-    c = c.replace(/\b(vector|map|set|unordered_map|unordered_set|pair|string|queue|stack|priority_queue|list|deque|array|cout|cin|endl|std|sort|min|max)\b/g, '<span style="color:#4EC9B0">$1</span>');
-    c = c.replace(/\b(\d+\.?\d*[fFlLuU]*)\b/g, '<span style="color:#B5CEA8">$1</span>');
+    c = c.replace(/(\/\/[^\n]*)/g, wrap("C", true));
+    c = c.replace(/(\/\*[\s\S]*?\*\/)/g, wrap("C", true));
+    c = c.replace(/("(?:[^"\\]|\\.)*")/g, wrap("S"));
+    c = c.replace(/(#\s*(?:include|define|ifndef|ifdef|endif|pragma))/g, wrap("P"));
+    c = c.replace(/\b(int|long|short|char|float|double|bool|void|auto|unsigned|signed|const|static|inline|virtual|size_t)\b/g, wrap("T"));
+    c = c.replace(/\b(if|else|for|while|do|switch|case|default|break|continue|return|goto|throw|try|catch)\b/g, wrap("F"));
+    c = c.replace(/\b(class|struct|union|enum|namespace|template|typename|public|private|protected|new|delete|this|nullptr|true|false|sizeof|typedef|using)\b/g, wrap("K"));
+    c = c.replace(/\b(vector|map|set|unordered_map|unordered_set|pair|string|queue|stack|priority_queue|list|deque|array|cout|cin|endl|std|sort|min|max|push_back|size|begin|end)\b/g, wrap("L"));
+    c = c.replace(/\b(\d+\.?\d*[fFlLuU]*)\b/g, wrap("N"));
   } else if (language === "python") {
-    c = c.replace(/(#[^\n]*)/g, '<span style="color:#6A9955;font-style:italic">$1</span>');
-    c = c.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, '<span style="color:#CE9178">$1</span>');
-    c = c.replace(/\b(def|class|if|elif|else|for|while|try|except|finally|with|as|import|from|return|yield|raise|break|continue|pass|lambda|and|or|not|in|is|async|await)\b/g, '<span style="color:#C586C0">$1</span>');
-    c = c.replace(/\b(None|True|False)\b/g, '<span style="color:#569CD6">$1</span>');
-    c = c.replace(/\b(int|float|str|list|dict|set|tuple|bool|range|len|print|input|open|super|self|enumerate|zip|map|filter|sorted)\b/g, '<span style="color:#4EC9B0">$1</span>');
-    c = c.replace(/\b(\d+\.?\d*)\b/g, '<span style="color:#B5CEA8">$1</span>');
+    c = c.replace(/(#[^\n]*)/g, wrap("C", true));
+    c = c.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, wrap("S"));
+    c = c.replace(/\b(def|class|if|elif|else|for|while|try|except|finally|with|as|import|from|return|yield|raise|break|continue|pass|lambda|and|or|not|in|is|async|await)\b/g, wrap("F"));
+    c = c.replace(/\b(None|True|False)\b/g, wrap("K"));
+    c = c.replace(/\b(int|float|str|list|dict|set|tuple|bool|range|len|print|input|open|super|self|enumerate|zip|map|filter|sorted)\b/g, wrap("L"));
+    c = c.replace(/\b(\d+\.?\d*)\b/g, wrap("N"));
   } else if (language === "java") {
-    c = c.replace(/(\/\/[^\n]*)/g, '<span style="color:#6A9955;font-style:italic">$1</span>');
-    c = c.replace(/("(?:[^"\\]|\\.)*")/g, '<span style="color:#CE9178">$1</span>');
-    c = c.replace(/\b(int|long|short|byte|char|float|double|boolean|void|class|interface|extends|implements|abstract|final|static|public|private|protected|new|this|super|return|if|else|for|while|do|switch|case|break|continue|try|catch|finally|throw|import|package)\b/g, '<span style="color:#569CD6">$1</span>');
-    c = c.replace(/\b(null|true|false)\b/g, '<span style="color:#569CD6">$1</span>');
-    c = c.replace(/\b(String|Integer|Long|Double|Float|Boolean|Object|System|Scanner|ArrayList|HashMap|HashSet|LinkedList|Arrays|Collections|Math|StringBuilder)\b/g, '<span style="color:#4EC9B0">$1</span>');
-    c = c.replace(/\b(\d+\.?\d*[fFdDlL]?)\b/g, '<span style="color:#B5CEA8">$1</span>');
+    c = c.replace(/(\/\/[^\n]*)/g, wrap("C", true));
+    c = c.replace(/(\/\*[\s\S]*?\*\/)/g, wrap("C", true));
+    c = c.replace(/("(?:[^"\\]|\\.)*")/g, wrap("S"));
+    c = c.replace(/\b(int|long|short|byte|char|float|double|boolean|void|class|interface|extends|implements|abstract|final|static|public|private|protected|new|this|super|return|if|else|for|while|do|switch|case|break|continue|try|catch|finally|throw|import|package)\b/g, wrap("K"));
+    c = c.replace(/\b(null|true|false)\b/g, wrap("K"));
+    c = c.replace(/\b(String|Integer|Long|Double|Float|Boolean|Object|System|Scanner|ArrayList|HashMap|HashSet|LinkedList|Arrays|Collections|Math|StringBuilder)\b/g, wrap("L"));
+    c = c.replace(/\b(\d+\.?\d*[fFdDlL]?)\b/g, wrap("N"));
   } else {
-    c = c.replace(/(\/\/[^\n]*)/g, '<span style="color:#6A9955;font-style:italic">$1</span>');
-    c = c.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/g, '<span style="color:#CE9178">$1</span>');
-    c = c.replace(/\b(const|let|var|function|class|return|if|else|for|while|do|switch|case|break|continue|try|catch|throw|new|this|import|export|from|async|await|typeof)\b/g, '<span style="color:#569CD6">$1</span>');
-    c = c.replace(/\b(null|undefined|true|false)\b/g, '<span style="color:#569CD6">$1</span>');
-    c = c.replace(/\b(Array|Object|String|Number|Boolean|Function|Promise|Map|Set|JSON|Math|console)\b/g, '<span style="color:#4EC9B0">$1</span>');
-    c = c.replace(/\b(\d+\.?\d*)\b/g, '<span style="color:#B5CEA8">$1</span>');
+    c = c.replace(/(\/\/[^\n]*)/g, wrap("C", true));
+    c = c.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/g, wrap("S"));
+    c = c.replace(/\b(const|let|var|function|class|return|if|else|for|while|do|switch|case|break|continue|try|catch|throw|new|this|import|export|from|async|await|typeof)\b/g, wrap("K"));
+    c = c.replace(/\b(null|undefined|true|false)\b/g, wrap("K"));
+    c = c.replace(/\b(Array|Object|String|Number|Boolean|Function|Promise|Map|Set|JSON|Math|console)\b/g, wrap("L"));
+    c = c.replace(/\b(\d+\.?\d*)\b/g, wrap("N"));
   }
+
+  // Replace markers with real HTML at the very end
+  c = c.replace(/◊([CSPTFKLN])(i?)◊/g, (_m, key, italic) => 
+    `<span style="color:${tokenColors[key]}${italic ? ";font-style:italic" : ""}">`
+  );
+  c = c.replace(/◊\/◊/g, "</span>");
   return c;
 }
 
@@ -507,8 +529,8 @@ export default function DashboardClient() {
   // Multi-revision flashcard panel
   const [showRevisionPanel, setShowRevisionPanel] = useState(false);
   const [revisionCards, setRevisionCards] = useState<string[]>([]); // entry IDs
-  const [revisionLayout, setRevisionLayout] = useState<2 | 3 | 4 | 6>(4); // grid columns
-  const [revisionCardHeight, setRevisionCardHeight] = useState(320); // card height in px
+  const [revisionLayout, setRevisionLayout] = useState<2 | 3 | 4 | 6>(3); // grid columns
+  const [revisionCardHeight, setRevisionCardHeight] = useState(340); // card height in px
   const [zoomedCardId, setZoomedCardId] = useState<string | null>(null); // currently zoomed card
   const [zoomSize, setZoomSize] = useState({ w: 900, h: 600 }); // zoom modal size
   const [isDraggingZoom, setIsDraggingZoom] = useState<"right" | "bottom" | "corner" | null>(null);
@@ -3476,25 +3498,28 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                           className="relative group/card"
                           style={{ height: `${revisionCardHeight}px` }}
                         >
-                          {/* Normal card */}
-                          <div className={`absolute inset-0 flex flex-col rounded-xl overflow-hidden border transition-all duration-200 group-hover/card:shadow-2xl ${lightMode ? "bg-white border-gray-200 shadow-md group-hover/card:border-purple-300" : "bg-[#12141a] border-[#2d333b] shadow-lg group-hover/card:border-purple-500/50"}`}>
+                          {/* Card — scales up & lifts on hover for real zoom preview */}
+                          <div 
+                            className={`absolute inset-0 flex flex-col rounded-xl overflow-hidden border cursor-pointer origin-center transition-all duration-300 ease-out group-hover/card:scale-[1.35] group-hover/card:z-20 group-hover/card:shadow-2xl ${lightMode ? "bg-white border-gray-200 shadow-md group-hover/card:border-purple-400" : "bg-[#12141a] border-[#2d333b] shadow-lg group-hover/card:border-purple-500/60"}`}
+                            onClick={() => setZoomedCardId(cardId)}
+                          >
                             <div className={`flex items-center justify-between px-3 py-2 shrink-0 border-b ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#1a1d24] border-[#2d333b]"}`}>
                               <div className="flex items-center gap-2 min-w-0">
                                 <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${entry.difficulty === "Easy" ? "bg-green-500" : entry.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"}`} />
-                                <span className={`text-[11px] font-bold truncate ${lightMode ? "text-gray-800" : "text-white"}`}>{entry.title}</span>
+                                <span className={`text-[10px] font-bold truncate ${lightMode ? "text-gray-800" : "text-white"}`}>{entry.title}</span>
                               </div>
-                              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover/card:opacity-100 transition-opacity">
-                                <button onClick={(e) => { e.stopPropagation(); loadEntryIntoCompiler(entry); setShowCompiler(true); setShowRevisionPanel(false); }} className="text-[9px] px-2 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 font-bold">▶</button>
-                                <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(entry.code_solution); }} className="text-[9px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold">📋</button>
-                                <button onClick={(e) => { e.stopPropagation(); setRevisionCards(prev => prev.filter(id => id !== cardId)); }} className="text-[9px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 font-bold">✕</button>
+                              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover/card:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                                <button onClick={() => { loadEntryIntoCompiler(entry); setShowCompiler(true); setShowRevisionPanel(false); }} className="text-[8px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 font-bold">▶</button>
+                                <button onClick={() => navigator.clipboard.writeText(entry.code_solution)} className="text-[8px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold">📋</button>
+                                <button onClick={() => setRevisionCards(prev => prev.filter(id => id !== cardId))} className="text-[8px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 font-bold">✕</button>
                               </div>
                             </div>
-                            <div className={`px-3 py-1 text-[9px] flex items-center gap-1.5`}>
+                            <div className={`px-3 py-0.5 text-[8px] flex items-center gap-1.5`}>
                               <span className={`px-1.5 py-0.5 rounded font-bold ${lightMode ? "bg-indigo-50 text-indigo-600" : "bg-indigo-500/15 text-indigo-400"}`}>{entry.topic}</span>
                               {entry.sub_topic && <span className={lightMode ? "text-gray-400" : "text-gray-600"}>{entry.sub_topic}</span>}
                             </div>
                             <div className={`flex-1 overflow-y-auto overflow-x-hidden ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
-                              <pre className="p-3 selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "12px", lineHeight: "19px", color: "#d4d4d4", tabSize: 4, whiteSpace: "pre-wrap", wordBreak: "break-word" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(entry.code_solution, entry.language) }} />
+                              <pre className="p-3 selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "9px", lineHeight: "15px", color: "#d4d4d4", tabSize: 2, whiteSpace: "pre-wrap", wordBreak: "break-word" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(entry.code_solution, entry.language) }} />
                             </div>
                           </div>
                         </div>
