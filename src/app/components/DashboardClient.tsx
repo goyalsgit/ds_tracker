@@ -468,6 +468,9 @@ export default function DashboardClient() {
   const [revisionCards, setRevisionCards] = useState<string[]>([]); // entry IDs
   const [revisionLayout, setRevisionLayout] = useState<2 | 3 | 4 | 6>(4); // grid columns
   const [revisionCardHeight, setRevisionCardHeight] = useState(280); // card height in px
+  const [zoomedCardId, setZoomedCardId] = useState<string | null>(null); // currently zoomed card
+  const [zoomSize, setZoomSize] = useState({ w: 900, h: 600 }); // zoom modal size
+  const [isDraggingZoom, setIsDraggingZoom] = useState<"right" | "bottom" | "corner" | null>(null);
   
   // Vertical layout height (percentage of code editor)
   const [verticalSplit, setVerticalSplit] = useState(60);
@@ -526,10 +529,10 @@ export default function DashboardClient() {
 
   // Resizable panels drag handlers - SMOOTH with requestAnimationFrame
   useEffect(() => {
-    if (!isDraggingLeft && !isDraggingRight && !isDraggingIO && !isDraggingVertical && !isDraggingProblemInfo) return;
+    if (!isDraggingLeft && !isDraggingRight && !isDraggingIO && !isDraggingVertical && !isDraggingProblemInfo && !isDraggingZoom) return;
     
-    const isVerticalDrag = isDraggingIO || isDraggingVertical || isDraggingProblemInfo;
-    document.body.classList.add(isVerticalDrag ? "dragging-vertical" : "dragging");
+    const isVerticalDrag = isDraggingIO || isDraggingVertical || isDraggingProblemInfo || isDraggingZoom === "bottom";
+    document.body.classList.add(isVerticalDrag ? "dragging-vertical" : isDraggingZoom === "corner" ? "dragging" : "dragging");
     
     let rafId: number | null = null;
     let latestMouseEvent: MouseEvent | null = null;
@@ -545,7 +548,6 @@ export default function DashboardClient() {
         const newWidth = Math.min(Math.max(window.innerWidth - e.clientX, 240), 600);
         setCompilerRightWidth(newWidth);
       } else if (isDraggingIO) {
-        // For IO split - measure from the top of the io/tabs container
         const ioContainer = document.getElementById("compiler-io-container");
         if (ioContainer) {
           const rect = ioContainer.getBoundingClientRect();
@@ -554,7 +556,6 @@ export default function DashboardClient() {
           setCompilerIOSplit(Math.min(Math.max(percentage, 15), 85));
         }
       } else if (isDraggingProblemInfo) {
-        // Adjust problem info height as percentage of right panel
         const rightPanel = document.getElementById("compiler-right-panel");
         if (rightPanel) {
           const rect = rightPanel.getBoundingClientRect();
@@ -569,6 +570,17 @@ export default function DashboardClient() {
           const relativeY = e.clientY - rect.top;
           const percentage = (relativeY / rect.height) * 100;
           setVerticalSplit(Math.min(Math.max(percentage, 20), 85));
+        }
+      } else if (isDraggingZoom) {
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        if (isDraggingZoom === "right" || isDraggingZoom === "corner") {
+          const newW = Math.min(Math.max((e.clientX - centerX) * 2 + 40, 500), window.innerWidth - 40);
+          setZoomSize(prev => ({ ...prev, w: newW }));
+        }
+        if (isDraggingZoom === "bottom" || isDraggingZoom === "corner") {
+          const newH = Math.min(Math.max((e.clientY - centerY) * 2 + 40, 300), window.innerHeight - 60);
+          setZoomSize(prev => ({ ...prev, h: newH }));
         }
       }
       rafId = null;
@@ -588,6 +600,7 @@ export default function DashboardClient() {
       setIsDraggingIO(false);
       setIsDraggingVertical(false);
       setIsDraggingProblemInfo(false);
+      setIsDraggingZoom(null);
     };
     
     const handleSelectStart = (e: Event) => e.preventDefault();
@@ -603,7 +616,7 @@ export default function DashboardClient() {
       document.removeEventListener("selectstart", handleSelectStart);
       document.body.classList.remove("dragging", "dragging-vertical");
     };
-  }, [isDraggingLeft, isDraggingRight, isDraggingIO, isDraggingVertical, isDraggingProblemInfo]);
+  }, [isDraggingLeft, isDraggingRight, isDraggingIO, isDraggingVertical, isDraggingProblemInfo, isDraggingZoom]);
 
   // Save tags handler
   const handleSaveTags = (solveId: string, tagsStr: string) => {
@@ -3445,15 +3458,15 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                       return (
                         <div
                           key={cardId}
-                          className="relative group/card"
+                          className={`relative group/card cursor-pointer transition-transform duration-200 hover:scale-[1.02] hover:z-10 ${zoomedCardId === cardId ? "ring-2 ring-purple-500" : ""}`}
                           style={{ height: `${revisionCardHeight}px` }}
+                          onClick={() => setZoomedCardId(cardId)}
                         >
-                          {/* Card - transforms on hover */}
                           <div
-                            className={`absolute inset-0 flex flex-col rounded-xl overflow-hidden border transition-all duration-300 ease-out group-hover/card:scale-[1.02] group-hover/card:z-30 group-hover/card:shadow-2xl ${
+                            className={`absolute inset-0 flex flex-col rounded-xl overflow-hidden border transition-shadow duration-200 hover:shadow-xl ${
                               lightMode 
-                                ? "bg-white border-gray-200 shadow-md group-hover/card:border-purple-400 group-hover/card:shadow-purple-200/50" 
-                                : "bg-[#12141a] border-[#2d333b] shadow-lg group-hover/card:border-purple-500/60 group-hover/card:shadow-purple-900/40"
+                                ? "bg-white border-gray-200 shadow-md hover:border-purple-300" 
+                                : "bg-[#12141a] border-[#2d333b] shadow-lg hover:border-purple-500/50"
                             }`}
                           >
                             {/* Card header */}
@@ -3462,10 +3475,10 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                                 <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${entry.difficulty === "Easy" ? "bg-green-500" : entry.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"}`} />
                                 <span className={`text-[11px] font-bold truncate ${lightMode ? "text-gray-800" : "text-white"}`}>{entry.title}</span>
                               </div>
-                              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover/card:opacity-100 transition-opacity">
-                                <button onClick={(e) => { e.stopPropagation(); loadEntryIntoCompiler(entry); setShowCompiler(true); setShowRevisionPanel(false); }} className="text-[9px] px-2 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 font-bold">▶ Run</button>
-                                <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(entry.code_solution); }} className="text-[9px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold">📋</button>
-                                <button onClick={(e) => { e.stopPropagation(); setRevisionCards(prev => prev.filter(id => id !== cardId)); }} className="text-[9px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 font-bold">✕</button>
+                              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover/card:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                                <button onClick={() => { loadEntryIntoCompiler(entry); setShowCompiler(true); setShowRevisionPanel(false); }} className="text-[9px] px-2 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 font-bold">▶</button>
+                                <button onClick={() => navigator.clipboard.writeText(entry.code_solution)} className="text-[9px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold">📋</button>
+                                <button onClick={() => setRevisionCards(prev => prev.filter(id => id !== cardId))} className="text-[9px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 font-bold">✕</button>
                               </div>
                             </div>
                             {/* Topic */}
@@ -3473,20 +3486,15 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               <span className={`px-1.5 py-0.5 rounded font-bold ${lightMode ? "bg-indigo-50 text-indigo-600" : "bg-indigo-500/15 text-indigo-400"}`}>{entry.topic}</span>
                               {entry.sub_topic && <span className={lightMode ? "text-gray-400" : "text-gray-600"}>{entry.sub_topic}</span>}
                             </div>
-                            {/* Code - with proper colors */}
-                            <div className={`flex-1 overflow-y-auto overflow-x-hidden ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
-                              <pre
-                                className="p-3 selectable"
-                                style={{ 
-                                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace", 
-                                  fontSize: "12px",
-                                  lineHeight: "20px",
-                                  color: "#9cdcfe",
-                                  tabSize: 4,
-                                  whiteSpace: "pre-wrap",
-                                  wordBreak: "break-word",
-                                }}
-                              >{entry.code_solution}</pre>
+                            {/* Code preview */}
+                            <div className={`flex-1 overflow-hidden ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
+                              <pre className="p-3 h-full overflow-hidden" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: "11px", lineHeight: "18px", color: "#9cdcfe", tabSize: 4, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{entry.code_solution}</pre>
+                            </div>
+                            {/* Click hint */}
+                            <div className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity pointer-events-none`}>
+                              <div className="bg-black/60 backdrop-blur-sm text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg">
+                                Click to zoom 🔍
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -3511,6 +3519,117 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                       <span className="text-[9px] mt-1 opacity-50">{learnEntries.filter(e => !revisionCards.includes(e.id)).length} available</span>
                     </motion.button>
                   </div>
+                  
+                  {/* ═══ ZOOM MODAL - Full screen readable code view ═══ */}
+                  <AnimatePresence>
+                    {zoomedCardId && (() => {
+                      const zoomedEntry = learnEntries.find(e => e.id === zoomedCardId);
+                      if (!zoomedEntry) return null;
+                      return (
+                        <motion.div
+                          key="zoom-overlay"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className="fixed inset-0 z-50 flex items-center justify-center p-6 sm:p-10"
+                          style={{ backgroundColor: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
+                          onClick={() => setZoomedCardId(null)}
+                          onKeyDown={(e) => { 
+                            if (e.key === "Escape") setZoomedCardId(null);
+                            if (e.key === "ArrowRight") {
+                              const idx = revisionCards.indexOf(zoomedCardId);
+                              if (idx < revisionCards.length - 1) setZoomedCardId(revisionCards[idx + 1]);
+                            }
+                            if (e.key === "ArrowLeft") {
+                              const idx = revisionCards.indexOf(zoomedCardId);
+                              if (idx > 0) setZoomedCardId(revisionCards[idx - 1]);
+                            }
+                          }}
+                          tabIndex={0}
+                          role="dialog"
+                        >
+                          <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                            className={`relative flex flex-col rounded-2xl overflow-hidden border-2 ${
+                              lightMode 
+                                ? "bg-white border-purple-300 shadow-2xl" 
+                                : "bg-[#12141a] border-purple-500/50 shadow-2xl shadow-purple-900/30"
+                            }`}
+                            style={{ width: `${zoomSize.w}px`, height: `${zoomSize.h}px`, maxWidth: "95vw", maxHeight: "90vh" }}
+                            onClick={e => e.stopPropagation()}
+                          >
+                            {/* Zoom header */}
+                            <div className={`flex items-center justify-between px-5 py-3 border-b shrink-0 ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#1a1d24] border-[#30363d]"}`}>
+                              <div className="flex items-center gap-3 min-w-0">
+                                <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${zoomedEntry.difficulty === "Easy" ? "bg-green-500" : zoomedEntry.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"}`} />
+                                <span className={`text-base font-bold truncate ${lightMode ? "text-gray-900" : "text-white"}`}>{zoomedEntry.title}</span>
+                                <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${lightMode ? "bg-indigo-50 text-indigo-600" : "bg-indigo-500/15 text-indigo-400"}`}>{zoomedEntry.topic}</span>
+                                {zoomedEntry.sub_topic && <span className={`text-xs ${lightMode ? "text-gray-400" : "text-gray-500"}`}>{zoomedEntry.sub_topic}</span>}
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {/* Nav arrows */}
+                                <button 
+                                  onClick={() => { const idx = revisionCards.indexOf(zoomedCardId); if (idx > 0) setZoomedCardId(revisionCards[idx - 1]); }}
+                                  disabled={revisionCards.indexOf(zoomedCardId) === 0}
+                                  className={`p-1.5 rounded-lg transition disabled:opacity-30 ${lightMode ? "hover:bg-gray-200 text-gray-600" : "hover:bg-white/10 text-white/60"}`}
+                                >←</button>
+                                <span className={`text-xs font-medium ${lightMode ? "text-gray-400" : "text-gray-500"}`}>{revisionCards.indexOf(zoomedCardId) + 1}/{revisionCards.length}</span>
+                                <button 
+                                  onClick={() => { const idx = revisionCards.indexOf(zoomedCardId); if (idx < revisionCards.length - 1) setZoomedCardId(revisionCards[idx + 1]); }}
+                                  disabled={revisionCards.indexOf(zoomedCardId) === revisionCards.length - 1}
+                                  className={`p-1.5 rounded-lg transition disabled:opacity-30 ${lightMode ? "hover:bg-gray-200 text-gray-600" : "hover:bg-white/10 text-white/60"}`}
+                                >→</button>
+                                <div className={`w-px h-5 mx-1 ${lightMode ? "bg-gray-200" : "bg-white/10"}`} />
+                                <button onClick={() => { loadEntryIntoCompiler(zoomedEntry); setShowCompiler(true); setShowRevisionPanel(false); setZoomedCardId(null); }} className="text-xs px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 font-bold">▶ Run in Compiler</button>
+                                <button onClick={() => navigator.clipboard.writeText(zoomedEntry.code_solution)} className="text-xs px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold">📋 Copy</button>
+                                <button onClick={() => setZoomedCardId(null)} className={`p-2 rounded-lg transition ${lightMode ? "hover:bg-gray-200 text-gray-500" : "hover:bg-white/10 text-white/50"}`}>✕</button>
+                              </div>
+                            </div>
+                            {/* Full code - large, readable */}
+                            <div className={`flex-1 overflow-y-auto ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
+                              <div className="flex">
+                                {/* Line numbers */}
+                                <div className="shrink-0 py-5 pl-4 pr-3 text-right select-none border-r border-white/5" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                                  {zoomedEntry.code_solution.split("\n").map((_, i) => (
+                                    <div key={i} style={{ fontSize: "14px", lineHeight: "24px", color: "#4b5563" }}>{i + 1}</div>
+                                  ))}
+                                </div>
+                                {/* Code */}
+                                <pre className="flex-1 py-5 pl-5 pr-5 selectable" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: "14px", lineHeight: "24px", color: "#9cdcfe", tabSize: 4, whiteSpace: "pre" }}>{zoomedEntry.code_solution}</pre>
+                              </div>
+                            </div>
+                            {/* Footer hint */}
+                            <div className={`px-4 py-2 text-center text-[10px] border-t ${lightMode ? "bg-gray-50 border-gray-200 text-gray-400" : "bg-[#1a1d24] border-[#30363d] text-gray-600"}`}>
+                              ← → Arrow keys to navigate • Esc to close • Drag edges to resize
+                            </div>
+                            
+                            {/* Resize handles */}
+                            {/* Right edge */}
+                            <div 
+                              className="absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-purple-500/30 transition-colors"
+                              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingZoom("right"); }}
+                            />
+                            {/* Bottom edge */}
+                            <div 
+                              className="absolute bottom-0 left-0 w-full h-2 cursor-row-resize hover:bg-purple-500/30 transition-colors"
+                              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingZoom("bottom"); }}
+                            />
+                            {/* Corner */}
+                            <div 
+                              className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize hover:bg-purple-500/50 transition-colors rounded-tl-lg"
+                              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingZoom("corner"); }}
+                            >
+                              <svg className="w-3 h-3 m-0.5 text-gray-500" viewBox="0 0 24 24" fill="currentColor"><path d="M22 22H20V20H22V22ZM22 18H18V22H14V18H10V22H6V18H2V14H6V10H2V6H6V2H10V6H14V2H18V6H22V10H18V14H22V18Z" opacity="0.3"/></svg>
+                            </div>
+                          </motion.div>
+                        </motion.div>
+                      );
+                    })()}
+                  </AnimatePresence>
                 </motion.div>
               )}
             </AnimatePresence>
