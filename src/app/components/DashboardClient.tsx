@@ -3624,8 +3624,25 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${lightMode ? "bg-indigo-50 text-indigo-600" : "bg-indigo-500/15 text-indigo-400"}`}>{pv.topic}</span>
                               <span className={`ml-auto text-[10px] ${lightMode ? "text-gray-400" : "text-gray-500"}`}>{pvIdx + 1}/{revisionCards.length} · ← → to navigate · Esc to close</span>
                             </div>
-                            <div className={`flex-1 overflow-y-auto overflow-x-auto ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
+                            <div className={`flex-1 overflow-y-auto overflow-x-auto relative ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
                               <pre className="p-4 selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "13px", lineHeight: "22px", color: "#d4d4d4", tabSize: 4, whiteSpace: "pre" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(pv.code_solution, pv.language) }} />
+                              {/* Invisible left/right tap zones over code area */}
+                              {canGoPrev && (
+                                <div
+                                  className="absolute left-0 top-0 w-1/2 h-full cursor-w-resize z-10 group/left"
+                                  onClick={(e) => { e.stopPropagation(); setHoverPreviewId(revisionCards[pvIdx - 1]); }}
+                                >
+                                  <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/0 group-hover/left:bg-white/15 flex items-center justify-center text-white/0 group-hover/left:text-white/80 transition-all text-sm">←</div>
+                                </div>
+                              )}
+                              {canGoNext && (
+                                <div
+                                  className="absolute right-0 top-0 w-1/2 h-full cursor-e-resize z-10 group/right"
+                                  onClick={(e) => { e.stopPropagation(); setHoverPreviewId(revisionCards[pvIdx + 1]); }}
+                                >
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/0 group-hover/right:bg-white/15 flex items-center justify-center text-white/0 group-hover/right:text-white/80 transition-all text-sm">→</div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </motion.div>
