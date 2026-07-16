@@ -3568,6 +3568,9 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                     {hoverPreviewId && !zoomedCardId && (() => {
                       const pv = learnEntries.find(e => e.id === hoverPreviewId);
                       if (!pv) return null;
+                      const pvIdx = revisionCards.indexOf(hoverPreviewId!);
+                      const canGoPrev = pvIdx > 0;
+                      const canGoNext = pvIdx < revisionCards.length - 1;
                       return (
                         <motion.div
                           key="hover-preview"
@@ -3586,7 +3589,30 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             setHoverPreviewId(null);
                           }}
                           onClick={() => setHoverPreviewId(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") setHoverPreviewId(null);
+                            if (e.key === "ArrowRight" && canGoNext) setHoverPreviewId(revisionCards[pvIdx + 1]);
+                            if (e.key === "ArrowLeft" && canGoPrev) setHoverPreviewId(revisionCards[pvIdx - 1]);
+                          }}
+                          tabIndex={0}
+                          ref={(el) => { if (el) el.focus(); }}
                         >
+                          {/* Left nav arrow */}
+                          {canGoPrev && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setHoverPreviewId(revisionCards[pvIdx - 1]); }}
+                              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center text-xl transition-all hover:scale-110 z-50"
+                              title="Previous (← arrow key)"
+                            >←</button>
+                          )}
+                          {/* Right nav arrow */}
+                          {canGoNext && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setHoverPreviewId(revisionCards[pvIdx + 1]); }}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center text-xl transition-all hover:scale-110 z-50"
+                              title="Next (→ arrow key)"
+                            >→</button>
+                          )}
                           <div
                             className={`flex flex-col rounded-2xl overflow-hidden border-2 shadow-2xl ${lightMode ? "bg-white border-purple-300" : "bg-[#12141a] border-purple-500/50"}`}
                             style={{ width: "min(700px, 85vw)", height: "min(600px, 80vh)" }}
@@ -3596,7 +3622,7 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               <span className={`w-3 h-3 rounded-full ${pv.difficulty === "Easy" ? "bg-green-500" : pv.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"}`} />
                               <span className={`text-sm font-bold ${lightMode ? "text-gray-900" : "text-white"}`}>{pv.title}</span>
                               <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${lightMode ? "bg-indigo-50 text-indigo-600" : "bg-indigo-500/15 text-indigo-400"}`}>{pv.topic}</span>
-                              <span className={`ml-auto text-[10px] ${lightMode ? "text-gray-400" : "text-gray-500"}`}>Click outside to close · Click card for fullscreen</span>
+                              <span className={`ml-auto text-[10px] ${lightMode ? "text-gray-400" : "text-gray-500"}`}>{pvIdx + 1}/{revisionCards.length} · ← → to navigate · Esc to close</span>
                             </div>
                             <div className={`flex-1 overflow-y-auto overflow-x-auto ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
                               <pre className="p-4 selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "13px", lineHeight: "22px", color: "#d4d4d4", tabSize: 4, whiteSpace: "pre" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(pv.code_solution, pv.language) }} />
