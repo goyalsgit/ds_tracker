@@ -96,6 +96,47 @@ function exportCSV(solves: SolveEntry[]) {
   a.click(); URL.revokeObjectURL(a.href);
 }
 
+/* ─── Syntax highlight helper (reusable for flash cards) ──── */
+function highlightCodeHtml(code: string, language: string): string {
+  if (!code) return "";
+  let c = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  
+  // Apply patterns based on language
+  if (language === "cpp" || language === "c") {
+    c = c.replace(/(\/\/[^\n]*)/g, '<span style="color:#6A9955;font-style:italic">$1</span>');
+    c = c.replace(/(\/\*[\s\S]*?\*\/)/g, '<span style="color:#6A9955;font-style:italic">$1</span>');
+    c = c.replace(/("(?:[^"\\]|\\.)*")/g, '<span style="color:#CE9178">$1</span>');
+    c = c.replace(/(#\s*(?:include|define|ifndef|ifdef|endif|pragma))/g, '<span style="color:#C586C0">$1</span>');
+    c = c.replace(/\b(int|long|short|char|float|double|bool|void|auto|unsigned|signed|const|static|inline|virtual|size_t)\b/g, '<span style="color:#4FC1FF">$1</span>');
+    c = c.replace(/\b(if|else|for|while|do|switch|case|default|break|continue|return|goto|throw|try|catch)\b/g, '<span style="color:#C586C0">$1</span>');
+    c = c.replace(/\b(class|struct|union|enum|namespace|template|typename|public|private|protected|new|delete|this|nullptr|true|false|sizeof|typedef|using)\b/g, '<span style="color:#569CD6">$1</span>');
+    c = c.replace(/\b(vector|map|set|unordered_map|unordered_set|pair|string|queue|stack|priority_queue|list|deque|array|cout|cin|endl|std|sort|min|max)\b/g, '<span style="color:#4EC9B0">$1</span>');
+    c = c.replace(/\b(\d+\.?\d*[fFlLuU]*)\b/g, '<span style="color:#B5CEA8">$1</span>');
+  } else if (language === "python") {
+    c = c.replace(/(#[^\n]*)/g, '<span style="color:#6A9955;font-style:italic">$1</span>');
+    c = c.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, '<span style="color:#CE9178">$1</span>');
+    c = c.replace(/\b(def|class|if|elif|else|for|while|try|except|finally|with|as|import|from|return|yield|raise|break|continue|pass|lambda|and|or|not|in|is|async|await)\b/g, '<span style="color:#C586C0">$1</span>');
+    c = c.replace(/\b(None|True|False)\b/g, '<span style="color:#569CD6">$1</span>');
+    c = c.replace(/\b(int|float|str|list|dict|set|tuple|bool|range|len|print|input|open|super|self|enumerate|zip|map|filter|sorted)\b/g, '<span style="color:#4EC9B0">$1</span>');
+    c = c.replace(/\b(\d+\.?\d*)\b/g, '<span style="color:#B5CEA8">$1</span>');
+  } else if (language === "java") {
+    c = c.replace(/(\/\/[^\n]*)/g, '<span style="color:#6A9955;font-style:italic">$1</span>');
+    c = c.replace(/("(?:[^"\\]|\\.)*")/g, '<span style="color:#CE9178">$1</span>');
+    c = c.replace(/\b(int|long|short|byte|char|float|double|boolean|void|class|interface|extends|implements|abstract|final|static|public|private|protected|new|this|super|return|if|else|for|while|do|switch|case|break|continue|try|catch|finally|throw|import|package)\b/g, '<span style="color:#569CD6">$1</span>');
+    c = c.replace(/\b(null|true|false)\b/g, '<span style="color:#569CD6">$1</span>');
+    c = c.replace(/\b(String|Integer|Long|Double|Float|Boolean|Object|System|Scanner|ArrayList|HashMap|HashSet|LinkedList|Arrays|Collections|Math|StringBuilder)\b/g, '<span style="color:#4EC9B0">$1</span>');
+    c = c.replace(/\b(\d+\.?\d*[fFdDlL]?)\b/g, '<span style="color:#B5CEA8">$1</span>');
+  } else {
+    c = c.replace(/(\/\/[^\n]*)/g, '<span style="color:#6A9955;font-style:italic">$1</span>');
+    c = c.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/g, '<span style="color:#CE9178">$1</span>');
+    c = c.replace(/\b(const|let|var|function|class|return|if|else|for|while|do|switch|case|break|continue|try|catch|throw|new|this|import|export|from|async|await|typeof)\b/g, '<span style="color:#569CD6">$1</span>');
+    c = c.replace(/\b(null|undefined|true|false)\b/g, '<span style="color:#569CD6">$1</span>');
+    c = c.replace(/\b(Array|Object|String|Number|Boolean|Function|Promise|Map|Set|JSON|Math|console)\b/g, '<span style="color:#4EC9B0">$1</span>');
+    c = c.replace(/\b(\d+\.?\d*)\b/g, '<span style="color:#B5CEA8">$1</span>');
+  }
+  return c;
+}
+
 /* ─── Theme ──────────────────────────────────────────────────────────────── */
 // Clean, professional theme inspired by modern coding platforms
 function getTheme(light: boolean) {
@@ -467,7 +508,7 @@ export default function DashboardClient() {
   const [showRevisionPanel, setShowRevisionPanel] = useState(false);
   const [revisionCards, setRevisionCards] = useState<string[]>([]); // entry IDs
   const [revisionLayout, setRevisionLayout] = useState<2 | 3 | 4 | 6>(4); // grid columns
-  const [revisionCardHeight, setRevisionCardHeight] = useState(280); // card height in px
+  const [revisionCardHeight, setRevisionCardHeight] = useState(320); // card height in px
   const [zoomedCardId, setZoomedCardId] = useState<string | null>(null); // currently zoomed card
   const [zoomSize, setZoomSize] = useState({ w: 900, h: 600 }); // zoom modal size
   const [isDraggingZoom, setIsDraggingZoom] = useState<"right" | "bottom" | "corner" | null>(null);
@@ -3421,27 +3462,10 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                     </div>
                   </div>
                   
-                  {/* Card grid with hover auto-zoom and touch swipe */}
+                  {/* Card grid with hover zoom */}
                   <div 
                     className="flex-1 overflow-y-auto p-4 gap-4"
                     style={{ display: "grid", gridTemplateColumns: `repeat(${revisionLayout}, 1fr)`, alignContent: "start" }}
-                    onTouchStart={(e) => {
-                      const touch = e.touches[0];
-                      (e.currentTarget as HTMLElement).dataset.touchX = String(touch.clientX);
-                    }}
-                    onTouchEnd={(e) => {
-                      const startX = Number((e.currentTarget as HTMLElement).dataset.touchX || 0);
-                      const endX = e.changedTouches[0].clientX;
-                      const diff = startX - endX;
-                      if (Math.abs(diff) > 80) {
-                        // Swipe detected - navigate zoom if zoomed
-                        if (zoomedCardId) {
-                          const idx = revisionCards.indexOf(zoomedCardId);
-                          if (diff > 0 && idx < revisionCards.length - 1) setZoomedCardId(revisionCards[idx + 1]);
-                          if (diff < 0 && idx > 0) setZoomedCardId(revisionCards[idx - 1]);
-                        }
-                      }
-                    }}
                   >
                     {revisionCards.map((cardId) => {
                       const entry = learnEntries.find(e => e.id === cardId);
@@ -3449,59 +3473,33 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                       return (
                         <div
                           key={cardId}
-                          className={`relative group/card cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:z-10 ${zoomedCardId === cardId ? "ring-2 ring-purple-500" : ""}`}
+                          className="relative group/card"
                           style={{ height: `${revisionCardHeight}px` }}
-                          onClick={() => setZoomedCardId(cardId)}
-                          onMouseEnter={(e) => {
-                            // Auto-zoom on hover after 600ms
-                            const el = e.currentTarget;
-                            const timer = setTimeout(() => setZoomedCardId(cardId), 600);
-                            el.dataset.hoverTimer = String(timer);
-                          }}
-                          onMouseLeave={(e) => {
-                            const timer = (e.currentTarget as HTMLElement).dataset.hoverTimer;
-                            if (timer) clearTimeout(Number(timer));
-                          }}
                         >
-                          <div
-                            className={`absolute inset-0 flex flex-col rounded-xl overflow-hidden border transition-shadow duration-200 hover:shadow-xl ${
-                              lightMode 
-                                ? "bg-white border-gray-200 shadow-md hover:border-purple-300" 
-                                : "bg-[#12141a] border-[#2d333b] shadow-lg hover:border-purple-500/50"
-                            }`}
-                          >
-                            {/* Card header */}
+                          {/* Normal card */}
+                          <div className={`absolute inset-0 flex flex-col rounded-xl overflow-hidden border transition-all duration-200 group-hover/card:shadow-2xl ${lightMode ? "bg-white border-gray-200 shadow-md group-hover/card:border-purple-300" : "bg-[#12141a] border-[#2d333b] shadow-lg group-hover/card:border-purple-500/50"}`}>
                             <div className={`flex items-center justify-between px-3 py-2 shrink-0 border-b ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#1a1d24] border-[#2d333b]"}`}>
                               <div className="flex items-center gap-2 min-w-0">
                                 <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${entry.difficulty === "Easy" ? "bg-green-500" : entry.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"}`} />
                                 <span className={`text-[11px] font-bold truncate ${lightMode ? "text-gray-800" : "text-white"}`}>{entry.title}</span>
                               </div>
-                              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover/card:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
-                                <button onClick={() => { loadEntryIntoCompiler(entry); setShowCompiler(true); setShowRevisionPanel(false); }} className="text-[9px] px-2 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 font-bold">▶</button>
-                                <button onClick={() => navigator.clipboard.writeText(entry.code_solution)} className="text-[9px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold">📋</button>
-                                <button onClick={() => setRevisionCards(prev => prev.filter(id => id !== cardId))} className="text-[9px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 font-bold">✕</button>
+                              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                <button onClick={(e) => { e.stopPropagation(); loadEntryIntoCompiler(entry); setShowCompiler(true); setShowRevisionPanel(false); }} className="text-[9px] px-2 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 font-bold">▶</button>
+                                <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(entry.code_solution); }} className="text-[9px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold">📋</button>
+                                <button onClick={(e) => { e.stopPropagation(); setRevisionCards(prev => prev.filter(id => id !== cardId)); }} className="text-[9px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 font-bold">✕</button>
                               </div>
                             </div>
-                            {/* Topic */}
-                            <div className={`px-3 py-1 text-[9px] flex items-center gap-1.5 ${lightMode ? "bg-gray-50/50" : ""}`}>
+                            <div className={`px-3 py-1 text-[9px] flex items-center gap-1.5`}>
                               <span className={`px-1.5 py-0.5 rounded font-bold ${lightMode ? "bg-indigo-50 text-indigo-600" : "bg-indigo-500/15 text-indigo-400"}`}>{entry.topic}</span>
                               {entry.sub_topic && <span className={lightMode ? "text-gray-400" : "text-gray-600"}>{entry.sub_topic}</span>}
                             </div>
-                            {/* Code preview */}
-                            <div className={`flex-1 overflow-hidden ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
-                              <pre className="p-3 h-full overflow-hidden" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', 'Cascadia Code', 'Source Code Pro', monospace", fontSize: "12px", lineHeight: "19px", color: "#79c0ff", tabSize: 4, whiteSpace: "pre-wrap", wordBreak: "break-word", fontVariantLigatures: "common-ligatures" }}>{entry.code_solution}</pre>
-                            </div>
-                            {/* Click hint */}
-                            <div className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity pointer-events-none`}>
-                              <div className="bg-black/60 backdrop-blur-sm text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg">
-                                Click to zoom 🔍
-                              </div>
+                            <div className={`flex-1 overflow-y-auto overflow-x-hidden ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
+                              <pre className="p-3 selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "12px", lineHeight: "19px", color: "#d4d4d4", tabSize: 4, whiteSpace: "pre-wrap", wordBreak: "break-word" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(entry.code_solution, entry.language) }} />
                             </div>
                           </div>
                         </div>
                       );
                     })}
-                    
                     {/* Add card button */}
                     <motion.button
                       onClick={() => {
@@ -3521,114 +3519,99 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                     </motion.button>
                   </div>
                   
-                  {/* ═══ ZOOM MODAL - Full screen readable code view ═══ */}
+                  {/* ═══ FULLSCREEN SWIPE VIEWER (like WhatsApp photos) ═══ */}
                   <AnimatePresence>
                     {zoomedCardId && (() => {
                       const zoomedEntry = learnEntries.find(e => e.id === zoomedCardId);
                       if (!zoomedEntry) return null;
+                      const currentIdx = revisionCards.indexOf(zoomedCardId);
                       return (
                         <motion.div
                           key="zoom-overlay"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          transition={{ duration: 0.15 }}
-                          className="fixed inset-0 z-50 flex items-center justify-center p-6 sm:p-10"
-                          style={{ backgroundColor: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
+                          className="fixed inset-0 z-50 flex items-center justify-center"
+                          style={{ backgroundColor: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)" }}
                           onClick={() => setZoomedCardId(null)}
                           onKeyDown={(e) => { 
                             if (e.key === "Escape") setZoomedCardId(null);
-                            if (e.key === "ArrowRight") { const idx = revisionCards.indexOf(zoomedCardId); if (idx < revisionCards.length - 1) setZoomedCardId(revisionCards[idx + 1]); }
-                            if (e.key === "ArrowLeft") { const idx = revisionCards.indexOf(zoomedCardId); if (idx > 0) setZoomedCardId(revisionCards[idx - 1]); }
+                            if (e.key === "ArrowRight" && currentIdx < revisionCards.length - 1) setZoomedCardId(revisionCards[currentIdx + 1]);
+                            if (e.key === "ArrowLeft" && currentIdx > 0) setZoomedCardId(revisionCards[currentIdx - 1]);
                           }}
-                          onTouchStart={(e) => { (e.currentTarget as HTMLElement).dataset.touchX = String(e.touches[0].clientX); }}
-                          onTouchEnd={(e) => {
-                            const startX = Number((e.currentTarget as HTMLElement).dataset.touchX || 0);
-                            const diff = startX - e.changedTouches[0].clientX;
-                            if (Math.abs(diff) > 60) {
-                              const idx = revisionCards.indexOf(zoomedCardId);
-                              if (diff > 0 && idx < revisionCards.length - 1) setZoomedCardId(revisionCards[idx + 1]);
-                              if (diff < 0 && idx > 0) setZoomedCardId(revisionCards[idx - 1]);
+                          onWheel={(e) => {
+                            // Trackpad horizontal scroll = swipe
+                            if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 50) {
+                              if (e.deltaX > 0 && currentIdx < revisionCards.length - 1) setZoomedCardId(revisionCards[currentIdx + 1]);
+                              if (e.deltaX < 0 && currentIdx > 0) setZoomedCardId(revisionCards[currentIdx - 1]);
                             }
                           }}
                           tabIndex={0}
                           role="dialog"
                         >
+                          {/* Left arrow */}
+                          {currentIdx > 0 && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setZoomedCardId(revisionCards[currentIdx - 1]); }}
+                              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xl transition z-50"
+                            >←</button>
+                          )}
+                          {/* Right arrow */}
+                          {currentIdx < revisionCards.length - 1 && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setZoomedCardId(revisionCards[currentIdx + 1]); }}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xl transition z-50"
+                            >→</button>
+                          )}
+                          
+                          {/* Card counter */}
+                          <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/60 text-sm font-medium z-50">
+                            {currentIdx + 1} / {revisionCards.length}
+                          </div>
+                          
+                          {/* Close */}
+                          <button onClick={(e) => { e.stopPropagation(); setZoomedCardId(null); }} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition z-50">✕</button>
+                          
+                          {/* The zoomed card */}
                           <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                            className={`relative flex flex-col rounded-2xl overflow-hidden border-2 ${
-                              lightMode 
-                                ? "bg-white border-purple-300 shadow-2xl" 
-                                : "bg-[#12141a] border-purple-500/50 shadow-2xl shadow-purple-900/30"
-                            }`}
-                            style={{ width: `${zoomSize.w}px`, height: `${zoomSize.h}px`, maxWidth: "95vw", maxHeight: "90vh" }}
+                            key={zoomedCardId}
+                            initial={{ opacity: 0, scale: 0.95, x: 50 }}
+                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, x: -50 }}
+                            transition={{ duration: 0.2 }}
+                            className={`flex flex-col rounded-2xl overflow-hidden border-2 ${lightMode ? "bg-white border-purple-300" : "bg-[#12141a] border-purple-500/40"}`}
+                            style={{ width: `${zoomSize.w}px`, height: `${zoomSize.h}px`, maxWidth: "92vw", maxHeight: "88vh" }}
                             onClick={e => e.stopPropagation()}
                           >
-                            {/* Zoom header */}
+                            {/* Header */}
                             <div className={`flex items-center justify-between px-5 py-3 border-b shrink-0 ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#1a1d24] border-[#30363d]"}`}>
                               <div className="flex items-center gap-3 min-w-0">
                                 <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${zoomedEntry.difficulty === "Easy" ? "bg-green-500" : zoomedEntry.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"}`} />
                                 <span className={`text-base font-bold truncate ${lightMode ? "text-gray-900" : "text-white"}`}>{zoomedEntry.title}</span>
                                 <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${lightMode ? "bg-indigo-50 text-indigo-600" : "bg-indigo-500/15 text-indigo-400"}`}>{zoomedEntry.topic}</span>
-                                {zoomedEntry.sub_topic && <span className={`text-xs ${lightMode ? "text-gray-400" : "text-gray-500"}`}>{zoomedEntry.sub_topic}</span>}
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                {/* Nav arrows */}
-                                <button 
-                                  onClick={() => { const idx = revisionCards.indexOf(zoomedCardId); if (idx > 0) setZoomedCardId(revisionCards[idx - 1]); }}
-                                  disabled={revisionCards.indexOf(zoomedCardId) === 0}
-                                  className={`p-1.5 rounded-lg transition disabled:opacity-30 ${lightMode ? "hover:bg-gray-200 text-gray-600" : "hover:bg-white/10 text-white/60"}`}
-                                >←</button>
-                                <span className={`text-xs font-medium ${lightMode ? "text-gray-400" : "text-gray-500"}`}>{revisionCards.indexOf(zoomedCardId) + 1}/{revisionCards.length}</span>
-                                <button 
-                                  onClick={() => { const idx = revisionCards.indexOf(zoomedCardId); if (idx < revisionCards.length - 1) setZoomedCardId(revisionCards[idx + 1]); }}
-                                  disabled={revisionCards.indexOf(zoomedCardId) === revisionCards.length - 1}
-                                  className={`p-1.5 rounded-lg transition disabled:opacity-30 ${lightMode ? "hover:bg-gray-200 text-gray-600" : "hover:bg-white/10 text-white/60"}`}
-                                >→</button>
-                                <div className={`w-px h-5 mx-1 ${lightMode ? "bg-gray-200" : "bg-white/10"}`} />
-                                <button onClick={() => { loadEntryIntoCompiler(zoomedEntry); setShowCompiler(true); setShowRevisionPanel(false); setZoomedCardId(null); }} className="text-xs px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 font-bold">▶ Run in Compiler</button>
+                                <button onClick={() => { loadEntryIntoCompiler(zoomedEntry); setShowCompiler(true); setShowRevisionPanel(false); setZoomedCardId(null); }} className="text-xs px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 font-bold">▶ Run</button>
                                 <button onClick={() => navigator.clipboard.writeText(zoomedEntry.code_solution)} className="text-xs px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold">📋 Copy</button>
-                                <button onClick={() => setZoomedCardId(null)} className={`p-2 rounded-lg transition ${lightMode ? "hover:bg-gray-200 text-gray-500" : "hover:bg-white/10 text-white/50"}`}>✕</button>
                               </div>
                             </div>
-                            {/* Full code - large, readable */}
+                            {/* Code */}
                             <div className={`flex-1 overflow-y-auto ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
                               <div className="flex">
-                                {/* Line numbers */}
-                                <div className="shrink-0 py-5 pl-4 pr-3 text-right select-none border-r border-white/5" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                                <div className="shrink-0 py-4 pl-4 pr-3 text-right select-none border-r border-white/5">
                                   {zoomedEntry.code_solution.split("\n").map((_, i) => (
-                                    <div key={i} style={{ fontSize: "14px", lineHeight: "24px", color: "#4b5563" }}>{i + 1}</div>
+                                    <div key={i} style={{ fontFamily: "'Fira Code', monospace", fontSize: "14px", lineHeight: "26px", color: "#4b5563" }}>{i + 1}</div>
                                   ))}
                                 </div>
-                                {/* Code */}
-                                <pre className="flex-1 py-5 pl-5 pr-5 selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', 'Cascadia Code', 'Source Code Pro', monospace", fontSize: "14px", lineHeight: "26px", color: "#79c0ff", tabSize: 4, whiteSpace: "pre", fontVariantLigatures: "common-ligatures", letterSpacing: "0.3px" }}>{zoomedEntry.code_solution}</pre>
+                                <pre className="flex-1 py-4 pl-5 pr-5 selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "14px", lineHeight: "26px", color: "#d4d4d4", tabSize: 4, whiteSpace: "pre", letterSpacing: "0.3px" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(zoomedEntry.code_solution, zoomedEntry.language) }} />
                               </div>
                             </div>
-                            {/* Footer hint */}
-                            <div className={`px-4 py-2 text-center text-[10px] border-t ${lightMode ? "bg-gray-50 border-gray-200 text-gray-400" : "bg-[#1a1d24] border-[#30363d] text-gray-600"}`}>
-                              ← → Arrow keys to navigate • Esc to close • Drag edges to resize
-                            </div>
-                            
-                            {/* Resize handles */}
-                            {/* Right edge */}
+                            {/* Resize handle corner */}
                             <div 
-                              className="absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-purple-500/30 transition-colors"
-                              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingZoom("right"); }}
-                            />
-                            {/* Bottom edge */}
-                            <div 
-                              className="absolute bottom-0 left-0 w-full h-2 cursor-row-resize hover:bg-purple-500/30 transition-colors"
-                              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingZoom("bottom"); }}
-                            />
-                            {/* Corner */}
-                            <div 
-                              className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize hover:bg-purple-500/50 transition-colors rounded-tl-lg"
+                              className="absolute bottom-0 right-0 w-5 h-5 cursor-nwse-resize opacity-40 hover:opacity-100 transition-opacity"
                               onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingZoom("corner"); }}
                             >
-                              <svg className="w-3 h-3 m-0.5 text-gray-500" viewBox="0 0 24 24" fill="currentColor"><path d="M22 22H20V20H22V22ZM22 18H18V22H14V18H10V22H6V18H2V14H6V10H2V6H6V2H10V6H14V2H18V6H22V10H18V14H22V18Z" opacity="0.3"/></svg>
+                              <svg className="w-4 h-4 m-0.5 text-purple-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20 20h-2v-2h2v2zm0-4h-2v-2h2v2zm-4 4h-2v-2h2v2z"/></svg>
                             </div>
                           </motion.div>
                         </motion.div>
@@ -3863,9 +3846,7 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             ))}
                           </div>
                           {/* Code content */}
-                          <pre className="flex-1 py-4 pl-4 pr-4 overflow-x-auto text-[13px] leading-[22px]" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", tabSize: 4 }}>
-                            <code className="text-[#d4d4d4]">{selectedEntry.code_solution}</code>
-                          </pre>
+                          <pre className="flex-1 py-4 pl-4 pr-4 overflow-x-auto text-[13px] leading-[22px] selectable" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", tabSize: 4, color: "#d4d4d4" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(selectedEntry.code_solution, selectedEntry.language) }} />
                         </div>
                       </div>
                     </div>
