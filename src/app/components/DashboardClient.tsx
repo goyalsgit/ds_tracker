@@ -457,6 +457,10 @@ export default function DashboardClient() {
   const [problemInfoHeight, setProblemInfoHeight] = useState(35);
   const [isDraggingProblemInfo, setIsDraggingProblemInfo] = useState(false);
   
+  // Notes editor state
+  const [compilerNotes, setCompilerNotes] = useState("");
+  const [rightPanelView, setRightPanelView] = useState<"io" | "notes">("io");
+  
   // Vertical layout height (percentage of code editor)
   const [verticalSplit, setVerticalSplit] = useState(60);
   const [isDraggingVertical, setIsDraggingVertical] = useState(false);
@@ -4454,9 +4458,28 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               return;
                             }
                             
-                            // ═══ Auto-close brackets: { ( [ " ' ═══
+                            // ═══ Skip over closing bracket if it matches ═══
+                            const closingChars = ["}", ")", "]", '"', "'", "`"];
+                            if (closingChars.includes(e.key) && start === end) {
+                              const nextChar = compilerCode.charAt(start);
+                              if (nextChar === e.key) {
+                                // Skip over it instead of inserting another
+                                e.preventDefault();
+                                setTimeout(() => {
+                                  textarea.selectionStart = textarea.selectionEnd = start + 1;
+                                }, 0);
+                                return;
+                              }
+                            }
+                            
+                            // ═══ Auto-close brackets: { ( [ " ' ` ═══
                             const bracketPairs: Record<string, string> = { "{": "}", "(": ")", "[": "]", '"': '"', "'": "'", "`": "`" };
                             if (bracketPairs[e.key] && start === end) {
+                              // Don't auto-close quotes if cursor is inside a word
+                              if ((e.key === '"' || e.key === "'" || e.key === "`")) {
+                                const prevChar = compilerCode.charAt(start - 1);
+                                if (prevChar && /[a-zA-Z0-9_]/.test(prevChar)) return; // Let it type normally
+                              }
                               e.preventDefault();
                               const closeChar = bracketPairs[e.key];
                               const newCode = compilerCode.substring(0, start) + e.key + closeChar + compilerCode.substring(end);
@@ -4466,10 +4489,26 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               }, 0);
                               return;
                             }
+                            
+                            // ═══ Backspace removes matching pair if empty ═══
+                            if (e.key === "Backspace" && start === end && start > 0) {
+                              const prevChar = compilerCode.charAt(start - 1);
+                              const nextChar = compilerCode.charAt(start);
+                              const pairs: Record<string, string> = { "{": "}", "(": ")", "[": "]", '"': '"', "'": "'", "`": "`" };
+                              if (pairs[prevChar] === nextChar) {
+                                e.preventDefault();
+                                const newCode = compilerCode.substring(0, start - 1) + compilerCode.substring(start + 1);
+                                setCompilerCode(newCode);
+                                setTimeout(() => {
+                                  textarea.selectionStart = textarea.selectionEnd = start - 1;
+                                }, 0);
+                                return;
+                              }
+                            }
                           }}
                           placeholder=""
                           spellCheck={false}
-                          className="absolute inset-0 w-full h-full py-4 pr-4 pl-3 outline-none resize-none bg-transparent border-none focus:ring-0 focus:outline-none text-transparent"
+                          className="absolute inset-0 w-full h-full py-4 pr-4 pl-3 outline-none resize-none bg-transparent border-none focus:ring-0 focus:outline-none"
                           style={{ 
                             fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace",
                             fontSize: `${compilerFontSize}px`,
@@ -4477,6 +4516,7 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             caretColor: compilerLightMode ? "#3b82f6" : "#22c55e",
                             tabSize: 4,
                             MozTabSize: 4,
+                            color: "transparent",
                             WebkitTextFillColor: "transparent",
                             overflow: "auto",
                           }}
@@ -4680,8 +4720,102 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                           </div>
                         </div>
                       )}
+                      
+                      {/* ═══ IO / Notes View Toggle ═══ */}
+                      <div className={`flex items-center gap-0 shrink-0 border-b ${compilerLightMode ? "bg-[#fafafa] border-gray-200" : "bg-[#161b22] border-[#30363d]"}`}>
+                        <button
+                          onClick={() => setRightPanelView("io")}
+                          className={`flex-1 px-3 py-2 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 border-b-2 ${
+                            rightPanelView === "io" 
+                              ? compilerLightMode ? "text-blue-600 border-blue-500" : "text-blue-400 border-blue-500" 
+                              : compilerLightMode ? "text-gray-500 hover:text-gray-700 border-transparent" : "text-gray-500 hover:text-gray-300 border-transparent"
+                          }`}
+                        >
+                          <span>⚡</span> Testcase & Result
+                        </button>
+                        <button
+                          onClick={() => setRightPanelView("notes")}
+                          className={`flex-1 px-3 py-2 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 border-b-2 ${
+                            rightPanelView === "notes" 
+                              ? compilerLightMode ? "text-purple-600 border-purple-500" : "text-purple-400 border-purple-500" 
+                              : compilerLightMode ? "text-gray-500 hover:text-gray-700 border-transparent" : "text-gray-500 hover:text-gray-300 border-transparent"
+                          }`}
+                        >
+                          <span>📝</span> Notes & Tricks
+                        </button>
+                      </div>
 
-                      {/* ═══ Testcase + Test Result - Vertically Stacked & Resizable ═══ */}
+                      {/* ═══ CONTENT BASED ON VIEW ═══ */}
+                      {rightPanelView === "notes" ? (
+                        /* ═══ NOTES EDITOR - Notion-like Rich Notes ═══ */
+                        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+                          <div className={`px-3 py-2 flex items-center justify-between shrink-0 border-b ${compilerLightMode ? "bg-white border-gray-200" : "bg-[#0d1117] border-[#30363d]"}`}>
+                            <span className={`text-[10px] font-semibold ${compilerLightMode ? "text-gray-500" : "text-gray-400"}`}>
+                              Supports: Markdown • Paste images • Code blocks
+                            </span>
+                            <button
+                              onClick={() => navigator.clipboard.writeText(compilerNotes)}
+                              className={`text-[9px] px-2 py-0.5 rounded ${compilerLightMode ? "hover:bg-gray-100 text-gray-500" : "hover:bg-white/10 text-white/50"}`}
+                            >📋 Copy</button>
+                          </div>
+                          <div 
+                            contentEditable
+                            className={`flex-1 overflow-y-auto p-4 outline-none prose prose-sm max-w-none selectable ${
+                              compilerLightMode 
+                                ? "bg-white text-gray-800 prose-headings:text-gray-900 prose-code:bg-gray-100 prose-code:text-pink-600 prose-pre:bg-gray-900 prose-pre:text-gray-100" 
+                                : "bg-[#0d1117] text-gray-200 prose-invert prose-headings:text-white prose-code:bg-[#161b22] prose-code:text-pink-400 prose-pre:bg-black prose-pre:text-gray-100"
+                            }`}
+                            style={{ 
+                              fontFamily: "'Inter', system-ui, sans-serif",
+                              fontSize: "13px",
+                              lineHeight: "1.7",
+                              minHeight: "100%",
+                              whiteSpace: "pre-wrap",
+                              wordWrap: "break-word",
+                            }}
+                            onInput={(e) => {
+                              const el = e.target as HTMLDivElement;
+                              setCompilerNotes(el.innerHTML);
+                            }}
+                            onPaste={(e) => {
+                              // Handle image paste
+                              const items = e.clipboardData?.items;
+                              if (items) {
+                                for (let i = 0; i < items.length; i++) {
+                                  if (items[i].type.startsWith("image/")) {
+                                    e.preventDefault();
+                                    const file = items[i].getAsFile();
+                                    if (file) {
+                                      const reader = new FileReader();
+                                      reader.onload = (ev) => {
+                                        const img = document.createElement("img");
+                                        img.src = ev.target?.result as string;
+                                        img.style.maxWidth = "100%";
+                                        img.style.borderRadius = "8px";
+                                        img.style.margin = "8px 0";
+                                        const selection = window.getSelection();
+                                        if (selection && selection.rangeCount > 0) {
+                                          const range = selection.getRangeAt(0);
+                                          range.deleteContents();
+                                          range.insertNode(img);
+                                          range.setStartAfter(img);
+                                          range.collapse(true);
+                                          selection.removeAllRanges();
+                                          selection.addRange(range);
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                    return;
+                                  }
+                                }
+                              }
+                            }}
+                            suppressContentEditableWarning
+                            dangerouslySetInnerHTML={{ __html: compilerNotes || '<p style="color: inherit; opacity: 0.4;">Write your notes, tricks, and approach here...</p><p style="color: inherit; opacity: 0.4;">• Paste images directly</p><p style="color: inherit; opacity: 0.4;">• Format with Ctrl+B (bold), Ctrl+I (italic)</p>' }}
+                          />
+                        </div>
+                      ) : (
                       <div id="compiler-io-container" className="flex-1 flex flex-col overflow-hidden min-h-0">
                         {/* TESTCASE SECTION - Top */}
                         <div 
@@ -4775,6 +4909,7 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                           </div>
                         </div>
                       </div>
+                      )}
 
                       {/* OLD Input/Output resizable container - HIDDEN */}
                       <div className="hidden flex-1 flex-col overflow-hidden">

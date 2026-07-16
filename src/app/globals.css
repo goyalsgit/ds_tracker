@@ -198,6 +198,18 @@ html {
   border: none !important;
 }
 
+/* Fix selection: make selected text stay invisible but show highlight */
+#compiler-textarea::selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+#compiler-textarea::-moz-selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: transparent;
+}
+
 .compiler-no-focus:focus {
   outline: none !important;
   box-shadow: none !important;
