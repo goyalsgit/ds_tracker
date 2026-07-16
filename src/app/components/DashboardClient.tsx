@@ -463,6 +463,11 @@ export default function DashboardClient() {
   const notesEditorRef = useRef<HTMLDivElement>(null);
   const notesLoadedIdRef = useRef<string | null>(null);
   
+  // Multi-revision flashcard panel
+  const [showRevisionPanel, setShowRevisionPanel] = useState(false);
+  const [revisionCards, setRevisionCards] = useState<string[]>([]); // entry IDs
+  const [revisionLayout, setRevisionLayout] = useState<2 | 3 | 4 | 6>(4); // grid columns
+  
   // Vertical layout height (percentage of code editor)
   const [verticalSplit, setVerticalSplit] = useState(60);
   const [isDraggingVertical, setIsDraggingVertical] = useState(false);
@@ -3296,7 +3301,6 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
             <motion.button
               onClick={() => { 
                 setShowCompiler(true); 
-                // Load entries if not already loaded
                 if (token && learnEntries.length === 0) loadLearnEntries(token);
               }}
               whileHover={{ scale: 1.05 }}
@@ -3306,6 +3310,153 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
               <span className="text-lg">⚡</span>
               <span className="hidden sm:inline">Run Code</span>
             </motion.button>
+            
+            {/* ════ FLASH REVISION BUTTON - Floating ════ */}
+            <motion.button
+              onClick={() => { 
+                // Open revision panel with current topic's entries or last 6 entries
+                const entriesToRevise = learnEntries.slice(0, 6).map(e => e.id);
+                setRevisionCards(entriesToRevise);
+                setShowRevisionPanel(true);
+              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`fixed bottom-4 right-36 sm:bottom-6 sm:right-40 z-40 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white shadow-2xl ${lightMode ? "bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700" : "bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600"}`}
+            >
+              <span className="text-lg">🃏</span>
+              <span className="hidden sm:inline">Flash Revision</span>
+            </motion.button>
+            
+            {/* ════════ MULTI-QUESTION FLASH REVISION PANEL ════════ */}
+            <AnimatePresence>
+              {showRevisionPanel && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex flex-col"
+                  style={{ backgroundColor: lightMode ? "#f0f0f0" : "#0a0a0f" }}
+                >
+                  {/* Header */}
+                  <div className={`flex items-center justify-between px-4 py-3 border-b shrink-0 ${lightMode ? "bg-white border-gray-200 shadow-sm" : "bg-[#161b22] border-[#30363d]"}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                        <span className="text-white text-sm">🃏</span>
+                      </div>
+                      <div>
+                        <h2 className={`text-sm font-bold ${lightMode ? "text-gray-900" : "text-white"}`}>Flash Revision</h2>
+                        <p className={`text-[10px] ${lightMode ? "text-gray-500" : "text-gray-400"}`}>{revisionCards.length} cards loaded • Grid {revisionLayout}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Grid layout controls */}
+                      {([2, 3, 4, 6] as const).map(cols => (
+                        <button
+                          key={cols}
+                          onClick={() => setRevisionLayout(cols)}
+                          className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition ${
+                            revisionLayout === cols
+                              ? "bg-purple-500 text-white shadow"
+                              : lightMode ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-white/10 text-white/60 hover:bg-white/20"
+                          }`}
+                        >{cols}×</button>
+                      ))}
+                      <div className={`w-px h-6 mx-1 ${lightMode ? "bg-gray-200" : "bg-white/10"}`} />
+                      {/* Shuffle */}
+                      <button
+                        onClick={() => setRevisionCards(prev => [...prev].sort(() => Math.random() - 0.5))}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition ${lightMode ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-white/10 text-white/60 hover:bg-white/20"}`}
+                      >🔀 Shuffle</button>
+                      {/* Close */}
+                      <button
+                        onClick={() => setShowRevisionPanel(false)}
+                        className={`rounded-lg p-2 text-lg transition ${lightMode ? "hover:bg-gray-100 text-gray-500" : "hover:bg-white/10 text-white/50"}`}
+                      >✕</button>
+                    </div>
+                  </div>
+                  
+                  {/* Card grid */}
+                  <div 
+                    className="flex-1 overflow-y-auto p-3 gap-3"
+                    style={{ display: "grid", gridTemplateColumns: `repeat(${revisionLayout}, 1fr)`, alignContent: "start" }}
+                  >
+                    {revisionCards.map((cardId) => {
+                      const entry = learnEntries.find(e => e.id === cardId);
+                      if (!entry) return null;
+                      return (
+                        <motion.div
+                          key={cardId}
+                          layout
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className={`group relative flex flex-col rounded-xl overflow-hidden border transition-shadow hover:shadow-xl ${
+                            lightMode ? "bg-white border-gray-200 shadow-md" : "bg-[#161b22] border-[#30363d] shadow-lg"
+                          }`}
+                          style={{ minHeight: "250px", maxHeight: "450px" }}
+                        >
+                          {/* Card header */}
+                          <div className={`flex items-center justify-between px-3 py-2 border-b shrink-0 ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#0d1117] border-[#30363d]"}`}>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${
+                                entry.difficulty === "Easy" ? "bg-green-500" : entry.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"
+                              }`} />
+                              <span className={`text-[11px] font-bold truncate ${lightMode ? "text-gray-800" : "text-white"}`}>{entry.title}</span>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={() => { loadEntryIntoCompiler(entry); setShowCompiler(true); setShowRevisionPanel(false); }}
+                                className={`text-[9px] px-1.5 py-0.5 rounded transition opacity-0 group-hover:opacity-100 ${lightMode ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-green-500/20 text-green-400 hover:bg-green-500/30"}`}
+                              >▶</button>
+                              <button
+                                onClick={() => navigator.clipboard.writeText(entry.code_solution)}
+                                className={`text-[9px] px-1.5 py-0.5 rounded transition opacity-0 group-hover:opacity-100 ${lightMode ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-white/10 text-white/60 hover:bg-white/20"}`}
+                              >📋</button>
+                              <button
+                                onClick={() => setRevisionCards(prev => prev.filter(id => id !== cardId))}
+                                className={`text-[9px] px-1.5 py-0.5 rounded transition opacity-0 group-hover:opacity-100 ${lightMode ? "bg-red-50 text-red-500 hover:bg-red-100" : "bg-red-500/10 text-red-400 hover:bg-red-500/20"}`}
+                              >✕</button>
+                            </div>
+                          </div>
+                          {/* Card subtitle */}
+                          <div className={`px-3 py-1.5 flex items-center gap-2 text-[9px] border-b ${lightMode ? "bg-gray-50/50 border-gray-100 text-gray-500" : "bg-[#0d1117]/50 border-[#30363d]/50 text-gray-500"}`}>
+                            <span className={`px-1.5 py-0.5 rounded font-bold ${lightMode ? "bg-blue-50 text-blue-600" : "bg-blue-500/10 text-blue-400"}`}>{entry.topic}</span>
+                            {entry.sub_topic && <span>{entry.sub_topic}</span>}
+                            <span className="ml-auto uppercase font-bold">{entry.language}</span>
+                          </div>
+                          {/* Code content */}
+                          <div className={`flex-1 overflow-auto ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
+                            <pre
+                              className="p-3 text-[11px] leading-[18px] whitespace-pre overflow-x-auto"
+                              style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", color: "#d4d4d4", tabSize: 4 }}
+                            >{entry.code_solution}</pre>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                    
+                    {/* Add more card button */}
+                    <motion.button
+                      onClick={() => {
+                        // Add next available entry that isn't already shown
+                        const available = learnEntries.filter(e => !revisionCards.includes(e.id));
+                        if (available.length > 0) {
+                          setRevisionCards(prev => [...prev, available[0].id]);
+                        }
+                      }}
+                      className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed min-h-[250px] transition ${
+                        lightMode ? "border-gray-300 hover:border-purple-400 hover:bg-purple-50 text-gray-400 hover:text-purple-500" : "border-[#30363d] hover:border-purple-500 hover:bg-purple-500/5 text-gray-600 hover:text-purple-400"
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <span className="text-3xl mb-2">+</span>
+                      <span className="text-xs font-bold">Add Card</span>
+                      <span className="text-[10px] mt-1 opacity-60">{learnEntries.filter(e => !revisionCards.includes(e.id)).length} available</span>
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* ════ LEFT SIDEBAR - Collapsible on mobile ════ */}
             <div className={`flex ${selectedEntry ? "hidden md:flex" : "flex"} w-full md:w-64 shrink-0 flex-col border-b md:border-b-0 md:border-r max-h-[50vh] md:max-h-none ${lightMode ? "border-gray-200 bg-[#f6f8fa]" : "border-[#30363d] bg-[#0d1117]"}`}>
