@@ -534,6 +534,8 @@ export default function DashboardClient() {
   const [zoomedCardId, setZoomedCardId] = useState<string | null>(null); // currently zoomed card
   const [zoomSize, setZoomSize] = useState({ w: 900, h: 600 }); // zoom modal size
   const [isDraggingZoom, setIsDraggingZoom] = useState<"right" | "bottom" | "corner" | null>(null);
+  const [zoomFontSize, setZoomFontSize] = useState(15); // font size in fullscreen viewer
+  const [hoverPreviewId, setHoverPreviewId] = useState<string | null>(null); // card hovered for center preview
   
   // Vertical layout height (percentage of code editor)
   const [verticalSplit, setVerticalSplit] = useState(60);
@@ -3498,10 +3500,19 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                           className="relative group/card"
                           style={{ height: `${revisionCardHeight}px` }}
                         >
-                          {/* Card — scales up & lifts on hover for real zoom preview */}
+                          {/* Card — hover shows centered preview, click opens fullscreen */}
                           <div 
-                            className={`absolute inset-0 flex flex-col rounded-xl overflow-hidden border cursor-pointer origin-center transition-all duration-300 ease-out group-hover/card:scale-[1.35] group-hover/card:z-20 group-hover/card:shadow-2xl ${lightMode ? "bg-white border-gray-200 shadow-md group-hover/card:border-purple-400" : "bg-[#12141a] border-[#2d333b] shadow-lg group-hover/card:border-purple-500/60"}`}
+                            className={`absolute inset-0 flex flex-col rounded-xl overflow-hidden border cursor-pointer transition-all duration-200 ease-out group-hover/card:-translate-y-1 group-hover/card:shadow-2xl ${lightMode ? "bg-white border-gray-200 shadow-md group-hover/card:border-purple-400" : "bg-[#12141a] border-[#2d333b] shadow-lg group-hover/card:border-purple-500/60"}`}
                             onClick={() => setZoomedCardId(cardId)}
+                            onMouseEnter={(e) => {
+                              const timer = setTimeout(() => setHoverPreviewId(cardId), 350);
+                              (e.currentTarget as HTMLElement).dataset.previewTimer = String(timer);
+                            }}
+                            onMouseLeave={(e) => {
+                              const timer = (e.currentTarget as HTMLElement).dataset.previewTimer;
+                              if (timer) clearTimeout(Number(timer));
+                              setHoverPreviewId(null);
+                            }}
                           >
                             <div className={`flex items-center justify-between px-3 py-2 shrink-0 border-b ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#1a1d24] border-[#2d333b]"}`}>
                               <div className="flex items-center gap-2 min-w-0">
@@ -3519,7 +3530,11 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               {entry.sub_topic && <span className={lightMode ? "text-gray-400" : "text-gray-600"}>{entry.sub_topic}</span>}
                             </div>
                             <div className={`flex-1 overflow-y-auto overflow-x-hidden ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
-                              <pre className="p-3 selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "9px", lineHeight: "15px", color: "#d4d4d4", tabSize: 2, whiteSpace: "pre-wrap", wordBreak: "break-word" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(entry.code_solution, entry.language) }} />
+                              <pre className="p-3 selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "11px", lineHeight: "18px", color: "#d4d4d4", tabSize: 2, whiteSpace: "pre-wrap", wordBreak: "break-word" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(entry.code_solution, entry.language) }} />
+                            </div>
+                            {/* Zoom hint on hover */}
+                            <div className="absolute bottom-2 right-2 opacity-0 group-hover/card:opacity-100 transition-opacity pointer-events-none">
+                              <span className="bg-black/60 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-1 rounded-full">🔍 Click to zoom</span>
                             </div>
                           </div>
                         </div>
@@ -3543,6 +3558,40 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                       <span className="text-[9px] mt-1 opacity-50">{learnEntries.filter(e => !revisionCards.includes(e.id)).length} available</span>
                     </motion.button>
                   </div>
+                  
+                  {/* ═══ CENTERED HOVER PREVIEW (appears on hover, disappears on leave) ═══ */}
+                  <AnimatePresence>
+                    {hoverPreviewId && !zoomedCardId && (() => {
+                      const pv = learnEntries.find(e => e.id === hoverPreviewId);
+                      if (!pv) return null;
+                      return (
+                        <motion.div
+                          key="hover-preview"
+                          initial={{ opacity: 0, scale: 0.92 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.92 }}
+                          transition={{ duration: 0.15 }}
+                          className="fixed inset-0 z-40 flex items-center justify-center pointer-events-none"
+                          style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(3px)" }}
+                        >
+                          <div
+                            className={`flex flex-col rounded-2xl overflow-hidden border-2 shadow-2xl ${lightMode ? "bg-white border-purple-300" : "bg-[#12141a] border-purple-500/50"}`}
+                            style={{ width: "min(700px, 85vw)", height: "min(600px, 80vh)" }}
+                          >
+                            <div className={`flex items-center gap-2 px-4 py-3 shrink-0 border-b ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#1a1d24] border-[#30363d]"}`}>
+                              <span className={`w-3 h-3 rounded-full ${pv.difficulty === "Easy" ? "bg-green-500" : pv.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"}`} />
+                              <span className={`text-sm font-bold ${lightMode ? "text-gray-900" : "text-white"}`}>{pv.title}</span>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${lightMode ? "bg-indigo-50 text-indigo-600" : "bg-indigo-500/15 text-indigo-400"}`}>{pv.topic}</span>
+                              <span className={`ml-auto text-[10px] ${lightMode ? "text-gray-400" : "text-gray-500"}`}>Click card for fullscreen →</span>
+                            </div>
+                            <div className={`flex-1 overflow-y-auto ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
+                              <pre className="p-4" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "13px", lineHeight: "22px", color: "#d4d4d4", tabSize: 4, whiteSpace: "pre" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(pv.code_solution, pv.language) }} />
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })()}
+                  </AnimatePresence>
                   
                   {/* ═══ FULLSCREEN SWIPE VIEWER (like WhatsApp photos) ═══ */}
                   <AnimatePresence>
@@ -3616,19 +3665,25 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                                 <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${lightMode ? "bg-indigo-50 text-indigo-600" : "bg-indigo-500/15 text-indigo-400"}`}>{zoomedEntry.topic}</span>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
+                                {/* Zoom font control */}
+                                <div className={`flex items-center gap-0.5 rounded-lg p-0.5 ${lightMode ? "bg-gray-100" : "bg-white/10"}`} onClick={e => e.stopPropagation()}>
+                                  <button onClick={() => setZoomFontSize(f => Math.max(10, f - 1))} className={`px-2 py-1 rounded text-[11px] font-bold ${lightMode ? "hover:bg-gray-200 text-gray-600" : "hover:bg-white/10 text-white/70"}`}>A−</button>
+                                  <span className={`px-1.5 text-[10px] font-bold ${lightMode ? "text-gray-700" : "text-white/70"}`}>{zoomFontSize}</span>
+                                  <button onClick={() => setZoomFontSize(f => Math.min(28, f + 1))} className={`px-2 py-1 rounded text-[11px] font-bold ${lightMode ? "hover:bg-gray-200 text-gray-600" : "hover:bg-white/10 text-white/70"}`}>A+</button>
+                                </div>
                                 <button onClick={() => { loadEntryIntoCompiler(zoomedEntry); setShowCompiler(true); setShowRevisionPanel(false); setZoomedCardId(null); }} className="text-xs px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 font-bold">▶ Run</button>
                                 <button onClick={() => navigator.clipboard.writeText(zoomedEntry.code_solution)} className="text-xs px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold">📋 Copy</button>
                               </div>
                             </div>
-                            {/* Code */}
-                            <div className={`flex-1 overflow-y-auto ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
-                              <div className="flex">
-                                <div className="shrink-0 py-4 pl-4 pr-3 text-right select-none border-r border-white/5">
+                            {/* Code - full width, fully scrollable both directions */}
+                            <div className={`flex-1 overflow-auto ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
+                              <div className="flex min-w-min">
+                                <div className="shrink-0 py-4 pl-4 pr-3 text-right select-none border-r border-white/5 sticky left-0" style={{ backgroundColor: lightMode ? "#1e1e2e" : "#0d1117" }}>
                                   {zoomedEntry.code_solution.split("\n").map((_, i) => (
-                                    <div key={i} style={{ fontFamily: "'Fira Code', monospace", fontSize: "14px", lineHeight: "26px", color: "#4b5563" }}>{i + 1}</div>
+                                    <div key={i} style={{ fontFamily: "'Fira Code', monospace", fontSize: `${zoomFontSize}px`, lineHeight: `${zoomFontSize + 10}px`, color: "#4b5563" }}>{i + 1}</div>
                                   ))}
                                 </div>
-                                <pre className="flex-1 py-4 pl-5 pr-5 selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "14px", lineHeight: "26px", color: "#d4d4d4", tabSize: 4, whiteSpace: "pre", letterSpacing: "0.3px" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(zoomedEntry.code_solution, zoomedEntry.language) }} />
+                                <pre className="flex-1 py-4 pl-5 pr-8 selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: `${zoomFontSize}px`, lineHeight: `${zoomFontSize + 10}px`, color: "#d4d4d4", tabSize: 4, whiteSpace: "pre", letterSpacing: "0.3px" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(zoomedEntry.code_solution, zoomedEntry.language) }} />
                               </div>
                             </div>
                             {/* Resize handle corner */}
