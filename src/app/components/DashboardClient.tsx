@@ -1069,7 +1069,7 @@ export default function DashboardClient() {
       // Check if we're editing an existing entry
       if (compilerEditingId) {
         // Update existing entry
-        const body = {
+        const body: Record<string, unknown> = {
           id: compilerEditingId,
           topic: compilerTopic.trim(),
           subTopic: compilerSubTopic.trim() || null,
@@ -1079,6 +1079,12 @@ export default function DashboardClient() {
           codeSolution: compilerCode,
           language: compilerLanguage,
         };
+        
+        // Only include notes if they have real content (not just placeholder)
+        const notesContent = compilerNotes.replace(/<[^>]*>/g, "").trim();
+        if (notesContent && !notesContent.startsWith("Write your notes")) {
+          body.explanation = compilerNotes;
+        }
         
         console.log("[Compiler] Updating entry:", body);
 
@@ -1099,7 +1105,7 @@ export default function DashboardClient() {
         loadLearnEntries(token);
       } else {
         // Create new entry
-        const body = {
+        const body: Record<string, unknown> = {
           topic: compilerTopic.trim(),
           subTopic: compilerSubTopic.trim() || null,
           title: compilerTitle.trim(),
@@ -1109,6 +1115,12 @@ export default function DashboardClient() {
           language: compilerLanguage,
           tags: [],
         };
+        
+        // Only include notes if they have real content
+        const notesContent = compilerNotes.replace(/<[^>]*>/g, "").trim();
+        if (notesContent && !notesContent.startsWith("Write your notes")) {
+          body.explanation = compilerNotes;
+        }
         
         console.log("[Compiler] Creating new entry:", body);
 
@@ -1163,6 +1175,7 @@ export default function DashboardClient() {
     setCompilerOutput("");
     setCompilerError("");
     setCompilerInput("");
+    setCompilerNotes(entry.explanation ?? "");
   };
   
   // Clear compiler for new entry
@@ -1178,6 +1191,7 @@ export default function DashboardClient() {
     setCompilerOutput("");
     setCompilerError("");
     setCompilerInput("");
+    setCompilerNotes("");
   };
   
   // Syntax highlighting for code editor (LeetCode/VS Code style colors)
@@ -3441,28 +3455,65 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                       </div>
                     )}
 
-                    {/* Explanation */}
+                    {/* Explanation / Notes */}
                     {selectedEntry.explanation && (
                       <div>
-                        <p className={`text-[11px] font-bold uppercase tracking-wider mb-2 ${t.textFaint}`}>📝 Approach</p>
-                        <p className={`text-sm leading-relaxed whitespace-pre-line ${t.textPrimary}`}>{selectedEntry.explanation}</p>
+                        <p className={`text-[11px] font-bold uppercase tracking-wider mb-2 ${t.textFaint}`}>📝 Notes & Approach</p>
+                        {selectedEntry.explanation.includes("<") ? (
+                          /* Rich HTML notes from editor */
+                          <div 
+                            className={`text-sm leading-relaxed prose prose-sm max-w-none ${lightMode ? "prose-gray" : "prose-invert"} ${lightMode ? "text-gray-700" : "text-gray-200"}`}
+                            dangerouslySetInnerHTML={{ __html: selectedEntry.explanation }}
+                          />
+                        ) : (
+                          /* Plain text notes */
+                          <p className={`text-sm leading-relaxed whitespace-pre-line ${t.textPrimary}`}>{selectedEntry.explanation}</p>
+                        )}
                       </div>
                     )}
 
                     {/* Code */}
                     <div>
-                      <div className={`flex items-center justify-between rounded-t-lg px-4 py-2 ${lightMode ? "bg-gray-800" : "bg-[#161b22] border border-b-0 border-[#30363d]"}`}>
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                          💻 {selectedEntry.language.toUpperCase()} Solution
-                        </span>
-                        <button
-                          onClick={() => { navigator.clipboard.writeText(selectedEntry.code_solution); }}
-                          className="text-[11px] font-semibold px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-gray-300 transition"
-                        >📋 Copy</button>
+                      <div className={`flex items-center justify-between rounded-t-xl px-4 py-3 ${lightMode ? "bg-[#1e1e2e]" : "bg-[#161b22] border border-b-0 border-[#30363d]"}`}>
+                        <div className="flex items-center gap-3">
+                          {/* Macbook dots */}
+                          <div className="flex gap-1.5">
+                            <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                            <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                            <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+                          </div>
+                          <span className="text-[12px] font-bold uppercase tracking-wider text-gray-400">
+                            {selectedEntry.language === "cpp" ? "main.cpp" : selectedEntry.language === "python" ? "solution.py" : selectedEntry.language === "java" ? "Solution.java" : "solution.js"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              loadEntryIntoCompiler(selectedEntry);
+                              setShowCompiler(true);
+                            }}
+                            className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-green-500/20 hover:bg-green-500/30 text-green-400 transition"
+                          >▶ Run in Compiler</button>
+                          <button
+                            onClick={() => { navigator.clipboard.writeText(selectedEntry.code_solution); }}
+                            className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 text-gray-300 transition"
+                          >📋 Copy</button>
+                        </div>
                       </div>
-                      <pre className={`text-xs font-mono leading-relaxed rounded-b-lg p-4 overflow-x-auto ${lightMode ? "bg-gray-900 text-green-300" : "bg-[#0d1117] text-green-300 border border-t-0 border-[#30363d]"}`}>
-                        {selectedEntry.code_solution}
-                      </pre>
+                      <div className={`rounded-b-xl overflow-hidden ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117] border border-t-0 border-[#30363d]"}`}>
+                        <div className="flex">
+                          {/* Line numbers */}
+                          <div className="shrink-0 py-4 pl-4 pr-3 text-right select-none border-r border-white/5" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}>
+                            {selectedEntry.code_solution.split("\n").map((_, i) => (
+                              <div key={i} className="text-[12px] leading-[22px] text-gray-600">{i + 1}</div>
+                            ))}
+                          </div>
+                          {/* Code content */}
+                          <pre className="flex-1 py-4 pl-4 pr-4 overflow-x-auto text-[13px] leading-[22px]" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", tabSize: 4 }}>
+                            <code className="text-[#d4d4d4]">{selectedEntry.code_solution}</code>
+                          </pre>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Complexity */}
@@ -4760,18 +4811,22 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                           </div>
                           <div 
                             contentEditable
-                            className={`flex-1 overflow-y-auto p-4 outline-none prose prose-sm max-w-none selectable ${
+                            dir="ltr"
+                            className={`flex-1 overflow-y-auto p-4 outline-none max-w-none selectable ${
                               compilerLightMode 
-                                ? "bg-white text-gray-800 prose-headings:text-gray-900 prose-code:bg-gray-100 prose-code:text-pink-600 prose-pre:bg-gray-900 prose-pre:text-gray-100" 
-                                : "bg-[#0d1117] text-gray-200 prose-invert prose-headings:text-white prose-code:bg-[#161b22] prose-code:text-pink-400 prose-pre:bg-black prose-pre:text-gray-100"
+                                ? "bg-white text-gray-800" 
+                                : "bg-[#0d1117] text-gray-200"
                             }`}
                             style={{ 
                               fontFamily: "'Inter', system-ui, sans-serif",
-                              fontSize: "13px",
-                              lineHeight: "1.7",
+                              fontSize: "14px",
+                              lineHeight: "1.8",
                               minHeight: "100%",
                               whiteSpace: "pre-wrap",
                               wordWrap: "break-word",
+                              textAlign: "left",
+                              direction: "ltr",
+                              unicodeBidi: "plaintext",
                             }}
                             onInput={(e) => {
                               const el = e.target as HTMLDivElement;
@@ -4812,7 +4867,7 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               }
                             }}
                             suppressContentEditableWarning
-                            dangerouslySetInnerHTML={{ __html: compilerNotes || '<p style="color: inherit; opacity: 0.4;">Write your notes, tricks, and approach here...</p><p style="color: inherit; opacity: 0.4;">• Paste images directly</p><p style="color: inherit; opacity: 0.4;">• Format with Ctrl+B (bold), Ctrl+I (italic)</p>' }}
+                            dangerouslySetInnerHTML={{ __html: compilerNotes || '<div style="opacity: 0.4; text-align: left;">Write your notes, tricks, and approach here...<br/><br/>• Paste images directly (Ctrl+V)<br/>• Bold: Ctrl+B | Italic: Ctrl+I<br/>• Paste formatted text from ChatGPT</div>' }}
                           />
                         </div>
                       ) : (
