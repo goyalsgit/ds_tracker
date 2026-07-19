@@ -3925,32 +3925,66 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                       {/* WhatsApp send button */}
                       <button
                         onClick={async () => {
-                          const phone = prompt("Enter your WhatsApp number (with country code, e.g. 919876543210):");
-                          if (!phone) return;
-                          const apiKey = prompt("Enter your CallMeBot API key:\n\nFirst time? Add +34 611 01 16 37 to contacts,\nsend 'I allow callmebot to send me messages' on WhatsApp,\nwait for API key reply.");
-                          if (!apiKey) return;
-                          // Build message
-                          const revisionList = pending.slice(0, 5).map((item, i) => {
+                          // Get saved credentials from localStorage or prompt
+                          let phone = localStorage.getItem("wa_phone") || "";
+                          let apiKey = localStorage.getItem("wa_apikey") || "";
+                          if (!phone) {
+                            phone = prompt("Enter your WhatsApp number (with country code, e.g. 919876543210):") || "";
+                            if (!phone) return;
+                            localStorage.setItem("wa_phone", phone);
+                          }
+                          if (!apiKey) {
+                            apiKey = prompt("Enter your CallMeBot API key:\n\nFirst time setup (free, 30 seconds):\n1. Add +34 611 01 16 37 to contacts\n2. Send 'I allow callmebot to send me messages' on WhatsApp\n3. Wait for API key reply\n\nEnter your key:") || "";
+                            if (!apiKey) return;
+                            localStorage.setItem("wa_apikey", apiKey);
+                          }
+                          // Build one message per question with code
+                          const messages = pending.slice(0, 7).map((item, i) => {
                             const solve = solves.find(s => s.id === item.solveId);
                             const code = solve?.code || learnEntries.find(e => e.title === item.title)?.code_solution || "";
-                            const snippet = code.split("\n").slice(0, 15).join("\n");
-                            return `*${i + 1}. ${item.title}* (${item.difficulty || "–"} | ${item.label})\n\`\`\`\n${snippet}\n\`\`\``;
-                          }).join("\n\n");
-                          const msg = `📖 *Today's Revision Queue*\n${pending.length} questions to revise\n\n${revisionList}\n\n_Complete your revisions to level up! 🚀_`;
+                            const snippet = code ? code.split("\n").slice(0, 25).join("\n") : "(no code saved)";
+                            return `📖 *Revision ${i + 1}/${pending.length}*\n\n*${item.title}*\n${item.difficulty || ""} | ${item.label} | ${(item.tags || []).slice(0, 3).join(", ")}\n\n\`\`\`${solve?.language || "cpp"}\n${snippet}\n\`\`\``;
+                          });
+                          // Add summary as first message
+                          messages.unshift(`⚔️ *Today's Revision Quest*\n\n${pending.length} questions to revise\n${done.length} already completed\n\n🎯 Complete all for +${pending.length * 15} XP!\n\n_Sending ${Math.min(pending.length, 7)} code cards..._`);
+
                           try {
                             const res = await fetch("/api/whatsapp/send", {
                               method: "POST",
                               headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                              body: JSON.stringify({ phone, apiKey, message: msg }),
+                              body: JSON.stringify({ phone, apiKey, messages }),
                             });
                             const data = await res.json();
-                            if (data.success) alert("✅ Sent to WhatsApp!");
-                            else alert("❌ Failed: " + (data.error || "Unknown error"));
+                            if (data.success) alert("✅ " + (data.message || "Sent to WhatsApp!"));
+                            else {
+                              // Clear saved credentials if failed (might be wrong)
+                              if (confirm("❌ Failed: " + (data.error || "Unknown error") + "\n\nClear saved credentials and try again?")) {
+                                localStorage.removeItem("wa_phone");
+                                localStorage.removeItem("wa_apikey");
+                              }
+                            }
                           } catch { alert("❌ Network error"); }
                         }}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${lightMode ? "bg-green-100 text-green-700 border border-green-300 hover:bg-green-200" : "bg-green-500/15 text-green-400 border border-green-500/30 hover:bg-green-500/25"}`}
                       >
-                        <span>📱</span> Send to WhatsApp
+                        <span>📱</span> WhatsApp
+                      </button>
+                      {/* Direct wa.me share link (fallback - opens WhatsApp app directly) */}
+                      <button
+                        onClick={() => {
+                          const summary = pending.slice(0, 5).map((item, i) => {
+                            const solve = solves.find(s => s.id === item.solveId);
+                            const code = solve?.code || learnEntries.find(e => e.title === item.title)?.code_solution || "";
+                            const snippet = code ? code.split("\n").slice(0, 10).join("\n") : "(no code)";
+                            return `${i + 1}. *${item.title}* (${item.difficulty || "–"})\n\`\`\`\n${snippet}\n\`\`\``;
+                          }).join("\n\n");
+                          const text = `📖 *Today's Revision*\n${pending.length} questions\n\n${summary}`;
+                          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                        }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${lightMode ? "bg-green-50 text-green-600 border border-green-200 hover:bg-green-100" : "bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500/15"}`}
+                        title="Opens WhatsApp directly to share"
+                      >
+                        <span>🔗</span> Share Link
                       </button>
                       <button onClick={() => setShowRevisionMode(false)} className={`rounded-lg p-2 text-lg transition ${lightMode ? "hover:bg-gray-100 text-gray-500" : "hover:bg-white/10 text-white/50"}`}>✕</button>
                     </div>
@@ -4058,7 +4092,10 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             <div className={`${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
                               <div className={`flex items-center justify-between px-4 py-1.5 text-[10px] border-b ${lightMode ? "border-gray-700/20" : "border-[#21262d]"}`}>
                                 <span className="text-gray-500 font-bold">{lang.toUpperCase()} • {code.split("\n").length} lines</span>
-                                <button onClick={() => navigator.clipboard.writeText(code)} className="text-gray-500 hover:text-blue-400 transition font-bold">📋 Copy</button>
+                                <div className="flex items-center gap-3">
+                                  <button onClick={() => navigator.clipboard.writeText(code)} className="text-gray-500 hover:text-blue-400 transition font-bold">📋 Copy</button>
+                                  <button onClick={() => { const text = `*${item.title}* (${item.difficulty || "–"})\n\`\`\`${lang}\n${code.split("\n").slice(0, 20).join("\n")}\n\`\`\``; window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank"); }} className="text-gray-500 hover:text-green-400 transition font-bold">📱 Share</button>
+                                </div>
                               </div>
                               <pre className="p-4 overflow-x-auto selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "12px", lineHeight: "20px", color: "#d4d4d4", tabSize: 2, whiteSpace: "pre", maxHeight: "400px", overflowY: "auto" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(code, lang) }} />
                             </div>
