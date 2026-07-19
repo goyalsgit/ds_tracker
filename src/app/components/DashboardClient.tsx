@@ -2672,11 +2672,34 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                                         onClick={async () => {
                                           if (!addCodeText.trim() || !token) return;
                                           try {
+                                            // Save code to solves table
                                             await fetch("/api/solves/code", {
                                               method: "PATCH",
                                               headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                                               body: JSON.stringify({ solveId: item.solveId, code: addCodeText, language: addCodeLang }),
                                             });
+                                            // Also save to content_library if not already there
+                                            const existsInLibrary = learnEntries.some(e => e.title === item.title);
+                                            if (!existsInLibrary) {
+                                              const topic = item.tags?.[0] || "General";
+                                              const subTopic = item.tags?.[1] || null;
+                                              const res = await fetch("/api/learn", {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                                body: JSON.stringify({
+                                                  topic,
+                                                  subTopic,
+                                                  title: item.title,
+                                                  difficulty: item.difficulty || "Medium",
+                                                  codeSolution: addCodeText,
+                                                  language: addCodeLang,
+                                                  sourceUrl: item.sourceUrl || null,
+                                                  tags: item.tags || [],
+                                                }),
+                                              });
+                                              const data = await res.json();
+                                              if (data.entry) setLearnEntries(prev => [data.entry, ...prev]);
+                                            }
                                             // Update local state
                                             setSolves(prev => prev.map(s => s.id === item.solveId ? { ...s, code: addCodeText, language: addCodeLang } : s));
                                             setAddCodeForRevision(null);
@@ -4061,11 +4084,34 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                                       onClick={async () => {
                                         if (!addCodeText.trim() || !token) return;
                                         try {
+                                          // Save code to solves table
                                           await fetch("/api/solves/code", {
                                             method: "PATCH",
                                             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                                             body: JSON.stringify({ solveId: item.solveId, code: addCodeText, language: addCodeLang }),
                                           });
+                                          // Also save to content_library if not already there
+                                          const existsInLibrary = learnEntries.some(e => e.title === item.title);
+                                          if (!existsInLibrary) {
+                                            const topic = item.tags?.[0] || "General";
+                                            const subTopic = item.tags?.[1] || null;
+                                            const res = await fetch("/api/learn", {
+                                              method: "POST",
+                                              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                              body: JSON.stringify({
+                                                topic,
+                                                subTopic,
+                                                title: item.title,
+                                                difficulty: item.difficulty || "Medium",
+                                                codeSolution: addCodeText,
+                                                language: addCodeLang,
+                                                sourceUrl: item.sourceUrl || null,
+                                                tags: item.tags || [],
+                                              }),
+                                            });
+                                            const data = await res.json();
+                                            if (data.entry) setLearnEntries(prev => [data.entry, ...prev]);
+                                          }
                                           setSolves(prev => prev.map(s => s.id === item.solveId ? { ...s, code: addCodeText, language: addCodeLang } : s));
                                           setAddCodeForRevision(null);
                                           setAddCodeText("");
