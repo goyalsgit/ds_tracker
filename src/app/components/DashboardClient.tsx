@@ -1634,15 +1634,28 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
     setAuthError(null); setSigningIn(true);
     try {
       const sb = getSupabaseBrowser();
-      const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}/` } });
+      // queryParams: prompt "select_account" forces Google to show account picker every time
+      const { error } = await sb.auth.signInWithOAuth({ 
+        provider: "google", 
+        options: { 
+          redirectTo: `${window.location.origin}/`,
+          queryParams: { prompt: "select_account" }
+        } 
+      });
       if (error) throw error;
     } catch (e) { setAuthError(e instanceof Error ? e.message : "Sign-in failed"); }
     finally { setSigningIn(false); }
   };
   const signOut = async () => {
     try {
-      await getSupabaseBrowser().auth.signOut();
+      const sb = getSupabaseBrowser();
+      // Sign out from Supabase (clears local session)
+      await sb.auth.signOut({ scope: "local" });
+      // Clear all state
+      setToken(null);
+      setUserEmail(null);
       setSolves([]); setTodayRevisions([]); setUpcomingRevisions([]); setHistory([]); setStats(null);
+      setLearnEntries([]); setLearnTopics([]);
     } catch (e) { setAuthError(e instanceof Error ? e.message : "Sign-out failed"); }
   };
 
