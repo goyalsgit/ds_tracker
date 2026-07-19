@@ -769,6 +769,39 @@ export default function DashboardClient() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  // ── Auto-send WhatsApp on page load (if enabled) ──
+  useEffect(() => {
+    if (!token || todayRevisions.length === 0) return;
+    const autoSend = localStorage.getItem("wa_autosend") === "true";
+    const phone = localStorage.getItem("wa_phone");
+    const apiKey = localStorage.getItem("wa_apikey");
+    const lastSentDate = localStorage.getItem("wa_last_sent");
+    const today = new Date().toISOString().slice(0, 10);
+    
+    // Only auto-send once per day
+    if (!autoSend || !phone || !apiKey || lastSentDate === today) return;
+    
+    const pendingItems = todayRevisions.filter(r => r.status === "scheduled" || r.status === "overdue");
+    if (pendingItems.length === 0) return;
+
+    // Send automatically
+    const messages = pendingItems.slice(0, 7).map((item, i) => {
+      const solve = solves.find(s => s.id === item.solveId);
+      const code = solve?.code || learnEntries.find(e => e.title === item.title)?.code_solution || "";
+      const snippet = code ? code.split("\n").slice(0, 20).join("\n") : "(no code saved)";
+      return `📖 *${i + 1}. ${item.title}*\n${item.difficulty || ""} | Stage ${item.stage}\n\n\`\`\`\n${snippet}\n\`\`\``;
+    });
+    messages.unshift(`⚔️ *Auto Revision Alert*\n\n${pendingItems.length} questions due today!\n\n_Complete all for +${pendingItems.length * 15} XP 🔥_`);
+
+    localStorage.setItem("wa_last_sent", today);
+    fetch("/api/whatsapp/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ phone, apiKey, messages }),
+    }).catch(() => undefined);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todayRevisions, token]);
+
   /* ── Sync ── */
   function runSync(username: string, t: string, silent = false) {
     if (!silent) { setSyncing(true); setSyncMsg("Syncing…"); }
@@ -2558,17 +2591,70 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                         </button>
                       )}
                       {pending.length > 0 && (
-                        <button onClick={() => {
-                          const summary = pending.slice(0, 5).map((item, i) => {
+                        <button onClick={async () => {
+                          let phone = localStorage.getItem("wa_phone") || "";
+                          let apiKey = localStorage.getItem("wa_apikey") || "";
+                          if (!phone) {
+                            phone = prompt("Enter your WhatsApp number (with country code, e.g. 919876543210):") || "";
+                            if (!phone) return;
+                            localStorage.setItem("wa_phone", phone);
+                          }
+                          if (!apiKey) {
+                            apiKey = prompt("CallMeBot API key (one-time setup):\n\n1. Add +34 611 01 16 37 to contacts\n2. Send 'I allow callmebot to send me messages' on WhatsApp\n3. Enter the API key you receive:") || "";
+                            if (!apiKey) return;
+                            localStorage.setItem("wa_apikey", apiKey);
+                          }
+                          const messages = pending.slice(0, 7).map((item, i) => {
                             const solve = solves.find(s => s.id === item.solveId);
                             const code = solve?.code || learnEntries.find(e => e.title === item.title)?.code_solution || "";
-                            const snippet = code ? code.split("\n").slice(0, 8).join("\n") : "(no code)";
-                            return `${i + 1}. *${item.title}* (${item.difficulty || "–"})\n\`\`\`\n${snippet}\n\`\`\``;
-                          }).join("\n\n");
-                          const text = `📖 *Today's Revision* (${pending.length} questions)\n\n${summary}`;
-                          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                            const snippet = code ? code.split("\n").slice(0, 20).join("\n") : "(no code saved)";
+                            return `📖 *${i + 1}. ${item.title}*\n${item.difficulty || ""} | ${item.label}\n\n\`\`\`\n${snippet}\n\`\`\``;
+                          });
+                          messages.unshift(`⚔️ *Today's Revision* — ${pending.length} questions\n\n_Sending code cards automatically..._`);
+                          try {
+                            const res = await fetch("/api/whatsapp/send", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                              body: JSON.stringify({ phone, apiKey, messages }),
+                            });
+                            const data = await res.json();
+                            if (data.success) alert("✅ " + (data.message || "Sent to WhatsApp!"));
+                            else {
+                              if (confirm("❌ " + (data.error || "Failed") + "\n\nClear saved credentials?")) {
+                                localStorage.removeItem("wa_phone");
+                                localStorage.removeItem("wa_apikey");
+                              }
+                            }
+                          } catch { alert("❌ Network error"); }
                         }} className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${lightMode ? "bg-green-100 text-green-700 hover:bg-green-200 border border-green-200" : "bg-green-500/15 text-green-400 hover:bg-green-500/25 border border-green-500/20"}`}>
-                          📱 WhatsApp
+                          ⚡ Send to WhatsApp
+                        </button>
+                      )}
+                      {pending.length > 0 && (
+                        <button onClick={() => {
+                          const current = localStorage.getItem("wa_autosend") === "true";
+                          if (!current) {
+                            // Enabling — make sure credentials exist
+                            let phone = localStorage.getItem("wa_phone") || "";
+                            let apiKey = localStorage.getItem("wa_apikey") || "";
+                            if (!phone) {
+                              phone = prompt("Enter your WhatsApp number (with country code, e.g. 919876543210):") || "";
+                              if (!phone) return;
+                              localStorage.setItem("wa_phone", phone);
+                            }
+                            if (!apiKey) {
+                              apiKey = prompt("CallMeBot API key:\n\n1. Add +34 611 01 16 37 to contacts\n2. Send 'I allow callmebot to send me messages'\n3. Enter the API key:") || "";
+                              if (!apiKey) return;
+                              localStorage.setItem("wa_apikey", apiKey);
+                            }
+                            localStorage.setItem("wa_autosend", "true");
+                            alert("✅ Auto-send enabled! You'll get revision codes on WhatsApp daily when you open the app.");
+                          } else {
+                            localStorage.setItem("wa_autosend", "false");
+                            alert("Auto-send disabled.");
+                          }
+                        }} className={`rounded-full px-1.5 py-1 text-[9px] font-bold transition ${localStorage.getItem("wa_autosend") === "true" ? (lightMode ? "bg-green-200 text-green-800 border border-green-400" : "bg-green-500/25 text-green-300 border border-green-500/40") : (lightMode ? "bg-gray-100 text-gray-400 border border-gray-200" : "bg-white/5 text-gray-600 border border-white/10")}`} title="Toggle daily auto-send">
+                          {localStorage.getItem("wa_autosend") === "true" ? "🔔" : "🔕"}
                         </button>
                       )}
                       <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] text-white/40">{todayKey}</span>
