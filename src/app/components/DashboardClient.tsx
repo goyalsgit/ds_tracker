@@ -3807,82 +3807,148 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             grouped[t].push(entry);
                           });
 
-                          // Summary sheet first
-                          const summarySheet = workbook.addWorksheet("Summary");
+                          // ═══ SUMMARY SHEET ═══
+                          const summarySheet = workbook.addWorksheet("📋 Summary");
                           summarySheet.columns = [
-                            { header: "Topic", key: "topic", width: 30 },
-                            { header: "Questions", key: "count", width: 12 },
-                            { header: "Easy", key: "easy", width: 8 },
+                            { header: "", key: "num", width: 5 },
+                            { header: "Topic", key: "topic", width: 35 },
+                            { header: "Total", key: "count", width: 10 },
+                            { header: "Easy", key: "easy", width: 10 },
                             { header: "Medium", key: "medium", width: 10 },
-                            { header: "Hard", key: "hard", width: 8 },
+                            { header: "Hard", key: "hard", width: 10 },
                           ];
-                          const sumHeader = summarySheet.getRow(1);
-                          sumHeader.font = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
-                          sumHeader.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF10B981" } };
-                          sumHeader.height = 28;
+                          // Title row
+                          summarySheet.spliceRows(1, 0, ["", "📊 DSA Pattern Sheet - Summary", "", "", "", ""]);
+                          const titleRow = summarySheet.getRow(1);
+                          titleRow.height = 35;
+                          titleRow.font = { bold: true, size: 16, color: { argb: "FF1F2937" } };
+                          summarySheet.mergeCells("B1:F1");
+                          
+                          // Header row (row 2)
+                          const sumHeaderRow = summarySheet.getRow(2);
+                          sumHeaderRow.values = ["#", "Topic", "Total", "Easy", "Medium", "Hard"];
+                          sumHeaderRow.font = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
+                          sumHeaderRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF6366F1" } };
+                          sumHeaderRow.alignment = { vertical: "middle", horizontal: "center" };
+                          sumHeaderRow.height = 26;
+                          sumHeaderRow.eachCell((cell) => {
+                            cell.border = { bottom: { style: "medium", color: { argb: "FF4F46E5" } } };
+                          });
+
+                          let topicIdx = 0;
                           Object.entries(grouped).forEach(([topic, entries]) => {
-                            summarySheet.addRow({
-                              topic,
+                            topicIdx++;
+                            const row = summarySheet.addRow({
+                              num: topicIdx,
+                              topic: topic,
                               count: entries.length,
                               easy: entries.filter(e => e.difficulty === "Easy").length,
                               medium: entries.filter(e => e.difficulty === "Medium").length,
                               hard: entries.filter(e => e.difficulty === "Hard").length,
                             });
+                            row.height = 22;
+                            row.font = { size: 11 };
+                            row.alignment = { vertical: "middle" };
+                            row.getCell(2).font = { bold: true, size: 11, color: { argb: "FF1F2937" } };
+                            row.getCell(4).font = { size: 10, color: { argb: "FF22C55E" } };
+                            row.getCell(5).font = { size: 10, color: { argb: "FFEAB308" } };
+                            row.getCell(6).font = { size: 10, color: { argb: "FFEF4444" } };
+                            if (topicIdx % 2 === 0) {
+                              row.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
+                            }
+                            row.eachCell((cell) => {
+                              cell.border = { bottom: { style: "thin", color: { argb: "FFE2E8F0" } } };
+                            });
                           });
 
-                          // Topic sheets
+                          // Total row
+                          const totalRow = summarySheet.addRow({
+                            num: "",
+                            topic: "TOTAL",
+                            count: learnEntries.length,
+                            easy: learnEntries.filter(e => e.difficulty === "Easy").length,
+                            medium: learnEntries.filter(e => e.difficulty === "Medium").length,
+                            hard: learnEntries.filter(e => e.difficulty === "Hard").length,
+                          });
+                          totalRow.height = 26;
+                          totalRow.font = { bold: true, size: 11 };
+                          totalRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE0E7FF" } };
+                          totalRow.eachCell((cell) => {
+                            cell.border = { top: { style: "medium", color: { argb: "FF6366F1" } } };
+                          });
+
+                          // ═══ TOPIC SHEETS (one per topic with proper code display) ═══
                           Object.entries(grouped).forEach(([topic, entries]) => {
                             const sheetName = topic.substring(0, 31).replace(/[\\/*?[\]]/g, "");
                             const sheet = workbook.addWorksheet(sheetName);
                             
-                            // Column definitions
+                            // Set columns wide enough for code
                             sheet.columns = [
-                              { header: "#", key: "num", width: 5 },
-                              { header: "Title", key: "title", width: 35 },
-                              { header: "Difficulty", key: "difficulty", width: 12 },
-                              { header: "Sub-Topic", key: "sub_topic", width: 20 },
-                              { header: "Language", key: "language", width: 12 },
-                              { header: "Code", key: "code", width: 80 },
+                              { key: "A", width: 5 },
+                              { key: "B", width: 90 },
+                              { key: "C", width: 14 },
+                              { key: "D", width: 20 },
                             ];
 
-                            // Style header row
-                            const headerRow = sheet.getRow(1);
-                            headerRow.font = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
-                            headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF6366F1" } };
-                            headerRow.alignment = { vertical: "middle", horizontal: "center" };
-                            headerRow.height = 28;
+                            // Topic title at top
+                            sheet.addRow(["", `📁 ${topic}`, "", ""]);
+                            const topicTitleRow = sheet.getRow(1);
+                            topicTitleRow.height = 32;
+                            topicTitleRow.getCell(2).font = { bold: true, size: 14, color: { argb: "FF4F46E5" } };
+                            sheet.mergeCells("B1:D1");
+
+                            // Spacer
+                            sheet.addRow([]);
 
                             entries.forEach((entry, idx) => {
-                              const row = sheet.addRow({
-                                num: idx + 1,
-                                title: entry.title,
-                                difficulty: entry.difficulty || "–",
-                                sub_topic: entry.sub_topic || "–",
-                                language: entry.language,
-                                code: entry.code_solution,
+                              // ── Question Header Row ──
+                              const qRow = sheet.addRow([
+                                idx + 1,
+                                `${entry.title}`,
+                                entry.difficulty || "–",
+                                entry.sub_topic || "–",
+                              ]);
+                              qRow.height = 24;
+                              qRow.font = { bold: true, size: 11 };
+                              qRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0F0FF" } };
+                              qRow.alignment = { vertical: "middle" };
+                              qRow.eachCell((cell) => {
+                                cell.border = {
+                                  top: { style: "thin", color: { argb: "FF6366F1" } },
+                                  bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+                                };
                               });
+                              // Difficulty color
+                              const diffColor = entry.difficulty === "Easy" ? "FF22C55E" : entry.difficulty === "Medium" ? "FFEAB308" : "FFEF4444";
+                              qRow.getCell(3).font = { bold: true, size: 10, color: { argb: diffColor } };
+                              qRow.getCell(4).font = { size: 10, italic: true, color: { argb: "FF6B7280" } };
 
-                              // Style code cell
-                              const codeCell = row.getCell(6);
-                              codeCell.font = { name: "Consolas", size: 9 };
-                              codeCell.alignment = { wrapText: true, vertical: "top" };
-                              
-                              // Style difficulty
-                              const diffCell = row.getCell(3);
-                              const diffColor = entry.difficulty === "Easy" ? "FF22C55E" : entry.difficulty === "Medium" ? "FFEAB308" : entry.difficulty === "Hard" ? "FFEF4444" : "FF9CA3AF";
-                              diffCell.font = { bold: true, size: 10, color: { argb: diffColor } };
+                              // ── Language + info row ──
+                              const langRow = sheet.addRow(["", `Language: ${entry.language} | Lines: ${entry.code_solution.split("\n").length}`, "", ""]);
+                              langRow.height = 18;
+                              langRow.getCell(2).font = { size: 9, italic: true, color: { argb: "FF6B7280" } };
 
-                              // Row height based on code lines
+                              // ── Code Row (the actual code in a big cell) ──
+                              const codeRow = sheet.addRow(["", entry.code_solution, "", ""]);
                               const lineCount = entry.code_solution.split("\n").length;
-                              row.height = Math.max(20, Math.min(lineCount * 12, 400));
-                              row.alignment = { vertical: "top", wrapText: true };
-                            });
+                              codeRow.height = Math.max(30, Math.min(lineCount * 13, 500));
+                              const codeCell = codeRow.getCell(2);
+                              codeCell.font = { name: "Consolas", size: 10, color: { argb: "FFD4D4D4" } };
+                              codeCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E1E2E" } };
+                              codeCell.alignment = { wrapText: true, vertical: "top", horizontal: "left" };
+                              codeCell.border = {
+                                top: { style: "thin", color: { argb: "FF30363D" } },
+                                bottom: { style: "thin", color: { argb: "FF30363D" } },
+                                left: { style: "thin", color: { argb: "FF30363D" } },
+                                right: { style: "thin", color: { argb: "FF30363D" } },
+                              };
+                              // Merge code cell across columns for width
+                              const codeRowNum = codeRow.number;
+                              sheet.mergeCells(`B${codeRowNum}:D${codeRowNum}`);
 
-                            // Alternate row colors
-                            sheet.eachRow((row, rowNum) => {
-                              if (rowNum > 1 && rowNum % 2 === 0) {
-                                row.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8FAFC" } };
-                              }
+                              // Spacer between questions
+                              const spacer = sheet.addRow([]);
+                              spacer.height = 8;
                             });
                           });
 
