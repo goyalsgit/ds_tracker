@@ -2557,6 +2557,20 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                           📖 Revision Mode
                         </button>
                       )}
+                      {pending.length > 0 && (
+                        <button onClick={() => {
+                          const summary = pending.slice(0, 5).map((item, i) => {
+                            const solve = solves.find(s => s.id === item.solveId);
+                            const code = solve?.code || learnEntries.find(e => e.title === item.title)?.code_solution || "";
+                            const snippet = code ? code.split("\n").slice(0, 8).join("\n") : "(no code)";
+                            return `${i + 1}. *${item.title}* (${item.difficulty || "–"})\n\`\`\`\n${snippet}\n\`\`\``;
+                          }).join("\n\n");
+                          const text = `📖 *Today's Revision* (${pending.length} questions)\n\n${summary}`;
+                          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                        }} className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${lightMode ? "bg-green-100 text-green-700 hover:bg-green-200 border border-green-200" : "bg-green-500/15 text-green-400 hover:bg-green-500/25 border border-green-500/20"}`}>
+                          📱 WhatsApp
+                        </button>
+                      )}
                       <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] text-white/40">{todayKey}</span>
                     </div>
                   </div>
@@ -2643,6 +2657,17 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             <button onClick={() => setRevisionCodePreview(revisionCodePreview === item.id ? null : item.id)}
                               className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${revisionCodePreview === item.id ? (lightMode ? "bg-emerald-100 text-emerald-800 border border-emerald-400 ring-1 ring-emerald-400" : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 ring-1 ring-emerald-500/40") : (lightMode ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100" : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20")}`}>
                               👁 Code
+                            </button>
+                            <button onClick={() => {
+                              const solve = solves.find(s => s.id === item.solveId);
+                              const code = solve?.code || learnEntries.find(e => e.title === item.title)?.code_solution || "";
+                              const lang = solve?.language || learnEntries.find(e => e.title === item.title)?.language || "cpp";
+                              const snippet = code ? code.split("\n").slice(0, 20).join("\n") : "(no code saved)";
+                              const text = `📖 *${item.title}*\n${item.difficulty || ""} | ${item.label}\n\n\`\`\`${lang}\n${snippet}\n\`\`\``;
+                              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                            }}
+                              className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${lightMode ? "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100" : "bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20"}`}>
+                              📱 WhatsApp
                             </button>
                           </div>
                           {/* Code Preview */}
