@@ -2869,54 +2869,52 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 mb-2">
                                 <div className={`h-2 w-2 shrink-0 rounded-full ${dc.dot}`} />
-                                <p className={`truncate text-base font-semibold leading-tight ${t.textPrimary}`}>{item.title}</p>
+                                <p className={`truncate text-sm font-semibold leading-tight ${lightMode ? "text-gray-900" : "text-[#e6edf3]"}`}>{item.title}</p>
                               </div>
-                              <div className="flex items-center gap-2 ml-4 flex-wrap">
-                                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${lightMode ? "bg-indigo-100 text-indigo-700 border border-indigo-200" : "bg-indigo-500/15 text-indigo-400 border border-indigo-500/20"}`}>
+                              <div className="flex items-center gap-1.5 ml-4 flex-wrap">
+                                <span className={`rounded-md px-2 py-0.5 text-[10px] font-medium ${lightMode ? "bg-gray-100 text-gray-600" : "bg-[#21262d] text-[#7d8590]"}`}>
                                   {item.label}
                                 </span>
-                                {item.difficulty && <span className={`text-xs font-semibold ${dc.text}`}>{item.difficulty}</span>}
+                                {item.difficulty && <span className={`text-[10px] font-semibold ${dc.text}`}>{item.difficulty}</span>}
                                 {item.tags && item.tags.slice(0, 3).map(tag => (
-                                  <span key={tag} className={`rounded-full px-2 py-0.5 text-[10px] ${t.tag}`}>{tag}</span>
+                                  <span key={tag} className={`rounded-md px-1.5 py-0.5 text-[10px] ${lightMode ? "bg-gray-100 text-gray-500" : "bg-[#21262d] text-[#7d8590]"}`}>{tag}</span>
                                 ))}
                               </div>
                             </div>
                             <div className="shrink-0 text-right">
-                              <span className={`block rounded-full px-2.5 py-1 text-xs font-semibold ${item.status === "overdue" ? lightMode ? "bg-yellow-100 text-yellow-700 border border-yellow-300" : "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20" : lightMode ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-white/5 text-white/40"}`}>
-                                {item.status === "overdue" ? "⚠️ Overdue" : "📅 Due Today"}
+                              <span className={`block text-[10px] font-medium ${lightMode ? "text-gray-500" : "text-[#7d8590]"}`}>
+                                {formatDate(item.dueOn)}
                               </span>
-                              <span className={`block mt-1 text-[10px] ${t.textFaint}`}>{formatDate(item.dueOn)}</span>
                             </div>
                           </div>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-1.5">
                             {item.sourceUrl && (
                               <a href={item.sourceUrl} target="_blank" rel="noreferrer"
-                                className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-medium transition ${lightMode ? "border border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100" : "border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20"}`}>
-                                Attempt on LeetCode ↗
+                                className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#21262d] text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#30363d]"}`}>
+                                LeetCode ↗
                               </a>
                             )}
                             <button onClick={() => markRevision(item.id, "done")}
-                              className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${lightMode ? "bg-green-100 text-green-700 border border-green-300 hover:bg-green-200" : "bg-green-500/15 text-green-400 hover:bg-green-500/25 border border-green-500/20"}`}>
-                              ✓ Mark Done
+                              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition ${lightMode ? "bg-green-600 text-white hover:bg-green-700" : "bg-[#238636] text-white hover:bg-[#2ea043]"}`}>
+                              ✓ Done
                             </button>
                             <button onClick={() => markRevision(item.id, "failed")}
-                              className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${lightMode ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" : "bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20"}`}>
+                              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition ${lightMode ? "bg-gray-100 text-red-600 hover:bg-red-50" : "bg-[#21262d] text-[#f85149] hover:bg-[#30363d]"}`}>
                               ✗ Failed
                             </button>
-                            {/* AI buttons */}
                             <button onClick={() => getCardHint(item)}
                               disabled={cardAI[item.id]?.loading}
-                              className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-medium transition disabled:opacity-40 ${lightMode ? "bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100" : "bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 border border-purple-500/20"}`}>
+                              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition disabled:opacity-40 ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#21262d] text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#30363d]"}`}>
                               {cardAI[item.id]?.loading ? "…" : "💡 Hint"}
                             </button>
                             <button onClick={() => getCardSummary(item)}
                               disabled={cardAI[item.id]?.loading}
-                              className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-medium transition disabled:opacity-40 ${lightMode ? "bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100" : "bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20"}`}>
+                              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition disabled:opacity-40 ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#21262d] text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#30363d]"}`}>
                               {cardAI[item.id]?.loading ? "…" : "📖 Summary"}
                             </button>
                             <button onClick={() => setRevisionCodePreview(revisionCodePreview === item.id ? null : item.id)}
-                              className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${revisionCodePreview === item.id ? (lightMode ? "bg-emerald-100 text-emerald-800 border border-emerald-400 ring-1 ring-emerald-400" : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 ring-1 ring-emerald-500/40") : (lightMode ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100" : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20")}`}>
-                              👁 Code
+                              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition ${revisionCodePreview === item.id ? (lightMode ? "bg-blue-600 text-white" : "bg-[#1f6feb] text-white") : (lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#21262d] text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#30363d]")}`}>
+                              {revisionCodePreview === item.id ? "✕ Close" : "{ } Code"}
                             </button>
                             <button onClick={() => {
                               const solve = solves.find(s => s.id === item.solveId);
@@ -2926,8 +2924,8 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               const text = `📖 *${item.title}*\n${item.difficulty || ""} | ${item.label}\n\n\`\`\`${lang}\n${snippet}\n\`\`\``;
                               window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
                             }}
-                              className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${lightMode ? "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100" : "bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20"}`}>
-                              📱 WhatsApp
+                              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#21262d] text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#30363d]"}`}>
+                              📱 Share
                             </button>
                           </div>
                           {/* Code Preview */}
