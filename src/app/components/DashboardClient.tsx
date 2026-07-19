@@ -3805,7 +3805,7 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
               )}
             </AnimatePresence>
 
-            {/* ════════ REVISION MODE PANEL ════════ */}
+            {/* ════════ REVISION MODE PANEL (Gamified) ════════ */}
             <AnimatePresence>
               {showRevisionMode && (
                 <motion.div
@@ -3815,67 +3815,167 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                   className="fixed inset-0 z-50 flex flex-col"
                   style={{ backgroundColor: lightMode ? "#f8fafc" : "#0d1117" }}
                 >
-                  {/* Header */}
-                  <div className={`flex items-center justify-between px-6 py-4 border-b shrink-0 ${lightMode ? "border-gray-200 bg-white" : "border-[#30363d] bg-[#161b22]"}`}>
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">📖</span>
+                  {/* Gamified Header */}
+                  <div className={`flex items-center justify-between px-6 py-4 border-b shrink-0 ${lightMode ? "border-gray-200 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50" : "border-[#30363d] bg-gradient-to-r from-indigo-900/20 via-purple-900/20 to-pink-900/20"}`}>
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <span className="text-3xl">⚔️</span>
+                        <motion.div
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ repeat: Infinity, duration: 2 }}
+                          className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-yellow-400 shadow-lg shadow-yellow-400/50"
+                        />
+                      </div>
                       <div>
-                        <h2 className={`text-lg font-bold ${lightMode ? "text-gray-900" : "text-white"}`}>Revision Mode</h2>
+                        <h2 className={`text-lg font-bold ${lightMode ? "text-gray-900" : "text-white"}`}>Revision Quest</h2>
                         <p className={`text-xs ${lightMode ? "text-gray-500" : "text-gray-400"}`}>
-                          {pending.length} pending · {done.length} completed · Scroll through code and mark done
+                          Complete revisions to earn XP • Each done = +{(() => { const baseXP = 10; return pending.length > 0 ? baseXP + (pending[0]?.difficulty === "Hard" ? 15 : pending[0]?.difficulty === "Medium" ? 10 : 5) : baseXP; })()}–{10 + 15} XP
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`text-sm font-bold ${lightMode ? "text-indigo-600" : "text-indigo-400"}`}>{done.length}/{todayRevisions.length} done</span>
+                    <div className="flex items-center gap-4">
+                      {/* XP & Level display */}
+                      <div className="flex items-center gap-3">
+                        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${lightMode ? "bg-yellow-100 border border-yellow-300" : "bg-yellow-500/15 border border-yellow-500/30"}`}>
+                          <span className="text-sm">⭐</span>
+                          <span className={`text-sm font-bold ${lightMode ? "text-yellow-700" : "text-yellow-400"}`}>{done.length * 15} XP</span>
+                        </div>
+                        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${lightMode ? "bg-purple-100 border border-purple-300" : "bg-purple-500/15 border border-purple-500/30"}`}>
+                          <span className="text-sm">🏆</span>
+                          <span className={`text-sm font-bold ${lightMode ? "text-purple-700" : "text-purple-400"}`}>Lv.{Math.floor(done.length / 3) + 1}</span>
+                        </div>
+                        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${lightMode ? "bg-orange-100 border border-orange-300" : "bg-orange-500/15 border border-orange-500/30"}`}>
+                          <span className="text-sm">🔥</span>
+                          <span className={`text-sm font-bold ${lightMode ? "text-orange-700" : "text-orange-400"}`}>{done.length}/{todayRevisions.length}</span>
+                        </div>
+                      </div>
+                      {/* WhatsApp send button */}
+                      <button
+                        onClick={async () => {
+                          const phone = prompt("Enter your WhatsApp number (with country code, e.g. 919876543210):");
+                          if (!phone) return;
+                          const apiKey = prompt("Enter your CallMeBot API key:\n\nFirst time? Add +34 611 01 16 37 to contacts,\nsend 'I allow callmebot to send me messages' on WhatsApp,\nwait for API key reply.");
+                          if (!apiKey) return;
+                          // Build message
+                          const revisionList = pending.slice(0, 5).map((item, i) => {
+                            const solve = solves.find(s => s.id === item.solveId);
+                            const code = solve?.code || learnEntries.find(e => e.title === item.title)?.code_solution || "";
+                            const snippet = code.split("\n").slice(0, 15).join("\n");
+                            return `*${i + 1}. ${item.title}* (${item.difficulty || "–"} | ${item.label})\n\`\`\`\n${snippet}\n\`\`\``;
+                          }).join("\n\n");
+                          const msg = `📖 *Today's Revision Queue*\n${pending.length} questions to revise\n\n${revisionList}\n\n_Complete your revisions to level up! 🚀_`;
+                          try {
+                            const res = await fetch("/api/whatsapp/send", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                              body: JSON.stringify({ phone, apiKey, message: msg }),
+                            });
+                            const data = await res.json();
+                            if (data.success) alert("✅ Sent to WhatsApp!");
+                            else alert("❌ Failed: " + (data.error || "Unknown error"));
+                          } catch { alert("❌ Network error"); }
+                        }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${lightMode ? "bg-green-100 text-green-700 border border-green-300 hover:bg-green-200" : "bg-green-500/15 text-green-400 border border-green-500/30 hover:bg-green-500/25"}`}
+                      >
+                        <span>📱</span> Send to WhatsApp
+                      </button>
                       <button onClick={() => setShowRevisionMode(false)} className={`rounded-lg p-2 text-lg transition ${lightMode ? "hover:bg-gray-100 text-gray-500" : "hover:bg-white/10 text-white/50"}`}>✕</button>
                     </div>
                   </div>
 
-                  {/* Progress */}
-                  <div className={`px-6 py-3 border-b ${lightMode ? "border-gray-100 bg-gray-50" : "border-[#21262d] bg-[#0d1117]"}`}>
-                    <div className={`h-2 rounded-full overflow-hidden ${lightMode ? "bg-gray-200" : "bg-white/10"}`}>
-                      <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" style={{ width: `${todayRevisions.length > 0 ? (done.length / todayRevisions.length) * 100 : 0}%` }} />
+                  {/* XP Progress Bar */}
+                  <div className={`px-6 py-3 border-b ${lightMode ? "border-gray-100 bg-white" : "border-[#21262d] bg-[#161b22]"}`}>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[10px] font-bold ${lightMode ? "text-gray-500" : "text-gray-500"}`}>QUEST PROGRESS</span>
+                      <div className={`flex-1 h-3 rounded-full overflow-hidden ${lightMode ? "bg-gray-200" : "bg-white/10"}`}>
+                        <motion.div
+                          className="h-full rounded-full bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 shadow-lg"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${todayRevisions.length > 0 ? (done.length / todayRevisions.length) * 100 : 0}%` }}
+                          transition={{ duration: 0.8, ease: "easeOut" }}
+                        />
+                      </div>
+                      <span className={`text-xs font-bold ${done.length === todayRevisions.length && todayRevisions.length > 0 ? "text-green-500" : lightMode ? "text-gray-600" : "text-gray-400"}`}>
+                        {done.length === todayRevisions.length && todayRevisions.length > 0 ? "🏆 COMPLETE!" : `${Math.round((done.length / Math.max(todayRevisions.length, 1)) * 100)}%`}
+                      </span>
+                    </div>
+                    {/* Milestone badges */}
+                    <div className="flex items-center gap-2 mt-2">
+                      {[1, 3, 5, 7].map(milestone => (
+                        <span key={milestone} className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${done.length >= milestone ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : lightMode ? "bg-gray-100 text-gray-300 border border-gray-200" : "bg-white/5 text-gray-700 border border-white/5"}`}>
+                          {done.length >= milestone ? "🌟" : "○"} {milestone}
+                        </span>
+                      ))}
+                      {done.length === todayRevisions.length && todayRevisions.length > 0 && (
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-gradient-to-r from-yellow-500/30 to-orange-500/30 text-yellow-300 border border-yellow-500/40"
+                        >
+                          👑 All Clear!
+                        </motion.span>
+                      )}
                     </div>
                   </div>
 
                   {/* Scrollable revision list with code */}
-                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  <div className="flex-1 overflow-y-auto p-6 space-y-5">
                     {pending.length === 0 ? (
-                      <div className={`text-center py-20 ${lightMode ? "text-gray-400" : "text-gray-600"}`}>
-                        <span className="text-5xl block mb-4">🎉</span>
-                        <p className="text-lg font-bold">All done for today!</p>
-                        <p className="text-sm mt-2">Great work on your revisions.</p>
-                      </div>
+                      <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className={`text-center py-20`}
+                      >
+                        <motion.span
+                          className="text-6xl block mb-4"
+                          animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+                          transition={{ repeat: Infinity, duration: 2 }}
+                        >🏆</motion.span>
+                        <p className={`text-2xl font-bold ${lightMode ? "text-gray-900" : "text-white"}`}>Quest Complete!</p>
+                        <p className={`text-sm mt-2 ${lightMode ? "text-gray-500" : "text-gray-400"}`}>You earned <span className="text-yellow-400 font-bold">{done.length * 15} XP</span> today. Keep the streak alive! 🔥</p>
+                        <div className="mt-6 flex items-center justify-center gap-3">
+                          <span className="px-4 py-2 rounded-full bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border border-yellow-500/30 font-bold text-sm">
+                            Level {Math.floor(done.length / 3) + 1} Achieved
+                          </span>
+                        </div>
+                      </motion.div>
                     ) : pending.map((item, idx) => {
                       const solve = solves.find(s => s.id === item.solveId);
                       const code = solve?.code || learnEntries.find(e => e.title === item.title)?.code_solution || "";
                       const lang = solve?.language || learnEntries.find(e => e.title === item.title)?.language || "cpp";
                       const dc = diffColor(item.difficulty || "Medium");
+                      const xpReward = 10 + (item.difficulty === "Hard" ? 15 : item.difficulty === "Medium" ? 10 : 5);
                       return (
-                        <div key={item.id} className={`rounded-xl border overflow-hidden ${lightMode ? "border-gray-200 bg-white shadow-sm" : "border-[#30363d] bg-[#161b22]"}`}>
-                          {/* Question header */}
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className={`rounded-xl border overflow-hidden ${lightMode ? "border-gray-200 bg-white shadow-sm hover:shadow-md" : "border-[#30363d] bg-[#161b22] hover:border-purple-500/30"} transition-all`}
+                        >
+                          {/* Question header with XP badge */}
                           <div className={`flex items-center justify-between px-5 py-3 border-b ${lightMode ? "border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50" : "border-[#30363d] bg-gradient-to-r from-indigo-500/5 to-purple-500/5"}`}>
                             <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <span className={`text-sm font-mono ${lightMode ? "text-gray-400" : "text-gray-600"}`}>{idx + 1}.</span>
+                              <span className={`text-sm font-mono font-bold ${lightMode ? "text-indigo-400" : "text-indigo-500"}`}>#{idx + 1}</span>
                               <div className={`h-2.5 w-2.5 rounded-full ${dc.dot}`} />
                               <span className={`text-sm font-bold truncate ${lightMode ? "text-gray-900" : "text-white"}`}>{item.title}</span>
                               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${lightMode ? "bg-indigo-100 text-indigo-700" : "bg-indigo-500/15 text-indigo-400"}`}>{item.label}</span>
                               {item.difficulty && <span className={`text-xs font-bold ${dc.text}`}>{item.difficulty}</span>}
-                              {item.tags && item.tags.slice(0, 3).map(tag => (
+                              {item.tags && item.tags.slice(0, 2).map(tag => (
                                 <span key={tag} className={`rounded-full px-2 py-0.5 text-[9px] ${lightMode ? "bg-gray-100 text-gray-500" : "bg-white/5 text-gray-500"}`}>{tag}</span>
                               ))}
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${lightMode ? "bg-yellow-100 text-yellow-700" : "bg-yellow-500/15 text-yellow-400"}`}>+{xpReward} XP</span>
                               {item.sourceUrl && (
                                 <a href={item.sourceUrl} target="_blank" rel="noreferrer" className={`text-[10px] px-2 py-1 rounded-lg font-bold transition ${lightMode ? "bg-blue-50 text-blue-600 hover:bg-blue-100" : "bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"}`}>
                                   LeetCode ↗
                                 </a>
                               )}
-                              <button onClick={() => markRevision(item.id, "done")} className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold bg-green-500/15 text-green-400 hover:bg-green-500/25 border border-green-500/20 transition">
-                                ✓ Done
+                              <button onClick={() => markRevision(item.id, "done")} className="inline-flex items-center gap-1 rounded-lg px-4 py-2 text-xs font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/25 transition-all hover:scale-105">
+                                ✓ Done (+{xpReward}XP)
                               </button>
-                              <button onClick={() => markRevision(item.id, "failed")} className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-bold bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition">
+                              <button onClick={() => markRevision(item.id, "failed")} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs font-bold bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition">
                                 ✗
                               </button>
                             </div>
@@ -3891,26 +3991,37 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             </div>
                           ) : (
                             <div className={`px-5 py-8 text-center ${lightMode ? "text-gray-400" : "text-gray-600"}`}>
-                              <p className="text-sm">No code saved for this question yet.</p>
-                              <p className="text-xs mt-1">Solve it in the Code Studio to save your solution.</p>
+                              <p className="text-sm">No code saved — solve in Code Studio to save your solution.</p>
                             </div>
                           )}
-                        </div>
+                        </motion.div>
                       );
                     })}
 
-                    {/* Completed items at bottom */}
+                    {/* Completed items with XP earned */}
                     {done.length > 0 && (
-                      <div className={`rounded-xl border p-4 ${lightMode ? "border-gray-200 bg-gray-50" : "border-[#30363d] bg-[#161b22]/50"}`}>
-                        <p className={`text-xs font-bold mb-3 ${lightMode ? "text-gray-500" : "text-gray-500"}`}>✓ Completed Today ({done.length})</p>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className={`rounded-xl border p-5 ${lightMode ? "border-green-200 bg-green-50" : "border-green-500/20 bg-green-500/5"}`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <p className={`text-xs font-bold ${lightMode ? "text-green-700" : "text-green-400"}`}>✓ Conquered Today ({done.length})</p>
+                          <span className={`text-xs font-bold ${lightMode ? "text-yellow-600" : "text-yellow-400"}`}>+{done.length * 15} XP earned</span>
+                        </div>
                         <div className="flex flex-wrap gap-2">
                           {done.map(item => (
-                            <span key={item.id} className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs ${lightMode ? "bg-green-50 text-green-700 border border-green-200" : "bg-green-500/10 text-green-400 border border-green-500/20"}`}>
-                              ✓ {item.title}
-                            </span>
+                            <motion.span
+                              key={item.id}
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold ${item.status === "done" ? (lightMode ? "bg-green-100 text-green-700 border border-green-300" : "bg-green-500/15 text-green-400 border border-green-500/25") : (lightMode ? "bg-red-100 text-red-700 border border-red-300" : "bg-red-500/15 text-red-400 border border-red-500/25")}`}
+                            >
+                              {item.status === "done" ? "⚡" : "✗"} {item.title}
+                            </motion.span>
                           ))}
                         </div>
-                      </div>
+                      </motion.div>
                     )}
                   </div>
                 </motion.div>
