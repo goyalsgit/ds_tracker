@@ -377,6 +377,8 @@ export default function DashboardClient() {
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [aiPlan, setAiPlan] = useState<string | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
+  // Daily problem from LeetCode
+  const [dailyProblem, setDailyProblem] = useState<{ title: string; difficulty: string; link: string; topics: string[]; description: string; date: string } | null>(null);
   // Per-card AI state: key = revisionId, value = { summary?, hint?, loading }
   const [cardAI, setCardAI] = useState<Record<string, { summary?: string; hint?: string; loading?: boolean }>>({});
   // Modal: show full AI summary in overlay
@@ -773,6 +775,10 @@ export default function DashboardClient() {
     // Load database usage
     fetch("/api/database/usage", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => setDbUsage(d)).catch(() => undefined);
+    
+    // Load today's daily problem
+    fetch("/api/daily-problem")
+      .then(r => r.json()).then(d => { if (d.title) setDailyProblem(d); }).catch(() => undefined);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
@@ -2258,128 +2264,25 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
 
             {/* Stats */}
             {stats ? (
-              <motion.div 
-                className="grid grid-cols-2 gap-4 sm:gap-5 sm:grid-cols-5"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-5">
                 {[
-                  { label: "Total Solved", value: stats.totalSolved, color: lightMode ? "#0969da" : "#58a6ff", borderGradient: "from-blue-500 to-cyan-500", glowClass: "glow-blue", icon: "📊", bgGradient: "from-blue-500/20 to-cyan-500/20" },
-                  { label: "Easy", value: stats.easySolved, color: lightMode ? "#1a7f37" : "#3fb950", borderGradient: "from-green-500 to-emerald-500", glowClass: "glow-green", icon: "✅", bgGradient: "from-green-500/20 to-emerald-500/20" },
-                  { label: "Medium", value: stats.mediumSolved, color: lightMode ? "#bf8700" : "#fbbf24", borderGradient: "from-yellow-500 to-orange-500", glowClass: "glow-yellow", icon: "⚡", bgGradient: "from-yellow-500/20 to-orange-500/20" },
-                  { label: "Hard", value: stats.hardSolved, color: lightMode ? "#cf222e" : "#f85149", borderGradient: "from-red-500 to-rose-500", glowClass: "glow-red", icon: "🔥", bgGradient: "from-red-500/20 to-rose-500/20" },
-                ].map((s, idx) => (
-                  <motion.div 
+                  { label: "Total", value: stats.totalSolved, accent: lightMode ? "text-gray-900" : "text-white" },
+                  { label: "Easy", value: stats.easySolved, accent: lightMode ? "text-green-600" : "text-green-400" },
+                  { label: "Medium", value: stats.mediumSolved, accent: lightMode ? "text-amber-600" : "text-amber-400" },
+                  { label: "Hard", value: stats.hardSolved, accent: lightMode ? "text-red-600" : "text-red-400" },
+                  { label: "Streak", value: streak, accent: lightMode ? "text-orange-600" : "text-orange-400", suffix: "d" },
+                ].map((s) => (
+                  <div 
                     key={s.label}
-                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: idx * 0.1 }}
-                    whileHover={{ scale: 1.05, y: -5 }}
-                    className={`group relative overflow-hidden rounded-2xl p-4 sm:p-6 transition-all duration-300 cursor-pointer ${s.glowClass} ${
-                      lightMode 
-                        ? "bg-white/90 backdrop-blur-xl shadow-xl hover:shadow-2xl border border-gray-200/50" 
-                        : "bg-gradient-to-br from-[#1a1a2e]/80 to-[#16213e]/80 backdrop-blur-xl shadow-2xl border border-white/10"
-                    }`}
+                    className={`rounded-xl p-4 sm:p-5 ${lightMode ? "bg-white border border-gray-200" : "bg-[#161b22] border border-[#30363d]"}`}
                   >
-                    {/* Animated gradient background on hover */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${s.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl`} />
-                    
-                    {/* Shine effect */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-between mb-3 sm:mb-4">
-                        <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${lightMode ? "text-gray-500" : "text-gray-400"}`}>{s.label}</p>
-                        <motion.span 
-                          className="text-2xl sm:text-3xl"
-                          animate={{ rotate: [0, 5, -5, 0] }}
-                          transition={{ duration: 3, repeat: Infinity, delay: idx * 0.2 }}
-                        >
-                          {s.icon}
-                        </motion.span>
-                      </div>
-                      <motion.p 
-                        className="text-4xl sm:text-5xl font-black mb-3 sm:mb-4"
-                        style={{ color: s.color }}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: "spring", stiffness: 200, delay: idx * 0.1 + 0.3 }}
-                      >
-                        {s.value}
-                      </motion.p>
-                      <div className={`h-2 sm:h-3 rounded-full overflow-hidden ${lightMode ? "bg-gray-200" : "bg-white/10"}`}>
-                        <motion.div 
-                          className={`h-full rounded-full bg-gradient-to-r ${s.borderGradient}`}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${Math.min((s.value / (stats.totalSolved || 1)) * 100, 100)}%` }}
-                          transition={{ duration: 1.2, delay: idx * 0.1 + 0.4, ease: "easeOut" }}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-                
-                {/* Streak Card - Special Design */}
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.4 }}
-                  whileHover={{ scale: 1.05, y: -5 }}
-                  className={`group relative overflow-hidden rounded-2xl p-4 sm:p-6 transition-all duration-300 cursor-pointer col-span-2 sm:col-span-1 ${
-                    lightMode 
-                      ? "bg-gradient-to-br from-orange-50 to-amber-50 shadow-xl hover:shadow-2xl border border-orange-200/50" 
-                      : "bg-gradient-to-br from-orange-500/20 to-amber-500/20 backdrop-blur-xl shadow-2xl border border-orange-500/30"
-                  }`}
-                  style={{ boxShadow: streak >= 7 ? "0 0 40px rgba(249, 115, 22, 0.3)" : undefined }}
-                >
-                  {/* Fire particles effect for streak >= 7 */}
-                  {streak >= 7 && (
-                    <div className="absolute inset-0 overflow-hidden">
-                      {[...Array(5)].map((_, i) => (
-                        <motion.div
-                          key={i}
-                          className="absolute w-2 h-2 rounded-full bg-orange-400/60"
-                          initial={{ y: "100%", x: `${20 + i * 15}%`, opacity: 0 }}
-                          animate={{ y: "-100%", opacity: [0, 1, 0] }}
-                          transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  
-                  {/* Content */}
-                  <div className="relative z-10 flex sm:block items-center gap-4">
-                    <div className="flex items-center justify-between mb-0 sm:mb-4">
-                      <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${lightMode ? "text-orange-600" : "text-orange-300"}`}>Streak</p>
-                      <motion.span 
-                        className="text-2xl sm:text-4xl ml-2 sm:ml-0"
-                        animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
-                        🔥
-                      </motion.span>
-                    </div>
-                    <div className="flex items-baseline gap-2 mb-2 sm:mb-4 ml-auto sm:ml-0">
-                      <motion.p 
-                        className="text-4xl sm:text-5xl font-black"
-                        style={{ color: lightMode ? "#ea580c" : "#fb923c" }}
-                        animate={streak >= 7 ? { scale: [1, 1.05, 1] } : {}}
-                        transition={{ duration: 1, repeat: Infinity }}
-                      >
-                        {streak}
-                      </motion.p>
-                      <span className={`text-sm sm:text-lg font-bold ${lightMode ? "text-orange-500" : "text-orange-300"}`}>days</span>
-                    </div>
-                    <p className={`text-xs sm:text-sm font-bold hidden sm:block ${lightMode ? "text-orange-600" : "text-orange-200"}`}>
-                      {streak === 0 ? "Start today! 🚀" : streak >= 30 ? "Legendary! 👑" : streak >= 7 ? "On fire! 🔥" : "Keep going! 💪"}
+                    <p className={`text-[11px] font-medium uppercase tracking-wide mb-2 ${lightMode ? "text-gray-500" : "text-[#7d8590]"}`}>{s.label}</p>
+                    <p className={`text-2xl sm:text-3xl font-bold ${s.accent}`}>
+                      {s.value}{s.suffix || ""}
                     </p>
                   </div>
-                </motion.div>
-              </motion.div>
+                ))}
+              </div>
             ) : (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -2459,6 +2362,30 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                   )}
                 </div>
               </motion.div>
+            )}
+
+            {/* Today's Daily Challenge */}
+            {dailyProblem && (
+              <div className={`rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${lightMode ? "bg-white border border-gray-200" : "bg-[#161b22] border border-[#30363d]"}`}>
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-lg ${lightMode ? "bg-blue-50" : "bg-blue-500/10"}`}>🎯</div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className={`text-[10px] font-medium uppercase tracking-wide ${lightMode ? "text-gray-500" : "text-[#7d8590]"}`}>Today&apos;s Daily Challenge</p>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${dailyProblem.difficulty === "Easy" ? (lightMode ? "bg-green-100 text-green-700" : "text-green-400 bg-green-500/10") : dailyProblem.difficulty === "Medium" ? (lightMode ? "bg-amber-100 text-amber-700" : "text-amber-400 bg-amber-500/10") : (lightMode ? "bg-red-100 text-red-700" : "text-red-400 bg-red-500/10")}`}>{dailyProblem.difficulty}</span>
+                    </div>
+                    <p className={`text-sm font-semibold truncate ${lightMode ? "text-gray-900" : "text-[#e6edf3]"}`}>{dailyProblem.title}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {dailyProblem.topics.slice(0, 4).map(t => (
+                        <span key={t} className={`text-[9px] px-1.5 py-0.5 rounded ${lightMode ? "bg-gray-100 text-gray-600" : "bg-[#21262d] text-[#7d8590]"}`}>{t}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <a href={dailyProblem.link} target="_blank" rel="noreferrer" className={`shrink-0 rounded-lg px-4 py-2 text-xs font-semibold transition ${lightMode ? "bg-gray-900 text-white hover:bg-gray-800" : "bg-[#21262d] text-[#e6edf3] hover:bg-[#30363d] border border-[#30363d]"}`}>
+                  Solve →
+                </a>
+              </div>
             )}
 
             {/* 3-col layout - stacks on mobile */}
