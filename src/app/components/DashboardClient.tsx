@@ -538,6 +538,8 @@ export default function DashboardClient() {
   const [zoomFontSize, setZoomFontSize] = useState(15); // font size in fullscreen viewer
   const [hoverPreviewId, setHoverPreviewId] = useState<string | null>(null); // card hovered for center preview
   const [showPatternSheet, setShowPatternSheet] = useState(false); // pattern sheet export panel
+  const [revisionCodePreview, setRevisionCodePreview] = useState<string | null>(null); // revision card code popup
+  const [showRevisionMode, setShowRevisionMode] = useState(false); // full revision mode panel
   
   // Vertical layout height (percentage of code editor)
   const [verticalSplit, setVerticalSplit] = useState(60);
@@ -2546,7 +2548,14 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                 <div className={`rounded-xl border p-5 ${t.card}`}>
                   <div className="flex items-center justify-between mb-1">
                     <p className={`text-sm font-semibold ${t.textPrimary}`}>Today&apos;s Revision Queue</p>
-                    <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] text-white/40">{todayKey}</span>
+                    <div className="flex items-center gap-2">
+                      {pending.length > 0 && (
+                        <button onClick={() => setShowRevisionMode(true)} className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${lightMode ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200" : "bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 border border-indigo-500/20"}`}>
+                          📖 Revision Mode
+                        </button>
+                      )}
+                      <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] text-white/40">{todayKey}</span>
+                    </div>
                   </div>
                   <p className={`text-xs mb-4 ${t.textFaint}`}>
                     {pending.length === 0 && done.length === 0
@@ -2628,7 +2637,32 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-medium transition disabled:opacity-40 ${lightMode ? "bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100" : "bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20"}`}>
                               {cardAI[item.id]?.loading ? "…" : "📖 Summary"}
                             </button>
+                            <button onClick={() => setRevisionCodePreview(revisionCodePreview === item.id ? null : item.id)}
+                              className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${revisionCodePreview === item.id ? (lightMode ? "bg-emerald-100 text-emerald-800 border border-emerald-400 ring-1 ring-emerald-400" : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 ring-1 ring-emerald-500/40") : (lightMode ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100" : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20")}`}>
+                              👁 Code
+                            </button>
                           </div>
+                          {/* Code Preview */}
+                          {revisionCodePreview === item.id && (() => {
+                            const solve = solves.find(s => s.id === item.solveId);
+                            const code = solve?.code || learnEntries.find(e => e.title === item.title)?.code_solution || "";
+                            const lang = solve?.language || learnEntries.find(e => e.title === item.title)?.language || "cpp";
+                            if (!code) return <p className={`mt-2 text-xs italic ${t.textFaint}`}>No code found for this question.</p>;
+                            return (
+                              <div className={`mt-3 rounded-xl overflow-hidden border ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}>
+                                <div className={`flex items-center justify-between px-3 py-2 text-[10px] border-b ${lightMode ? "bg-gray-50 border-gray-200 text-gray-500" : "bg-[#1a1d24] border-[#30363d] text-gray-500"}`}>
+                                  <span className="font-bold">{lang.toUpperCase()} • {code.split("\n").length} lines</span>
+                                  <div className="flex items-center gap-2">
+                                    <button onClick={() => navigator.clipboard.writeText(code)} className="hover:text-blue-400 transition font-bold">📋 Copy</button>
+                                    <button onClick={() => setRevisionCodePreview(null)} className="hover:text-red-400 transition font-bold">✕ Close</button>
+                                  </div>
+                                </div>
+                                <div className={`max-h-[350px] overflow-auto ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
+                                  <pre className="p-3 selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "12px", lineHeight: "20px", color: "#d4d4d4", tabSize: 2, whiteSpace: "pre" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(code, lang) }} />
+                                </div>
+                              </div>
+                            );
+                          })()}
                           {/* AI response display */}
                           {(cardAI[item.id]?.hint || cardAI[item.id]?.summary) && (
                             <div className={`mt-3 rounded-lg px-3 py-2.5 ${lightMode ? "border border-purple-200 bg-purple-50" : "border border-purple-500/20 bg-purple-500/5"}`}>
@@ -3767,6 +3801,118 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                       );
                     })()}
                   </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ════════ REVISION MODE PANEL ════════ */}
+            <AnimatePresence>
+              {showRevisionMode && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex flex-col"
+                  style={{ backgroundColor: lightMode ? "#f8fafc" : "#0d1117" }}
+                >
+                  {/* Header */}
+                  <div className={`flex items-center justify-between px-6 py-4 border-b shrink-0 ${lightMode ? "border-gray-200 bg-white" : "border-[#30363d] bg-[#161b22]"}`}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">📖</span>
+                      <div>
+                        <h2 className={`text-lg font-bold ${lightMode ? "text-gray-900" : "text-white"}`}>Revision Mode</h2>
+                        <p className={`text-xs ${lightMode ? "text-gray-500" : "text-gray-400"}`}>
+                          {pending.length} pending · {done.length} completed · Scroll through code and mark done
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-sm font-bold ${lightMode ? "text-indigo-600" : "text-indigo-400"}`}>{done.length}/{todayRevisions.length} done</span>
+                      <button onClick={() => setShowRevisionMode(false)} className={`rounded-lg p-2 text-lg transition ${lightMode ? "hover:bg-gray-100 text-gray-500" : "hover:bg-white/10 text-white/50"}`}>✕</button>
+                    </div>
+                  </div>
+
+                  {/* Progress */}
+                  <div className={`px-6 py-3 border-b ${lightMode ? "border-gray-100 bg-gray-50" : "border-[#21262d] bg-[#0d1117]"}`}>
+                    <div className={`h-2 rounded-full overflow-hidden ${lightMode ? "bg-gray-200" : "bg-white/10"}`}>
+                      <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" style={{ width: `${todayRevisions.length > 0 ? (done.length / todayRevisions.length) * 100 : 0}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Scrollable revision list with code */}
+                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    {pending.length === 0 ? (
+                      <div className={`text-center py-20 ${lightMode ? "text-gray-400" : "text-gray-600"}`}>
+                        <span className="text-5xl block mb-4">🎉</span>
+                        <p className="text-lg font-bold">All done for today!</p>
+                        <p className="text-sm mt-2">Great work on your revisions.</p>
+                      </div>
+                    ) : pending.map((item, idx) => {
+                      const solve = solves.find(s => s.id === item.solveId);
+                      const code = solve?.code || learnEntries.find(e => e.title === item.title)?.code_solution || "";
+                      const lang = solve?.language || learnEntries.find(e => e.title === item.title)?.language || "cpp";
+                      const dc = diffColor(item.difficulty || "Medium");
+                      return (
+                        <div key={item.id} className={`rounded-xl border overflow-hidden ${lightMode ? "border-gray-200 bg-white shadow-sm" : "border-[#30363d] bg-[#161b22]"}`}>
+                          {/* Question header */}
+                          <div className={`flex items-center justify-between px-5 py-3 border-b ${lightMode ? "border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50" : "border-[#30363d] bg-gradient-to-r from-indigo-500/5 to-purple-500/5"}`}>
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <span className={`text-sm font-mono ${lightMode ? "text-gray-400" : "text-gray-600"}`}>{idx + 1}.</span>
+                              <div className={`h-2.5 w-2.5 rounded-full ${dc.dot}`} />
+                              <span className={`text-sm font-bold truncate ${lightMode ? "text-gray-900" : "text-white"}`}>{item.title}</span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${lightMode ? "bg-indigo-100 text-indigo-700" : "bg-indigo-500/15 text-indigo-400"}`}>{item.label}</span>
+                              {item.difficulty && <span className={`text-xs font-bold ${dc.text}`}>{item.difficulty}</span>}
+                              {item.tags && item.tags.slice(0, 3).map(tag => (
+                                <span key={tag} className={`rounded-full px-2 py-0.5 text-[9px] ${lightMode ? "bg-gray-100 text-gray-500" : "bg-white/5 text-gray-500"}`}>{tag}</span>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {item.sourceUrl && (
+                                <a href={item.sourceUrl} target="_blank" rel="noreferrer" className={`text-[10px] px-2 py-1 rounded-lg font-bold transition ${lightMode ? "bg-blue-50 text-blue-600 hover:bg-blue-100" : "bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"}`}>
+                                  LeetCode ↗
+                                </a>
+                              )}
+                              <button onClick={() => markRevision(item.id, "done")} className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold bg-green-500/15 text-green-400 hover:bg-green-500/25 border border-green-500/20 transition">
+                                ✓ Done
+                              </button>
+                              <button onClick={() => markRevision(item.id, "failed")} className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-bold bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition">
+                                ✗
+                              </button>
+                            </div>
+                          </div>
+                          {/* Code area */}
+                          {code ? (
+                            <div className={`${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`}>
+                              <div className={`flex items-center justify-between px-4 py-1.5 text-[10px] border-b ${lightMode ? "border-gray-700/20" : "border-[#21262d]"}`}>
+                                <span className="text-gray-500 font-bold">{lang.toUpperCase()} • {code.split("\n").length} lines</span>
+                                <button onClick={() => navigator.clipboard.writeText(code)} className="text-gray-500 hover:text-blue-400 transition font-bold">📋 Copy</button>
+                              </div>
+                              <pre className="p-4 overflow-x-auto selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "12px", lineHeight: "20px", color: "#d4d4d4", tabSize: 2, whiteSpace: "pre", maxHeight: "400px", overflowY: "auto" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(code, lang) }} />
+                            </div>
+                          ) : (
+                            <div className={`px-5 py-8 text-center ${lightMode ? "text-gray-400" : "text-gray-600"}`}>
+                              <p className="text-sm">No code saved for this question yet.</p>
+                              <p className="text-xs mt-1">Solve it in the Code Studio to save your solution.</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Completed items at bottom */}
+                    {done.length > 0 && (
+                      <div className={`rounded-xl border p-4 ${lightMode ? "border-gray-200 bg-gray-50" : "border-[#30363d] bg-[#161b22]/50"}`}>
+                        <p className={`text-xs font-bold mb-3 ${lightMode ? "text-gray-500" : "text-gray-500"}`}>✓ Completed Today ({done.length})</p>
+                        <div className="flex flex-wrap gap-2">
+                          {done.map(item => (
+                            <span key={item.id} className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs ${lightMode ? "bg-green-50 text-green-700 border border-green-200" : "bg-green-500/10 text-green-400 border border-green-500/20"}`}>
+                              ✓ {item.title}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
