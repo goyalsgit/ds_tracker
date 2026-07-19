@@ -537,6 +537,7 @@ export default function DashboardClient() {
   const [isDraggingZoom, setIsDraggingZoom] = useState<"right" | "bottom" | "corner" | null>(null);
   const [zoomFontSize, setZoomFontSize] = useState(15); // font size in fullscreen viewer
   const [hoverPreviewId, setHoverPreviewId] = useState<string | null>(null); // card hovered for center preview
+  const [showPatternSheet, setShowPatternSheet] = useState(false); // pattern sheet export panel
   
   // Vertical layout height (percentage of code editor)
   const [verticalSplit, setVerticalSplit] = useState(60);
@@ -3406,6 +3407,17 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
               <span className="text-lg">🃏</span>
               <span className="hidden sm:inline">Flash Revision</span>
             </motion.button>
+
+            {/* ════ PATTERN SHEET BUTTON - Floating ════ */}
+            <motion.button
+              onClick={() => setShowPatternSheet(true)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`fixed bottom-4 right-72 sm:bottom-6 sm:right-[320px] z-40 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white shadow-2xl ${lightMode ? "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700" : "bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600"}`}
+            >
+              <span className="text-lg">📊</span>
+              <span className="hidden sm:inline">Pattern Sheet</span>
+            </motion.button>
             
             {/* ════════ MULTI-QUESTION FLASH REVISION PANEL ════════ */}
             <AnimatePresence>
@@ -3755,6 +3767,193 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                       );
                     })()}
                   </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ════════ PATTERN SHEET PANEL ════════ */}
+            <AnimatePresence>
+              {showPatternSheet && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex flex-col"
+                  style={{ backgroundColor: lightMode ? "#f8fafc" : "#0d1117" }}
+                >
+                  {/* Header */}
+                  <div className={`flex items-center justify-between px-6 py-4 border-b shrink-0 ${lightMode ? "border-gray-200 bg-white" : "border-[#30363d] bg-[#161b22]"}`}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">📊</span>
+                      <div>
+                        <h2 className={`text-lg font-bold ${lightMode ? "text-gray-900" : "text-white"}`}>Pattern Sheet</h2>
+                        <p className={`text-xs ${lightMode ? "text-gray-500" : "text-gray-400"}`}>{learnEntries.length} questions · {[...new Set(learnEntries.map(e => e.topic))].length} topics · Download as Excel</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={async () => {
+                          const ExcelJS = (await import("exceljs")).default;
+                          const { saveAs } = await import("file-saver");
+                          const workbook = new ExcelJS.Workbook();
+                          workbook.creator = "DSA Pattern Sheet";
+                          workbook.created = new Date();
+
+                          // Group entries by topic
+                          const grouped: Record<string, ContentEntry[]> = {};
+                          learnEntries.forEach(entry => {
+                            const t = entry.topic || "Uncategorized";
+                            if (!grouped[t]) grouped[t] = [];
+                            grouped[t].push(entry);
+                          });
+
+                          // Summary sheet first
+                          const summarySheet = workbook.addWorksheet("Summary");
+                          summarySheet.columns = [
+                            { header: "Topic", key: "topic", width: 30 },
+                            { header: "Questions", key: "count", width: 12 },
+                            { header: "Easy", key: "easy", width: 8 },
+                            { header: "Medium", key: "medium", width: 10 },
+                            { header: "Hard", key: "hard", width: 8 },
+                          ];
+                          const sumHeader = summarySheet.getRow(1);
+                          sumHeader.font = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
+                          sumHeader.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF10B981" } };
+                          sumHeader.height = 28;
+                          Object.entries(grouped).forEach(([topic, entries]) => {
+                            summarySheet.addRow({
+                              topic,
+                              count: entries.length,
+                              easy: entries.filter(e => e.difficulty === "Easy").length,
+                              medium: entries.filter(e => e.difficulty === "Medium").length,
+                              hard: entries.filter(e => e.difficulty === "Hard").length,
+                            });
+                          });
+
+                          // Topic sheets
+                          Object.entries(grouped).forEach(([topic, entries]) => {
+                            const sheetName = topic.substring(0, 31).replace(/[\\/*?[\]]/g, "");
+                            const sheet = workbook.addWorksheet(sheetName);
+                            
+                            // Column definitions
+                            sheet.columns = [
+                              { header: "#", key: "num", width: 5 },
+                              { header: "Title", key: "title", width: 35 },
+                              { header: "Difficulty", key: "difficulty", width: 12 },
+                              { header: "Sub-Topic", key: "sub_topic", width: 20 },
+                              { header: "Language", key: "language", width: 12 },
+                              { header: "Code", key: "code", width: 80 },
+                            ];
+
+                            // Style header row
+                            const headerRow = sheet.getRow(1);
+                            headerRow.font = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
+                            headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF6366F1" } };
+                            headerRow.alignment = { vertical: "middle", horizontal: "center" };
+                            headerRow.height = 28;
+
+                            entries.forEach((entry, idx) => {
+                              const row = sheet.addRow({
+                                num: idx + 1,
+                                title: entry.title,
+                                difficulty: entry.difficulty || "–",
+                                sub_topic: entry.sub_topic || "–",
+                                language: entry.language,
+                                code: entry.code_solution,
+                              });
+
+                              // Style code cell
+                              const codeCell = row.getCell(6);
+                              codeCell.font = { name: "Consolas", size: 9 };
+                              codeCell.alignment = { wrapText: true, vertical: "top" };
+                              
+                              // Style difficulty
+                              const diffCell = row.getCell(3);
+                              const diffColor = entry.difficulty === "Easy" ? "FF22C55E" : entry.difficulty === "Medium" ? "FFEAB308" : entry.difficulty === "Hard" ? "FFEF4444" : "FF9CA3AF";
+                              diffCell.font = { bold: true, size: 10, color: { argb: diffColor } };
+
+                              // Row height based on code lines
+                              const lineCount = entry.code_solution.split("\n").length;
+                              row.height = Math.max(20, Math.min(lineCount * 12, 400));
+                              row.alignment = { vertical: "top", wrapText: true };
+                            });
+
+                            // Alternate row colors
+                            sheet.eachRow((row, rowNum) => {
+                              if (rowNum > 1 && rowNum % 2 === 0) {
+                                row.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8FAFC" } };
+                              }
+                            });
+                          });
+
+                          const buffer = await workbook.xlsx.writeBuffer();
+                          const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                          saveAs(blob, `DSA_Pattern_Sheet_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-sm shadow-lg transition-all hover:scale-105"
+                      >
+                        <span>📥</span> Download Excel
+                      </button>
+                      <button onClick={() => setShowPatternSheet(false)} className={`rounded-lg p-2 text-lg transition ${lightMode ? "hover:bg-gray-100 text-gray-500" : "hover:bg-white/10 text-white/50"}`}>✕</button>
+                    </div>
+                  </div>
+
+                  {/* Content — grouped by topic */}
+                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    {(() => {
+                      const grouped: Record<string, ContentEntry[]> = {};
+                      learnEntries.forEach(entry => {
+                        const t = entry.topic || "Uncategorized";
+                        if (!grouped[t]) grouped[t] = [];
+                        grouped[t].push(entry);
+                      });
+                      return Object.entries(grouped).map(([topic, entries]) => (
+                        <div key={topic} className={`rounded-xl border overflow-hidden ${lightMode ? "border-gray-200 bg-white shadow-sm" : "border-[#30363d] bg-[#161b22]"}`}>
+                          {/* Topic header */}
+                          <div className={`flex items-center justify-between px-5 py-3 border-b ${lightMode ? "border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50" : "border-[#30363d] bg-gradient-to-r from-indigo-500/10 to-purple-500/10"}`}>
+                            <div className="flex items-center gap-3">
+                              <span className={`text-sm font-bold ${lightMode ? "text-indigo-700" : "text-indigo-400"}`}>{topic}</span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${lightMode ? "bg-indigo-100 text-indigo-600" : "bg-indigo-500/20 text-indigo-400"}`}>{entries.length} questions</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] font-bold">
+                              <span className="text-green-500">{entries.filter(e => e.difficulty === "Easy").length} Easy</span>
+                              <span className="text-yellow-500">{entries.filter(e => e.difficulty === "Medium").length} Med</span>
+                              <span className="text-red-500">{entries.filter(e => e.difficulty === "Hard").length} Hard</span>
+                            </div>
+                          </div>
+                          {/* Questions table */}
+                          <div className="divide-y divide-opacity-50" style={{ borderColor: lightMode ? "#e5e7eb" : "#21262d" }}>
+                            {entries.map((entry, idx) => (
+                              <div key={entry.id} className={`flex gap-4 px-5 py-3 transition-colors ${lightMode ? "hover:bg-gray-50" : "hover:bg-white/[0.02]"}`}>
+                                <span className={`shrink-0 w-6 text-center text-xs font-mono ${lightMode ? "text-gray-400" : "text-gray-600"}`}>{idx + 1}</span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className={`w-2 h-2 rounded-full ${entry.difficulty === "Easy" ? "bg-green-500" : entry.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"}`} />
+                                    <span className={`text-sm font-semibold truncate ${lightMode ? "text-gray-900" : "text-white"}`}>{entry.title}</span>
+                                    {entry.sub_topic && <span className={`text-[10px] px-1.5 py-0.5 rounded ${lightMode ? "bg-gray-100 text-gray-500" : "bg-white/5 text-gray-500"}`}>{entry.sub_topic}</span>}
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${lightMode ? "bg-blue-50 text-blue-600" : "bg-blue-500/10 text-blue-400"}`}>{entry.language}</span>
+                                  </div>
+                                  {/* Code preview — collapsible */}
+                                  <details className="group">
+                                    <summary className={`text-[10px] cursor-pointer select-none font-bold ${lightMode ? "text-indigo-500 hover:text-indigo-700" : "text-indigo-400 hover:text-indigo-300"}`}>
+                                      👁 View Code ({entry.code_solution.split("\n").length} lines)
+                                    </summary>
+                                    <div className={`mt-2 rounded-lg overflow-hidden border ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}>
+                                      <div className={`flex items-center justify-between px-3 py-1.5 text-[10px] border-b ${lightMode ? "bg-gray-50 border-gray-200 text-gray-500" : "bg-[#1a1d24] border-[#30363d] text-gray-500"}`}>
+                                        <span>{entry.language} • {entry.title}</span>
+                                        <button onClick={() => navigator.clipboard.writeText(entry.code_solution)} className="hover:text-blue-400 transition">📋 Copy</button>
+                                      </div>
+                                      <pre className={`p-3 overflow-x-auto text-[11px] leading-[18px] ${lightMode ? "bg-[#1e1e2e]" : "bg-[#0d1117]"}`} style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", color: "#d4d4d4", tabSize: 2, whiteSpace: "pre" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(entry.code_solution, entry.language) }} />
+                                    </div>
+                                  </details>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
