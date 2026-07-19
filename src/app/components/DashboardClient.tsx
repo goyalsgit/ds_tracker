@@ -540,6 +540,9 @@ export default function DashboardClient() {
   const [showPatternSheet, setShowPatternSheet] = useState(false); // pattern sheet export panel
   const [revisionCodePreview, setRevisionCodePreview] = useState<string | null>(null); // revision card code popup
   const [showRevisionMode, setShowRevisionMode] = useState(false); // full revision mode panel
+  const [addCodeForRevision, setAddCodeForRevision] = useState<string | null>(null); // which revision is in "add code" mode
+  const [addCodeText, setAddCodeText] = useState(""); // code being typed
+  const [addCodeLang, setAddCodeLang] = useState("cpp"); // language for the new code
   
   // Vertical layout height (percentage of code editor)
   const [verticalSplit, setVerticalSplit] = useState(60);
@@ -2647,7 +2650,54 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             const solve = solves.find(s => s.id === item.solveId);
                             const code = solve?.code || learnEntries.find(e => e.title === item.title)?.code_solution || "";
                             const lang = solve?.language || learnEntries.find(e => e.title === item.title)?.language || "cpp";
-                            if (!code) return <p className={`mt-2 text-xs italic ${t.textFaint}`}>No code found for this question.</p>;
+                            if (!code) return (
+                              <div className={`mt-3 rounded-xl border p-3 ${lightMode ? "border-gray-200 bg-gray-50" : "border-[#30363d] bg-[#161b22]"}`}>
+                                {addCodeForRevision === item.id ? (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <select value={addCodeLang} onChange={e => setAddCodeLang(e.target.value)} className={`text-[11px] px-2 py-1 rounded-lg border ${lightMode ? "bg-white border-gray-200" : "bg-[#0d1117] border-[#30363d] text-white"}`}>
+                                        <option value="cpp">C++</option><option value="java">Java</option><option value="python">Python</option><option value="javascript">JavaScript</option>
+                                      </select>
+                                      <span className={`text-[10px] ${lightMode ? "text-gray-400" : "text-gray-500"}`}>Paste your solution code below</span>
+                                    </div>
+                                    <textarea
+                                      value={addCodeText}
+                                      onChange={e => setAddCodeText(e.target.value)}
+                                      placeholder="Paste your code here..."
+                                      className={`w-full h-40 rounded-lg p-3 text-xs font-mono resize-y border ${lightMode ? "bg-white border-gray-200 text-gray-900" : "bg-[#0d1117] border-[#30363d] text-gray-200"}`}
+                                      style={{ fontFamily: "'Fira Code', monospace", tabSize: 2 }}
+                                    />
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={async () => {
+                                          if (!addCodeText.trim() || !token) return;
+                                          try {
+                                            await fetch("/api/solves/code", {
+                                              method: "PATCH",
+                                              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                              body: JSON.stringify({ solveId: item.solveId, code: addCodeText, language: addCodeLang }),
+                                            });
+                                            // Update local state
+                                            setSolves(prev => prev.map(s => s.id === item.solveId ? { ...s, code: addCodeText, language: addCodeLang } : s));
+                                            setAddCodeForRevision(null);
+                                            setAddCodeText("");
+                                          } catch { /* ignore */ }
+                                        }}
+                                        className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-green-500/15 text-green-400 hover:bg-green-500/25 border border-green-500/20 transition"
+                                      >💾 Save Code</button>
+                                      <button onClick={() => { setAddCodeForRevision(null); setAddCodeText(""); }} className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition">Cancel</button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-3">
+                                    <p className={`text-xs italic ${lightMode ? "text-gray-400" : "text-gray-500"}`}>No code found for this question.</p>
+                                    <button onClick={() => { setAddCodeForRevision(item.id); setAddCodeText(""); setAddCodeLang("cpp"); }} className={`text-[11px] px-3 py-1 rounded-lg font-bold transition ${lightMode ? "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200" : "bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/20"}`}>
+                                      + Add Code
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
                             return (
                               <div className={`mt-3 rounded-xl overflow-hidden border ${lightMode ? "border-gray-200" : "border-[#30363d]"}`}>
                                 <div className={`flex items-center justify-between px-3 py-2 text-[10px] border-b ${lightMode ? "bg-gray-50 border-gray-200 text-gray-500" : "bg-[#1a1d24] border-[#30363d] text-gray-500"}`}>
@@ -3990,8 +4040,51 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               <pre className="p-4 overflow-x-auto selectable" style={{ fontFamily: "'Fira Code', 'JetBrains Mono', monospace", fontSize: "12px", lineHeight: "20px", color: "#d4d4d4", tabSize: 2, whiteSpace: "pre", maxHeight: "400px", overflowY: "auto" }} dangerouslySetInnerHTML={{ __html: highlightCodeHtml(code, lang) }} />
                             </div>
                           ) : (
-                            <div className={`px-5 py-8 text-center ${lightMode ? "text-gray-400" : "text-gray-600"}`}>
-                              <p className="text-sm">No code saved — solve in Code Studio to save your solution.</p>
+                            <div className={`px-5 py-5 ${lightMode ? "bg-gray-50" : "bg-[#161b22]"}`}>
+                              {addCodeForRevision === item.id ? (
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-xs font-bold ${lightMode ? "text-gray-700" : "text-gray-300"}`}>Add your solution:</span>
+                                    <select value={addCodeLang} onChange={e => setAddCodeLang(e.target.value)} className={`text-[11px] px-2 py-1 rounded-lg border ${lightMode ? "bg-white border-gray-200" : "bg-[#0d1117] border-[#30363d] text-white"}`}>
+                                      <option value="cpp">C++</option><option value="java">Java</option><option value="python">Python</option><option value="javascript">JavaScript</option>
+                                    </select>
+                                  </div>
+                                  <textarea
+                                    value={addCodeText}
+                                    onChange={e => setAddCodeText(e.target.value)}
+                                    placeholder="Paste your code here..."
+                                    className={`w-full h-48 rounded-lg p-3 text-xs font-mono resize-y border ${lightMode ? "bg-white border-gray-200 text-gray-900" : "bg-[#0d1117] border-[#30363d] text-gray-200"}`}
+                                    style={{ fontFamily: "'Fira Code', monospace", tabSize: 2 }}
+                                  />
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={async () => {
+                                        if (!addCodeText.trim() || !token) return;
+                                        try {
+                                          await fetch("/api/solves/code", {
+                                            method: "PATCH",
+                                            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                            body: JSON.stringify({ solveId: item.solveId, code: addCodeText, language: addCodeLang }),
+                                          });
+                                          setSolves(prev => prev.map(s => s.id === item.solveId ? { ...s, code: addCodeText, language: addCodeLang } : s));
+                                          setAddCodeForRevision(null);
+                                          setAddCodeText("");
+                                        } catch { /* ignore */ }
+                                      }}
+                                      className="px-4 py-2 rounded-lg text-xs font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg transition-all hover:scale-105"
+                                    >💾 Save Code</button>
+                                    <button onClick={() => { setAddCodeForRevision(null); setAddCodeText(""); }} className="px-3 py-2 rounded-lg text-xs font-bold bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition">Cancel</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center gap-3 py-4">
+                                  <span className="text-2xl opacity-40">📝</span>
+                                  <p className={`text-sm ${lightMode ? "text-gray-400" : "text-gray-500"}`}>No code saved for this question yet.</p>
+                                  <button onClick={() => { setAddCodeForRevision(item.id); setAddCodeText(""); setAddCodeLang("cpp"); }} className={`text-xs px-4 py-2 rounded-lg font-bold transition ${lightMode ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200" : "bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 border border-indigo-500/20"}`}>
+                                    + Add Code Now
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           )}
                         </motion.div>
