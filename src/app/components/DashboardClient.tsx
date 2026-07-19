@@ -160,44 +160,44 @@ function highlightCodeHtml(code: string, language: string): string {
 }
 
 /* ─── Theme ──────────────────────────────────────────────────────────────── */
-// Clean, professional theme inspired by modern coding platforms
+// Clean, professional theme — Sailio/Linear inspired
 function getTheme(light: boolean) {
   return {
-    // Page - Subtle warm gray background (not pure white)
-    pageBg:      light ? "bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100" : "bg-[#0d1117]",
-    // Navbar - Slightly off-white with better shadow
-    navBg:       light ? "bg-white/80 backdrop-blur-xl border-slate-200/60 shadow-lg shadow-slate-200/50" : "bg-[#161b22] border-[#30363d] shadow-lg",
-    navText:     light ? "text-slate-800"          : "text-[#e6edf3]",
-    navMuted:    light ? "text-slate-500"          : "text-[#7d8590]",
-    navBtn:      light ? "border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-slate-400 hover:text-slate-900 font-semibold" : "border-[#30363d] text-[#e6edf3] hover:border-[#1f6feb] hover:bg-[#21262d] font-semibold",
-    tabActive:   light ? "bg-slate-800 text-white font-bold shadow-lg shadow-slate-400/30" : "bg-[#1f6feb] text-white font-bold shadow-lg",
-    tabInactive: light ? "text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-semibold" : "text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#21262d] font-semibold",
-    tabWrap:     light ? "bg-slate-100/80 backdrop-blur-sm"            : "bg-[#161b22]",
-    // Cards - Warm white with nice shadow
-    card:        light ? "bg-white/90 backdrop-blur-sm border-slate-200/60 shadow-lg shadow-slate-200/30 hover:shadow-xl hover:shadow-slate-300/30" : "bg-[#161b22] border-[#30363d] shadow-xl",
-    cardDark:    light ? "bg-slate-800 text-white shadow-xl shadow-slate-400/20"           : "bg-[#0d1117] text-[#e6edf3] border-[#30363d] shadow-xl",
-    // Text - Better contrast
-    textPrimary: light ? "text-slate-800 font-semibold"          : "text-[#e6edf3] font-semibold",
-    textMuted:   light ? "text-slate-600 font-medium"          : "text-[#7d8590] font-medium",
-    textFaint:   light ? "text-slate-500"          : "text-[#7d8590]",
-    textVfaint:  light ? "text-slate-400"          : "text-[#6e7681]",
-    // Inputs - Subtle background
-    input:       light ? "border-slate-300 bg-slate-50/80 text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:bg-white font-medium" : "border-[#30363d] bg-[#0d1117] text-[#e6edf3] placeholder-[#7d8590] focus:border-[#1f6feb] focus:ring-2 focus:ring-[#1f6feb]/20 font-medium",
-    select:      light ? "border-slate-300 bg-slate-50/80 text-slate-800 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 font-medium" : "border-[#30363d] bg-[#0d1117] text-[#e6edf3] focus:border-[#1f6feb] focus:ring-2 focus:ring-[#1f6feb]/20 font-medium",
-    // Rows / items
-    row:         light ? "border-slate-200/60 hover:bg-slate-50" : "border-[#30363d] hover:bg-[#161b22]",
-    rowBg:       light ? "bg-slate-50/80 border-slate-200/60"       : "bg-[#161b22] border-[#30363d]",
-    // Tags - Better visibility
-    tag:         light ? "bg-blue-50 text-blue-700 border-blue-200 font-semibold"        : "bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/30 font-semibold",
+    // Page
+    pageBg:      light ? "bg-[#f9fafb]" : "bg-[#0a0a0a]",
+    // Navbar
+    navBg:       light ? "bg-white/90 backdrop-blur-lg border-gray-200 shadow-sm" : "bg-[#0a0a0a]/90 backdrop-blur-lg border-[#1f1f1f] shadow-none",
+    navText:     light ? "text-gray-900"          : "text-white",
+    navMuted:    light ? "text-gray-500"          : "text-[#a1a1a1]",
+    navBtn:      light ? "border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900" : "border-[#2a2a2a] text-[#a1a1a1] hover:text-white hover:bg-[#1a1a1a]",
+    tabActive:   light ? "bg-gray-900 text-white shadow-sm" : "bg-white text-black shadow-sm",
+    tabInactive: light ? "text-gray-500 hover:text-gray-900 hover:bg-gray-100" : "text-[#666] hover:text-white hover:bg-[#1a1a1a]",
+    tabWrap:     light ? "bg-gray-100"            : "bg-[#111]",
+    // Cards
+    card:        light ? "bg-white border-gray-200 shadow-sm" : "bg-[#111] border-[#1f1f1f]",
+    cardDark:    light ? "bg-gray-900 text-white"           : "bg-[#0a0a0a] text-white border-[#1f1f1f]",
+    // Text
+    textPrimary: light ? "text-gray-900"          : "text-white",
+    textMuted:   light ? "text-gray-600"          : "text-[#a1a1a1]",
+    textFaint:   light ? "text-gray-400"          : "text-[#666]",
+    textVfaint:  light ? "text-gray-300"          : "text-[#444]",
+    // Inputs
+    input:       light ? "border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-200" : "border-[#2a2a2a] bg-[#111] text-white placeholder-[#555] focus:border-[#444] focus:ring-1 focus:ring-[#333]",
+    select:      light ? "border-gray-200 bg-white text-gray-900 focus:border-gray-400" : "border-[#2a2a2a] bg-[#111] text-white focus:border-[#444]",
+    // Rows
+    row:         light ? "border-gray-100 hover:bg-gray-50" : "border-[#1f1f1f] hover:bg-[#111]",
+    rowBg:       light ? "bg-gray-50 border-gray-100"       : "bg-[#111] border-[#1f1f1f]",
+    // Tags
+    tag:         light ? "bg-gray-100 text-gray-600"        : "bg-[#1a1a1a] text-[#888]",
     // Divider
-    divider:     light ? "bg-slate-200/60"            : "bg-[#30363d]",
+    divider:     light ? "bg-gray-200"            : "bg-[#1f1f1f]",
     // Table
-    tableHead:   light ? "bg-slate-100/80 border-slate-200/60 text-slate-700 font-bold" : "bg-[#161b22] border-[#30363d] text-[#e6edf3] font-bold",
-    tableRow:    light ? "border-slate-200/60 hover:bg-slate-50/80" : "border-[#30363d] hover:bg-[#161b22]",
+    tableHead:   light ? "bg-gray-50 border-gray-200 text-gray-600" : "bg-[#111] border-[#1f1f1f] text-[#888]",
+    tableRow:    light ? "border-gray-100 hover:bg-gray-50" : "border-[#1f1f1f] hover:bg-[#0f0f0f]",
     // Dashed empty state
-    dashed:      light ? "border-slate-300 text-slate-500 font-medium"    : "border-[#30363d] text-[#7d8590] font-medium",
-    // Revision card - Better shadow
-    revisionCard: light ? "border-slate-200/60 bg-white/90 backdrop-blur-sm hover:border-slate-300 hover:shadow-xl shadow-lg shadow-slate-200/30" : "border-[#30363d] bg-[#161b22] hover:border-[#1f6feb] hover:shadow-2xl shadow-lg",
+    dashed:      light ? "border-gray-200 text-gray-400"    : "border-[#2a2a2a] text-[#555]",
+    // Revision card
+    revisionCard: light ? "border-gray-200 bg-white hover:bg-gray-50" : "border-[#1f1f1f] bg-[#111] hover:bg-[#141414]",
   };
 }
 function AISummaryModal({
@@ -1851,14 +1851,14 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
               <motion.button 
                 key={tab2} 
                 onClick={() => setTab(tab2)}
-                className={`relative rounded-lg px-3 sm:px-5 py-2 sm:py-2.5 text-[10px] sm:text-xs font-bold transition-all whitespace-nowrap ${
+                className={`relative rounded-lg px-3 sm:px-5 py-2 sm:py-2.5 text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap ${
                   tab === tab2 
                     ? lightMode 
-                      ? "bg-white text-gray-900 shadow-lg" 
-                      : "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30"
+                      ? "bg-gray-900 text-white" 
+                      : "bg-white text-[#0a0a0a]"
                     : lightMode
-                      ? "text-gray-600 hover:text-gray-900 hover:bg-white/50"
-                      : "text-gray-400 hover:text-white hover:bg-white/10"
+                      ? "text-gray-500 hover:text-gray-900"
+                      : "text-[#666] hover:text-white"
                 }`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -1867,7 +1867,7 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                 transition={{ delay: idx * 0.05 }}
               >
                 <span className="sm:hidden">{tab2 === "dashboard" ? "📊" : tab2 === "questions" ? "📝" : tab2 === "analysis" ? "🤖" : "🎓"}</span>
-                <span className="hidden sm:inline">{tab2 === "dashboard" ? "📊 Dashboard" : tab2 === "questions" ? "📝 Questions" : tab2 === "analysis" ? "🤖 AI Analysis" : "🎓 Learn"}</span>
+                <span className="hidden sm:inline">{tab2 === "dashboard" ? "Dashboard" : tab2 === "questions" ? "Questions" : tab2 === "analysis" ? "AI Analysis" : "Learn"}</span>
               </motion.button>
             ))}
           </div>
@@ -2264,20 +2264,20 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
 
             {/* Stats */}
             {stats ? (
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-5">
+              <div className="grid grid-cols-2 gap-3 sm:gap-3 sm:grid-cols-5">
                 {[
                   { label: "Total", value: stats.totalSolved, accent: lightMode ? "text-gray-900" : "text-white" },
-                  { label: "Easy", value: stats.easySolved, accent: lightMode ? "text-green-600" : "text-green-400" },
-                  { label: "Medium", value: stats.mediumSolved, accent: lightMode ? "text-amber-600" : "text-amber-400" },
-                  { label: "Hard", value: stats.hardSolved, accent: lightMode ? "text-red-600" : "text-red-400" },
-                  { label: "Streak", value: streak, accent: lightMode ? "text-orange-600" : "text-orange-400", suffix: "d" },
+                  { label: "Easy", value: stats.easySolved, accent: lightMode ? "text-green-600" : "text-[#4ade80]" },
+                  { label: "Medium", value: stats.mediumSolved, accent: lightMode ? "text-amber-600" : "text-[#fbbf24]" },
+                  { label: "Hard", value: stats.hardSolved, accent: lightMode ? "text-red-600" : "text-[#f87171]" },
+                  { label: "Streak", value: streak, accent: lightMode ? "text-orange-600" : "text-[#fb923c]", suffix: "d" },
                 ].map((s) => (
                   <div 
                     key={s.label}
-                    className={`rounded-xl p-4 sm:p-5 ${lightMode ? "bg-white border border-gray-200" : "bg-[#161b22] border border-[#30363d]"}`}
+                    className={`rounded-xl p-4 sm:p-5 border transition-colors ${lightMode ? "bg-white border-gray-200 hover:border-gray-300" : "bg-[#111] border-[#1f1f1f] hover:border-[#333]"}`}
                   >
-                    <p className={`text-[11px] font-medium uppercase tracking-wide mb-2 ${lightMode ? "text-gray-500" : "text-[#7d8590]"}`}>{s.label}</p>
-                    <p className={`text-2xl sm:text-3xl font-bold ${s.accent}`}>
+                    <p className={`text-[10px] font-medium uppercase tracking-wider mb-2 ${lightMode ? "text-gray-400" : "text-[#666]"}`}>{s.label}</p>
+                    <p className={`text-2xl sm:text-3xl font-semibold tracking-tight ${s.accent}`}>
                       {s.value}{s.suffix || ""}
                     </p>
                   </div>
@@ -2287,14 +2287,10 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`relative overflow-hidden rounded-2xl sm:rounded-3xl px-6 sm:px-10 py-10 sm:py-16 ${lightMode ? "bg-gradient-to-br from-[#f0f7ff] via-white to-[#f5f0ff] shadow-lg border border-gray-100" : "bg-gradient-to-br from-[#0d1117] via-[#161b22] to-[#1c1229] shadow-2xl border border-[#30363d]"}`}
+                className={`relative overflow-hidden rounded-2xl px-6 sm:px-10 py-10 sm:py-16 border ${lightMode ? "bg-white border-gray-200" : "bg-[#111] border-[#1f1f1f]"}`}
               >
-                {/* Decorative elements */}
-                <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-20 ${lightMode ? "bg-blue-300" : "bg-indigo-600"}`} />
-                <div className={`absolute bottom-0 left-0 w-48 h-48 rounded-full blur-3xl opacity-15 ${lightMode ? "bg-purple-300" : "bg-purple-700"}`} />
-                
                 {/* Content */}
-                <div className="relative max-w-2xl mx-auto text-center">
+                <div className="max-w-2xl mx-auto text-center">
                   {authStatus !== "in" ? (
                     <>
                       <motion.h1 
@@ -4602,6 +4598,78 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                         className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-sm shadow-lg transition-all hover:scale-105"
                       >
                         <span>📥</span> Download Excel
+                      </button>
+                      <button
+                        onClick={() => {
+                          // Select all or currently visible entries for PDF
+                          const entries = learnEntries;
+                          if (entries.length === 0) { alert("No questions to export."); return; }
+                          
+                          const pw = window.open("", "_blank");
+                          if (!pw) { alert("Please allow popups"); return; }
+
+                          const pages = entries.map((entry, idx) => {
+                            const code = entry.code_solution
+                              .replace(/&/g, "&amp;")
+                              .replace(/</g, "&lt;")
+                              .replace(/>/g, "&gt;");
+                            const dc = entry.difficulty === "Easy" ? "#16a34a" : entry.difficulty === "Medium" ? "#d97706" : "#dc2626";
+                            return `
+                              <div class="page" ${idx > 0 ? 'style="page-break-before: always;"' : ''}>
+                                <div class="header">
+                                  <span class="num">${idx + 1}</span>
+                                  <div class="meta">
+                                    <h2>${entry.title}</h2>
+                                    <div class="tags">
+                                      <span class="diff" style="color:${dc}">${entry.difficulty || "–"}</span>
+                                      <span class="topic">${entry.topic}</span>
+                                      ${entry.sub_topic ? `<span class="subtopic">${entry.sub_topic}</span>` : ""}
+                                      <span class="lang">${entry.language}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <pre class="code">${code}</pre>
+                              </div>`;
+                          }).join("");
+
+                          pw.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>DSA Code Sheet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+  .cover { padding: 80px 60px; text-align: center; page-break-after: always; }
+  .cover h1 { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+  .cover p { font-size: 14px; color: #6b7280; margin-bottom: 4px; }
+  .page { padding: 40px 50px; }
+  .header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb; }
+  .num { font-size: 14px; font-weight: 700; color: #fff; background: #111; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .meta h2 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tags span { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #f3f4f6; color: #4b5563; font-weight: 500; }
+  .diff { background: none !important; font-weight: 600 !important; }
+  .code { font-family: 'JetBrains Mono', 'Consolas', monospace; font-size: 12px; line-height: 1.7; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px 24px; white-space: pre; overflow-x: auto; color: #1f2937; }
+  @media print {
+    body { background: #fff; }
+    .page { padding: 30px 40px; }
+    .code { font-size: 11px; border: 1px solid #d1d5db; }
+  }
+</style>
+</head><body>
+<div class="cover">
+  <h1>DSA Code Sheet</h1>
+  <p>${entries.length} Questions · ${[...new Set(entries.map(e => e.topic))].length} Topics</p>
+  <p style="margin-top:4px;font-size:12px;color:#9ca3af;">Generated ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</p>
+</div>
+${pages}
+</body></html>`);
+                          pw.document.close();
+                          pw.focus();
+                          setTimeout(() => pw.print(), 600);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm shadow-lg transition-all hover:scale-105"
+                      >
+                        <span>📄</span> Download PDF
                       </button>
                       <button onClick={() => setShowPatternSheet(false)} className={`rounded-lg p-2 text-lg transition ${lightMode ? "hover:bg-gray-100 text-gray-500" : "hover:bg-white/10 text-white/50"}`}>✕</button>
                     </div>
