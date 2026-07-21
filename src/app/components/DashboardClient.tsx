@@ -160,44 +160,44 @@ function highlightCodeHtml(code: string, language: string): string {
 }
 
 /* ─── Theme ──────────────────────────────────────────────────────────────── */
-// Clean, professional theme — Sailio/Linear inspired
+// Clean, professional theme — high contrast, readable
 function getTheme(light: boolean) {
   return {
     // Page
-    pageBg:      light ? "bg-[#f9fafb]" : "bg-[#0a0a0a]",
+    pageBg:      light ? "bg-[#f7f7f8]" : "bg-[#09090b]",
     // Navbar
-    navBg:       light ? "bg-white/90 backdrop-blur-lg border-gray-200 shadow-sm" : "bg-[#0a0a0a]/90 backdrop-blur-lg border-[#1f1f1f] shadow-none",
-    navText:     light ? "text-gray-900"          : "text-white",
-    navMuted:    light ? "text-gray-500"          : "text-[#a1a1a1]",
-    navBtn:      light ? "border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900" : "border-[#2a2a2a] text-[#a1a1a1] hover:text-white hover:bg-[#1a1a1a]",
-    tabActive:   light ? "bg-gray-900 text-white shadow-sm" : "bg-white text-black shadow-sm",
-    tabInactive: light ? "text-gray-500 hover:text-gray-900 hover:bg-gray-100" : "text-[#666] hover:text-white hover:bg-[#1a1a1a]",
-    tabWrap:     light ? "bg-gray-100"            : "bg-[#111]",
+    navBg:       light ? "bg-white border-gray-200 shadow-sm" : "bg-[#09090b] border-[#27272a]",
+    navText:     light ? "text-gray-900"          : "text-[#fafafa]",
+    navMuted:    light ? "text-gray-500"          : "text-[#a1a1aa]",
+    navBtn:      light ? "border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900" : "border-[#27272a] text-[#a1a1aa] hover:text-white hover:bg-[#18181b]",
+    tabActive:   light ? "bg-gray-900 text-white" : "bg-[#fafafa] text-[#09090b]",
+    tabInactive: light ? "text-gray-500 hover:text-gray-900" : "text-[#71717a] hover:text-[#fafafa]",
+    tabWrap:     light ? "bg-gray-100"            : "bg-[#18181b]",
     // Cards
-    card:        light ? "bg-white border-gray-200 shadow-sm" : "bg-[#111] border-[#1f1f1f]",
-    cardDark:    light ? "bg-gray-900 text-white"           : "bg-[#0a0a0a] text-white border-[#1f1f1f]",
-    // Text
-    textPrimary: light ? "text-gray-900"          : "text-white",
-    textMuted:   light ? "text-gray-600"          : "text-[#a1a1a1]",
-    textFaint:   light ? "text-gray-400"          : "text-[#666]",
-    textVfaint:  light ? "text-gray-300"          : "text-[#444]",
+    card:        light ? "bg-white border-gray-200" : "bg-[#18181b] border-[#27272a]",
+    cardDark:    light ? "bg-gray-900 text-white" : "bg-[#09090b] text-[#fafafa] border-[#27272a]",
+    // Text — high contrast
+    textPrimary: light ? "text-gray-900"          : "text-[#fafafa]",
+    textMuted:   light ? "text-gray-600"          : "text-[#d4d4d8]",
+    textFaint:   light ? "text-gray-400"          : "text-[#a1a1aa]",
+    textVfaint:  light ? "text-gray-300"          : "text-[#71717a]",
     // Inputs
-    input:       light ? "border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-200" : "border-[#2a2a2a] bg-[#111] text-white placeholder-[#555] focus:border-[#444] focus:ring-1 focus:ring-[#333]",
-    select:      light ? "border-gray-200 bg-white text-gray-900 focus:border-gray-400" : "border-[#2a2a2a] bg-[#111] text-white focus:border-[#444]",
+    input:       light ? "border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-200" : "border-[#27272a] bg-[#18181b] text-[#fafafa] placeholder-[#71717a] focus:border-[#3f3f46] focus:ring-1 focus:ring-[#27272a]",
+    select:      light ? "border-gray-200 bg-white text-gray-900 focus:border-gray-400" : "border-[#27272a] bg-[#18181b] text-[#fafafa] focus:border-[#3f3f46]",
     // Rows
-    row:         light ? "border-gray-100 hover:bg-gray-50" : "border-[#1f1f1f] hover:bg-[#111]",
-    rowBg:       light ? "bg-gray-50 border-gray-100"       : "bg-[#111] border-[#1f1f1f]",
+    row:         light ? "border-gray-100 hover:bg-gray-50" : "border-[#27272a] hover:bg-[#18181b]",
+    rowBg:       light ? "bg-gray-50 border-gray-100"       : "bg-[#18181b] border-[#27272a]",
     // Tags
-    tag:         light ? "bg-gray-100 text-gray-600"        : "bg-[#1a1a1a] text-[#888]",
+    tag:         light ? "bg-gray-100 text-gray-700"        : "bg-[#27272a] text-[#d4d4d8]",
     // Divider
-    divider:     light ? "bg-gray-200"            : "bg-[#1f1f1f]",
+    divider:     light ? "bg-gray-200"            : "bg-[#27272a]",
     // Table
-    tableHead:   light ? "bg-gray-50 border-gray-200 text-gray-600" : "bg-[#111] border-[#1f1f1f] text-[#888]",
-    tableRow:    light ? "border-gray-100 hover:bg-gray-50" : "border-[#1f1f1f] hover:bg-[#0f0f0f]",
+    tableHead:   light ? "bg-gray-50 border-gray-200 text-gray-700" : "bg-[#18181b] border-[#27272a] text-[#d4d4d8]",
+    tableRow:    light ? "border-gray-100 hover:bg-gray-50" : "border-[#27272a] hover:bg-[#18181b]",
     // Dashed empty state
-    dashed:      light ? "border-gray-200 text-gray-400"    : "border-[#2a2a2a] text-[#555]",
+    dashed:      light ? "border-gray-200 text-gray-500"    : "border-[#27272a] text-[#71717a]",
     // Revision card
-    revisionCard: light ? "border-gray-200 bg-white hover:bg-gray-50" : "border-[#1f1f1f] bg-[#111] hover:bg-[#141414]",
+    revisionCard: light ? "border-gray-200 bg-white hover:bg-gray-50" : "border-[#27272a] bg-[#18181b] hover:bg-[#1f1f23]",
   };
 }
 function AISummaryModal({
@@ -2266,7 +2266,7 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
             {stats ? (
               <div className="grid grid-cols-2 gap-3 sm:gap-3 sm:grid-cols-5">
                 {[
-                  { label: "Total", value: stats.totalSolved, accent: lightMode ? "text-gray-900" : "text-white" },
+                  { label: "Total", value: stats.totalSolved, accent: lightMode ? "text-gray-900" : "text-[#fafafa]" },
                   { label: "Easy", value: stats.easySolved, accent: lightMode ? "text-green-600" : "text-[#4ade80]" },
                   { label: "Medium", value: stats.mediumSolved, accent: lightMode ? "text-amber-600" : "text-[#fbbf24]" },
                   { label: "Hard", value: stats.hardSolved, accent: lightMode ? "text-red-600" : "text-[#f87171]" },
@@ -2274,10 +2274,10 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                 ].map((s) => (
                   <div 
                     key={s.label}
-                    className={`rounded-xl p-4 sm:p-5 border transition-colors ${lightMode ? "bg-white border-gray-200 hover:border-gray-300" : "bg-[#111] border-[#1f1f1f] hover:border-[#333]"}`}
+                    className={`rounded-xl p-5 border transition-colors ${lightMode ? "bg-white border-gray-200 hover:border-gray-300" : "bg-[#18181b] border-[#27272a] hover:border-[#3f3f46]"}`}
                   >
-                    <p className={`text-[10px] font-medium uppercase tracking-wider mb-2 ${lightMode ? "text-gray-400" : "text-[#666]"}`}>{s.label}</p>
-                    <p className={`text-2xl sm:text-3xl font-semibold tracking-tight ${s.accent}`}>
+                    <p className={`text-xs font-medium uppercase tracking-wider mb-3 ${lightMode ? "text-gray-500" : "text-[#a1a1aa]"}`}>{s.label}</p>
+                    <p className={`text-3xl sm:text-4xl font-semibold tracking-tight ${s.accent}`}>
                       {s.value}{s.suffix || ""}
                     </p>
                   </div>
@@ -2678,13 +2678,13 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
 
               {/* ── Col 2: Today's queue ── */}
               <div className="flex flex-col gap-4">
-                <div className={`rounded-xl border p-5 ${t.card}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className={`text-sm font-semibold ${t.textPrimary}`}>Today&apos;s Revision Queue</p>
+                <div className={`rounded-xl border p-6 ${t.card}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className={`text-base font-semibold ${lightMode ? "text-gray-900" : "text-[#fafafa]"}`}>Today&apos;s Revision Queue</h3>
                     <div className="flex items-center gap-2">
                       {pending.length > 0 && (
-                        <button onClick={() => setShowRevisionMode(true)} className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${lightMode ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200" : "bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 border border-indigo-500/20"}`}>
-                          📖 Revision Mode
+                        <button onClick={() => setShowRevisionMode(true)} className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#27272a] text-[#d4d4d8] hover:bg-[#3f3f46]"}`}>
+                          Revision Mode
                         </button>
                       )}
                       {pending.length > 0 && (
@@ -2723,8 +2723,8 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               }
                             }
                           } catch { alert("❌ Network error"); }
-                        }} className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${lightMode ? "bg-green-100 text-green-700 hover:bg-green-200 border border-green-200" : "bg-green-500/15 text-green-400 hover:bg-green-500/25 border border-green-500/20"}`}>
-                          ⚡ Send to WhatsApp
+                        }} className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#27272a] text-[#d4d4d8] hover:bg-[#3f3f46]"}`}>
+                          WhatsApp
                         </button>
                       )}
                       {pending.length > 0 && (
@@ -2750,14 +2750,14 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                             localStorage.setItem("wa_autosend", "false");
                             alert("Auto-send disabled.");
                           }
-                        }} className={`rounded-full px-1.5 py-1 text-[9px] font-bold transition ${localStorage.getItem("wa_autosend") === "true" ? (lightMode ? "bg-green-200 text-green-800 border border-green-400" : "bg-green-500/25 text-green-300 border border-green-500/40") : (lightMode ? "bg-gray-100 text-gray-400 border border-gray-200" : "bg-white/5 text-gray-600 border border-white/10")}`} title="Toggle daily auto-send">
+                        }} className={`rounded-md px-2 py-1.5 text-xs font-medium transition ${localStorage.getItem("wa_autosend") === "true" ? (lightMode ? "bg-green-100 text-green-700" : "bg-green-500/15 text-green-300") : (lightMode ? "bg-gray-100 text-gray-400" : "bg-[#27272a] text-[#71717a]")}`} title="Toggle daily auto-send">
                           {localStorage.getItem("wa_autosend") === "true" ? "🔔" : "🔕"}
                         </button>
                       )}
-                      <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] text-white/40">{todayKey}</span>
+                      <span className={`text-xs ${lightMode ? "text-gray-400" : "text-[#71717a]"}`}>{todayKey}</span>
                     </div>
                   </div>
-                  <p className={`text-xs mb-4 ${t.textFaint}`}>
+                  <p className={`text-sm mb-5 ${lightMode ? "text-gray-500" : "text-[#a1a1aa]"}`}>
                     {pending.length === 0 && done.length === 0
                       ? authStatus !== "in" ? "Sign in to see your queue." : "Nothing due today — great work!"
                       : `${pending.length} pending · ${done.length} completed`}
@@ -2765,19 +2765,19 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
 
                   {/* Progress bar */}
                   {todayRevisions.length > 0 && (
-                    <div className="mb-4">
-                      <div className={`flex justify-between text-[11px] mb-1.5 ${t.textFaint}`}>
+                    <div className="mb-5">
+                      <div className={`flex justify-between text-xs mb-2 ${lightMode ? "text-gray-500" : "text-[#a1a1aa]"}`}>
                         <span>Progress</span>
-                        <span>{done.length}/{todayRevisions.length}</span>
+                        <span className="font-medium">{done.length}/{todayRevisions.length}</span>
                       </div>
-                      <div className={`h-1.5 rounded-full overflow-hidden ${lightMode ? "bg-zinc-200" : "bg-white/10"}`}>
-                        <div className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+                      <div className={`h-2 rounded-full overflow-hidden ${lightMode ? "bg-gray-200" : "bg-[#27272a]"}`}>
+                        <div className={`h-full rounded-full transition-all duration-500 ${lightMode ? "bg-gray-900" : "bg-[#fafafa]"}`}
                           style={{ width: `${todayRevisions.length > 0 ? (done.length / todayRevisions.length) * 100 : 0}%` }} />
                       </div>
                     </div>
                   )}
 
-                  <div className="flex flex-col gap-2.5">
+                  <div className="flex flex-col gap-3">
                     {pending.length === 0 && done.length === 0 && (
                       <div className={`rounded-lg border border-dashed px-4 py-6 text-center text-xs ${t.dashed}`}>
                         {authStatus === "in" ? "Sync LeetCode to populate your revision schedule." : "Sign in with Google to get started."}
@@ -2791,16 +2791,16 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <div className={`h-2 w-2 shrink-0 rounded-full ${dc.dot}`} />
-                                <p className={`truncate text-sm font-semibold leading-tight ${lightMode ? "text-gray-900" : "text-[#e6edf3]"}`}>{item.title}</p>
+                                <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${dc.dot}`} />
+                                <p className={`truncate text-[15px] font-medium leading-tight ${lightMode ? "text-gray-900" : "text-[#fafafa]"}`}>{item.title}</p>
                               </div>
-                              <div className="flex items-center gap-1.5 ml-4 flex-wrap">
-                                <span className={`rounded-md px-2 py-0.5 text-[10px] font-medium ${lightMode ? "bg-gray-100 text-gray-600" : "bg-[#21262d] text-[#7d8590]"}`}>
+                              <div className="flex items-center gap-1.5 ml-5 flex-wrap">
+                                <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${lightMode ? "bg-gray-100 text-gray-600" : "bg-[#27272a] text-[#d4d4d8]"}`}>
                                   {item.label}
                                 </span>
-                                {item.difficulty && <span className={`text-[10px] font-semibold ${dc.text}`}>{item.difficulty}</span>}
+                                {item.difficulty && <span className={`text-xs font-medium ${dc.text}`}>{item.difficulty}</span>}
                                 {item.tags && item.tags.slice(0, 3).map(tag => (
-                                  <span key={tag} className={`rounded-md px-1.5 py-0.5 text-[10px] ${lightMode ? "bg-gray-100 text-gray-500" : "bg-[#21262d] text-[#7d8590]"}`}>{tag}</span>
+                                  <span key={tag} className={`rounded-md px-1.5 py-0.5 text-xs ${lightMode ? "bg-gray-100 text-gray-500" : "bg-[#27272a] text-[#a1a1aa]"}`}>{tag}</span>
                                 ))}
                               </div>
                             </div>
@@ -2810,34 +2810,34 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               </span>
                             </div>
                           </div>
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-2">
                             {item.sourceUrl && (
                               <a href={item.sourceUrl} target="_blank" rel="noreferrer"
-                                className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#21262d] text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#30363d]"}`}>
+                                className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium transition ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#27272a] text-[#d4d4d8] hover:bg-[#3f3f46]"}`}>
                                 LeetCode ↗
                               </a>
                             )}
                             <button onClick={() => markRevision(item.id, "done")}
-                              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition ${lightMode ? "bg-green-600 text-white hover:bg-green-700" : "bg-[#238636] text-white hover:bg-[#2ea043]"}`}>
+                              className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium transition ${lightMode ? "bg-green-600 text-white hover:bg-green-700" : "bg-[#22c55e] text-[#09090b] hover:bg-[#16a34a]"}`}>
                               ✓ Done
                             </button>
                             <button onClick={() => markRevision(item.id, "failed")}
-                              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition ${lightMode ? "bg-gray-100 text-red-600 hover:bg-red-50" : "bg-[#21262d] text-[#f85149] hover:bg-[#30363d]"}`}>
+                              className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium transition ${lightMode ? "bg-gray-100 text-red-600 hover:bg-red-50" : "bg-[#27272a] text-[#f87171] hover:bg-[#3f3f46]"}`}>
                               ✗ Failed
                             </button>
                             <button onClick={() => getCardHint(item)}
                               disabled={cardAI[item.id]?.loading}
-                              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition disabled:opacity-40 ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#21262d] text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#30363d]"}`}>
-                              {cardAI[item.id]?.loading ? "…" : "💡 Hint"}
+                              className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium transition disabled:opacity-40 ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#27272a] text-[#d4d4d8] hover:bg-[#3f3f46]"}`}>
+                              {cardAI[item.id]?.loading ? "…" : "Hint"}
                             </button>
                             <button onClick={() => getCardSummary(item)}
                               disabled={cardAI[item.id]?.loading}
-                              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition disabled:opacity-40 ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#21262d] text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#30363d]"}`}>
-                              {cardAI[item.id]?.loading ? "…" : "📖 Summary"}
+                              className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium transition disabled:opacity-40 ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#27272a] text-[#d4d4d8] hover:bg-[#3f3f46]"}`}>
+                              {cardAI[item.id]?.loading ? "…" : "Summary"}
                             </button>
                             <button onClick={() => setRevisionCodePreview(revisionCodePreview === item.id ? null : item.id)}
-                              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition ${revisionCodePreview === item.id ? (lightMode ? "bg-blue-600 text-white" : "bg-[#1f6feb] text-white") : (lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#21262d] text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#30363d]")}`}>
-                              {revisionCodePreview === item.id ? "✕ Close" : "{ } Code"}
+                              className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium transition ${revisionCodePreview === item.id ? (lightMode ? "bg-gray-900 text-white" : "bg-[#fafafa] text-[#09090b]") : (lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#27272a] text-[#d4d4d8] hover:bg-[#3f3f46]")}`}>
+                              {revisionCodePreview === item.id ? "Close" : "Code"}
                             </button>
                             <button onClick={() => {
                               const solve = solves.find(s => s.id === item.solveId);
@@ -2847,7 +2847,7 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                               const text = `📖 *${item.title}*\n${item.difficulty || ""} | ${item.label}\n\n\`\`\`${lang}\n${snippet}\n\`\`\``;
                               window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
                             }}
-                              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#21262d] text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#30363d]"}`}>
+                              className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium transition ${lightMode ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-[#27272a] text-[#d4d4d8] hover:bg-[#3f3f46]"}`}>
                               📱 Share
                             </button>
                           </div>
@@ -3826,27 +3826,15 @@ body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#7
                           className="relative group/card"
                           style={{ height: `${revisionCardHeight}px` }}
                         >
-                          {/* Card — hover shows centered preview, click opens fullscreen */}
+                          {/* Card — click to zoom (no auto hover) */}
                           <div 
-                            className={`absolute inset-0 flex flex-col rounded-xl overflow-hidden border cursor-pointer transition-all duration-200 ease-out group-hover/card:-translate-y-1 group-hover/card:shadow-2xl ${lightMode ? "bg-white border-gray-200 shadow-md group-hover/card:border-purple-400" : "bg-[#12141a] border-[#2d333b] shadow-lg group-hover/card:border-purple-500/60"}`}
+                            className={`absolute inset-0 flex flex-col rounded-xl overflow-hidden border cursor-pointer transition-all duration-200 ease-out ${lightMode ? "bg-white border-gray-200 hover:border-gray-300" : "bg-[#18181b] border-[#27272a] hover:border-[#3f3f46]"}`}
                             onClick={() => setZoomedCardId(cardId)}
-                            onMouseEnter={(e) => {
-                              // Cancel any pending close
-                              if (hoverCloseTimerRef.current) { clearTimeout(hoverCloseTimerRef.current); hoverCloseTimerRef.current = null; }
-                              const timer = setTimeout(() => setHoverPreviewId(cardId), 350);
-                              (e.currentTarget as HTMLElement).dataset.previewTimer = String(timer);
-                            }}
-                            onMouseLeave={(e) => {
-                              const timer = (e.currentTarget as HTMLElement).dataset.previewTimer;
-                              if (timer) clearTimeout(Number(timer));
-                              // Delay close so user can move pointer to the preview
-                              hoverCloseTimerRef.current = setTimeout(() => { setHoverPreviewId(null); hoverCloseTimerRef.current = null; }, 300);
-                            }}
                           >
-                            <div className={`flex items-center justify-between px-3 py-2 shrink-0 border-b ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#1a1d24] border-[#2d333b]"}`}>
+                            <div className={`flex items-center justify-between px-3 py-2 shrink-0 border-b ${lightMode ? "bg-gray-50 border-gray-200" : "bg-[#09090b] border-[#27272a]"}`}>
                               <div className="flex items-center gap-2 min-w-0">
                                 <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${entry.difficulty === "Easy" ? "bg-green-500" : entry.difficulty === "Medium" ? "bg-yellow-500" : "bg-red-500"}`} />
-                                <span className={`text-[10px] font-bold truncate ${lightMode ? "text-gray-800" : "text-white"}`}>{entry.title}</span>
+                                <span className={`text-xs font-medium truncate ${lightMode ? "text-gray-900" : "text-[#fafafa]"}`}>{entry.title}</span>
                               </div>
                               <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover/card:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
                                 <button onClick={() => { loadEntryIntoCompiler(entry); setShowCompiler(true); setShowRevisionPanel(false); }} className="text-[8px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 font-bold">▶</button>

@@ -10,12 +10,24 @@
   box-sizing: border-box; 
 }
 
+html {
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   text-rendering: optimizeLegibility;
+  line-height: 1.6;
+  color: #fafafa;
+}
+
+.light body,
+html.light body {
+  color: #18181b;
 }
 
 /* ═══ GLOBAL SMOOTHNESS ═══ */
